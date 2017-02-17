@@ -11,31 +11,31 @@ public class ExpressionNode implements Serializable {
     private static final long serialVersionUID = 8049660827041716275L;
 
     final static double PROB_TERM_UNIV = 0.35,
-            PROB_TERM_EVENT = 0.4,
-            PROB_TERM_CONST = 0.15,
-            PROB_TERM_ERC = 0.1,
-            PROB_TERM[] = {
-                PROB_TERM_UNIV,
-                PROB_TERM_EVENT,
-                PROB_TERM_CONST
-            },
-            PROB_FUNC_A1 = 0.2,
-            PROB_FUNC_A2 = 0.6,
-            PROB_FUNC_A3 = 0.05,
-            PROB_FUNC_A4 = 0.15,
-            PROB_FUNC[] = {
-                PROB_FUNC_A1,
-                PROB_FUNC_A2,
-                PROB_FUNC_A3,
-                PROB_FUNC_A4
-            },
-            PROB_MIDTREE_TERM = 0.35,
-            PROB_CROSS_ROOT = 0.3,
-            PROB_CROSS_TERMINAL = 0.1,
-            PROB_CROSS_FUNC = 0.6,
-            PROB_MUTATE_ROOT = 0.05,
-            PROB_MUTATE_FUNC = 0.4,
-            PROB_MUTATE_TERMINAL = 0.15;
+        PROB_TERM_EVENT = 0.4,
+        PROB_TERM_CONST = 0.15,
+        PROB_TERM_ERC = 0.1,
+        PROB_TERM[] = {
+            PROB_TERM_UNIV,
+            PROB_TERM_EVENT,
+            PROB_TERM_CONST
+        },
+        PROB_FUNC_A1 = 0.2,
+        PROB_FUNC_A2 = 0.6,
+        PROB_FUNC_A3 = 0.05,
+        PROB_FUNC_A4 = 0.15,
+        PROB_FUNC[] = {
+            PROB_FUNC_A1,
+            PROB_FUNC_A2,
+            PROB_FUNC_A3,
+            PROB_FUNC_A4
+        },
+        PROB_MIDTREE_TERM = 0.35,
+        PROB_CROSS_ROOT = 0.3,
+        PROB_CROSS_TERMINAL = 0.1,
+        PROB_CROSS_FUNC = 0.6,
+        PROB_MUTATE_ROOT = 0.05,
+        PROB_MUTATE_FUNC = 0.4,
+        PROB_MUTATE_TERMINAL = 0.15;
 
     // Class Fields ///////////////////////////////////////////////////////////
     int depth, arity = -1;
@@ -70,10 +70,10 @@ public class ExpressionNode implements Serializable {
         }
 
         composed.append(")");
-        
+
         return composed.toString();
     }
- 
+
     public void grow(int depth, int event) {
         setArity(depth);
         assignExpression(depth, event);
@@ -324,29 +324,48 @@ public class ExpressionNode implements Serializable {
     };
 
     final static String CONSTANT_TERMINALS[] = {
+        // Rules Constants
+        "ACCELERATION",
+        "DECELERATION",
+        "MAX_VELOCITY",
+        "MIN_BULLET_POWER",
+        "MAX_BULLET_POWER",
+        "MAX_TURN_RATE_RADIANS",
+        "GUN_TURN_RATE_RADIANS",
+        "RADAR_TURN_RATE_RADIANS",
+        "ROBOT_HIT_DAMAGE",
+        "ROBOT_HIT_BONUS",
         "0.00001", // Zero, offset to avoid division issues
         "Math.random()", // random value from [0, 1]
         "(Math.random()*2 - 1)", // random value from [-1, 1]
         "Math.floor((Math.random()*10))", // random integer from [1, 10]
         "Math.PI" // 3.14...
-    //"runVar1",				// static variables
-    //"runVar2"				// 	- the GP defines these
-    // Ephemeral Random Constants: Double.toString(random.nextDouble());
+        //"runVar1",				// static variables
+        //"runVar2"				// 	- the GP defines these
+        // Ephemeral Random Constants: Double.toString(random.nextDouble());
     };
 
     // terminals that can only be called during a ScannedRobotEvent
     final static String SCANNED_EVENT_TERMINALS[] = {
-        "e.getBearing()", // Returns difference between enemy and robot heading
+        "e.getBearingRadians()", // Returns difference between enemy and robot heading
         "e.getDistance()", // Returns distance to enemy
         "e.getEnergy()", // Returns energy (life) of enemy
-        "e.getHeading()", // Returns direction enemy is facing
+        "e.getHeadingRadians()", // Returns direction enemy is facing
         "e.getVelocity()" // Returns the velocity of enemy
+    };
+
+    // terminals that can only be called during a HitByBulletEvent
+    final static String HIT_BY_BULLET_EVENT_TERMINALS[] = {
+        "e.getBearingRadians()", // Returns difference between bullet and robot heading
+        "e.getPower()", // Returns power of bullet
+        "e.getHeadingRadians()", // Returns direction enemy is facing
+        "e.getVelocity()" // Returns the velocity of bullet
     };
 
     final static String[][] TERMINALS = {
         UNIVERSAL_TERMINALS,
-        CONSTANT_TERMINALS,
-        SCANNED_EVENT_TERMINALS
+        SCANNED_EVENT_TERMINALS,
+        CONSTANT_TERMINALS
     };
 
     final static String FUNCTIONS_A1[][] = {

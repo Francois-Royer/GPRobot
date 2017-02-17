@@ -34,8 +34,8 @@ public class RunGP {
     private static MetaBot
             pool[] = new MetaBot[POP_SIZE],
             newPool[] = new MetaBot[POP_SIZE],
-            candidates[] = new MetaBot[MAX_GENS],    // should probably store as String[] of file paths
-            bestSoFar = new MetaBot(-1, 0);
+            bestSoFar = new MetaBot(-1, 0),
+            bestLastGen = new MetaBot(-1, 0);
 
     private static String botNames[] = new String[POP_SIZE];
     private static int genCount = 0;
@@ -95,18 +95,20 @@ public class RunGP {
             allAvgFitnesses[genCount] = avgFitness;
 
             // store the best-in-generation
-            candidates[genCount] = pool[best];
+            bestLastGen = pool[best];
             if (pool[best].fitness > bestSoFar.fitness) bestSoFar = pool[best];
 
             System.out.println("\nROUND " + genCount
                     + "\nAvg. Fitness:\t" + avgFitness + "\t Avg # of nodes: " + avgNumNodes[genCount]
-                    + "\nBest In Round:\t" + candidates[genCount].botName + " - " + candidates[genCount].fitness
-                    + "\t# nodes " + candidates[genCount].nodeCount
+                    + "\nBest In Round:\t" + bestLastGen.botName + " - " + bestLastGen.fitness
+                    + "\t# nodes " + bestLastGen.nodeCount
                     + "\nBest So Far:\t" + bestSoFar.botName + " - " + bestSoFar.fitness + "\n");
 
-            storeRunData(genCount, avgFitness, pool[best].fitness, avgNodeCount, pool[best].nodeCount, pool[best].fileName);
+            // delete Generation files except best one
+            RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
 
-            //if(++genCount == MAX_GENS) break;
+            storeRunData(genCount, avgFitness, bestLastGen.fitness, avgNodeCount, bestLastGen.nodeCount, bestLastGen.fileName);
+
             genCount++;
             // breed next generation
             System.out.println("In breeding stage");
@@ -116,9 +118,6 @@ public class RunGP {
             // set newPool as pool, clear newPool
             pool = newPool;
             newPool = new MetaBot[POP_SIZE];
-
-            // delete all old files
-            RobotCodeUtil.clearBots(genCount - 1, POP_SIZE, candidates[genCount - 1].memberID);
 
             try {
                 saveCtx();
@@ -192,7 +191,7 @@ public class RunGP {
 
     private static void breedPool() {
         // replicate best in last round
-        newPool[0] = candidates[genCount - 1].replicate(genCount, 0);
+        newPool[0] = bestLastGen.replicate(genCount, 0);
         // replicate best so far
         newPool[1] = bestSoFar.replicate(genCount, 1);
         // breed next generation
@@ -315,8 +314,8 @@ public class RunGP {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(CTX_FILE))) {
             oos.writeInt(genCount);
             oos.writeObject(bestSoFar);
+            oos.writeObject(bestLastGen);
             oos.writeObject(pool);
-            oos.writeObject(candidates);
         }
     }
 
@@ -324,8 +323,8 @@ public class RunGP {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(CTX_FILE))) {
             genCount = ois.readInt();
             bestSoFar = (MetaBot) ois.readObject();
+            bestLastGen = (MetaBot) ois.readObject();
             pool = (MetaBot[]) ois.readObject();
-            candidates = (MetaBot[]) ois.readObject();
         }
     }
 

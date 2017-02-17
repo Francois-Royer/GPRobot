@@ -146,6 +146,7 @@ public class MetaBot implements Serializable {
         sourceCode
                 = "package " + targetPakage + ";"
                 + "\nimport robocode.*;"
+                + "\nimport static robocode.Rules.*;"
                 + "\nimport java.awt.Color;\n"
                 + "\n"
                 + "\npublic class " + botName + " extends AdvancedRobot {"

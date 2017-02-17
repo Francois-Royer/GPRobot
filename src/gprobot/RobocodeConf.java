@@ -29,14 +29,14 @@ public class RobocodeConf {
     public static final BattlefieldSpecification battlefield = new BattlefieldSpecification(800, 600);
 
     // constant that can be tunned
-    public final static int POP_SIZE = 100;
+    public final static int POP_SIZE = 300;
     public final static int MAX_GENS = 4000;
     public final static int MIN_DEPTH = 2;
     public final static int MAX_DEPTH = 8;
-    public final static int ROUNDS = 10;
+    public final static int ROUNDS = 25;
     public final static int TOURNY_SIZE = 24; // Selection Pressure
     public final static int BATTLE_HANDICAP =1;
-    public final static int RUNNERS_COUNT = 5; // /!\ POP_SIZE % RUNNER_COUNT must be 0
+    public final static int RUNNERS_COUNT = 6; // /!\ POP_SIZE % RUNNER_COUNT must be 0
 
     public static double PROB_CROSSOVER = 0.85;
     public static double PROB_MUTATION = 0.1;
@@ -45,7 +45,7 @@ public class RobocodeConf {
 
     static String[] sampleRobots = {
             //"sample.Corners",
-            //"sample.Crazy",
+            "sample.Crazy",
             //"sample.Fire",
             //"sample.Interactive",
             //"sample.Interactive_v2",
@@ -54,9 +54,9 @@ public class RobocodeConf {
             //"sample.PaintingRobot",
             //"sample.RamFire",
             //"sample.SittingDuck",
-            //"sample.SpinBot",
+            "sample.SpinBot",
             //"sample.Target",
-            //"sample.Tracker",
+            "sample.Tracker",
             //"sample.TrackFire",
             //"sample.VelociRobot",
             "sample.Walls"
