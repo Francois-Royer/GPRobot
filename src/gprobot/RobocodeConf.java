@@ -36,10 +36,11 @@ public class RobocodeConf {
     public final static int ROUNDS = 25;
     public final static int TOURNY_SIZE = 24; // Selection Pressure
     public final static int BATTLE_HANDICAP =1;
-    public final static int RUNNERS_COUNT = 6; // /!\ POP_SIZE % RUNNER_COUNT must be 0
+    public final static int RUNNERS_COUNT = 4; // /!\ POP_SIZE % RUNNER_COUNT must be 0
 
     public static double PROB_CROSSOVER = 0.85;
     public static double PROB_MUTATION = 0.01;
+    public static double PROB_SEED = 0.15;
 
     public static String CTX_FILE = "GP_ctx.bin";
 

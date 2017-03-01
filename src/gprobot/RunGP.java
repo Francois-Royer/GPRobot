@@ -4,14 +4,13 @@ import static gprobot.RobocodeConf.*;
 import static gprobot.RobotCodeUtil.*;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.time.Duration;
 import java.util.Date;
-import java.util.stream.Stream;
 
-import com.sun.org.apache.bcel.internal.generic.POP;
 import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
@@ -34,6 +33,7 @@ public class RunGP {
     private static MetaBot
             pool[] = new MetaBot[POP_SIZE],
             newPool[] = new MetaBot[POP_SIZE],
+            seedPool[],
             bestSoFar = new MetaBot(-1, 0),
             bestLastGen = new MetaBot(-1, 0);
 
@@ -108,6 +108,11 @@ public class RunGP {
             RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
 
             storeRunData(genCount, avgFitness, bestLastGen.fitness, avgNodeCount, bestLastGen.nodeCount, bestLastGen.fileName);
+
+            if (seedPool == null) {
+                double finalAvgFitness = avgFitness;
+                seedPool = Arrays.stream(pool).filter(b -> b.fitness > finalAvgFitness).toArray(MetaBot[]::new);
+            }
 
             genCount++;
             // breed next generation
@@ -200,10 +205,10 @@ public class RunGP {
 
         while (newPop < POP_SIZE) {
             geneticOporator = random.nextDouble();
-            MetaBot b1 = tournamentSelect();
+            MetaBot b1 = candidateSelect();
             
             if (geneticOporator <= PROB_CROSSOVER) {
-                MetaBot b2 = tournamentSelect();
+                MetaBot b2 = candidateSelect();
                 newPool[newPop] = b1.crossover(b2, genCount, newPop);
             } else {
                 newPool[newPop] = b1.replicate(genCount, newPop);
@@ -226,9 +231,9 @@ public class RunGP {
         engine.runBattle(battleSpec, true);
 
         BattleResults[] results = battleObserver.getResults();
-        double totalScore = Stream.of(results).mapToDouble(r -> r.getScore()).sum();
+        double totalScore = Arrays.stream(results).mapToDouble(r -> r.getScore()).sum();
 
-        return Stream.of(results).mapToDouble(r -> r.getScore()).map(d -> d / totalScore).toArray();
+        return Arrays.stream(results).mapToDouble(r -> r.getScore()).map(d -> d / totalScore).toArray();
     }
 
     private static void scoreFitnessOnSet(String[] opponents) {
@@ -266,16 +271,22 @@ public class RunGP {
     }
 
 
-    public static MetaBot tournamentSelect() {
-        int size = TOURNY_SIZE;
-        int subPool[] = new int[size];
-        for (int i = 0; i < size; i++) {
+    public static MetaBot candidateSelect() {
+        return random.nextDouble() > PROB_SEED
+                ? seedPool[random.nextInt(seedPool.length)]
+                : tournementSelect();
+
+    }
+
+    public static MetaBot tournementSelect() {
+        int subPool[] = new int[TOURNY_SIZE];
+        for (int i = 0; i < TOURNY_SIZE; i++) {
             do {
-              subPool[i] = random.nextInt(POP_SIZE);
+                subPool[i] = random.nextInt(POP_SIZE);
             } while (pool[subPool[i]].selection > 2);
         }
         int best = subPool[0];
-        for (int i = 1; i < size; i++)
+        for (int i = 1; i < TOURNY_SIZE; i++)
             if (pool[subPool[i]].fitness > pool[best].fitness) best = subPool[i];
         pool[best].selection++;
         return pool[best];
@@ -311,6 +322,7 @@ public class RunGP {
             oos.writeObject(bestSoFar);
             oos.writeObject(bestLastGen);
             oos.writeObject(pool);
+            oos.writeObject(seedPool);
         }
     }
 
@@ -320,6 +332,7 @@ public class RunGP {
             bestSoFar = (MetaBot) ois.readObject();
             bestLastGen = (MetaBot) ois.readObject();
             pool = (MetaBot[]) ois.readObject();
+            seedPool = (MetaBot[]) ois.readObject();
         }
     }
 
