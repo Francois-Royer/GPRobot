@@ -175,7 +175,6 @@ public class RunGP {
         //long begin = System.currentTimeMillis();
         try {
             String[] srcpool = new String[pool.length];
-
             for (int i = 0; i < pool.length; i++) {
                 pool[i].construct();
                 srcpool[i] = pool[i].writeSource();
@@ -203,19 +202,15 @@ public class RunGP {
             geneticOporator = random.nextDouble();
             MetaBot b1 = tournamentSelect();
             
-            if ((geneticOporator -= PROB_CROSSOVER) <= 0) {
+            if (geneticOporator <= PROB_CROSSOVER) {
                 MetaBot b2 = tournamentSelect();
-                //System.out.println("Crossing over bots " +p1+ " & " +p2+" -> " +newPop);
-
                 newPool[newPop] = b1.crossover(b2, genCount, newPop);
-                //newPool[newPop] = pool[tournamentSelect()].crossover(pool[tournamentSelect()], genCount+1, newPop);
-            } else if ((geneticOporator -= PROB_MUTATION) <= 0) {
-                //System.out.println("Mutating bot");
-                newPool[newPop] = b1.mutate(genCount, newPop);
             } else {
-                //System.out.println("Replicating Bot");
                 newPool[newPop] = b1.replicate(genCount, newPop);
-                
+            }
+
+            if (geneticOporator <= PROB_MUTATION) {
+                newPool[newPop] = newPool[newPop] .mutate(genCount, newPop);
             }
             newPop++;
         }

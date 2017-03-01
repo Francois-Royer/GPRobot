@@ -120,12 +120,12 @@ public class BattleRunner {
                 BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS, battlefield, selectedBots);
                 engine.runBattle(battleSpec, true);
                 BattleResults[] results = battleObserver.getResults();
-                int botSurvival = Stream.of(results).filter(br -> bot.equals(br.getTeamLeaderName()))
-                        .findFirst().get().getSurvival();
-                int totalSurvival = Stream.of(results).mapToInt(br -> br.getSurvival()).sum();
+                int botScore = Stream.of(results).filter(br -> bot.equals(br.getTeamLeaderName()))
+                        .findFirst().get().getScore();
+                int totalScore = Stream.of(results).mapToInt(br -> br.getScore()).sum();
 
-                double survivalFitness = ((double) botSurvival + RobocodeConf.BATTLE_HANDICAP) / (totalSurvival + RobocodeConf.BATTLE_HANDICAP);
-                fitnesses[i] = (2 * fitnessScore + survivalFitness) / 3;
+                double roundFitness = ((double) botScore+ RobocodeConf.BATTLE_HANDICAP) / (totalScore + RobocodeConf.BATTLE_HANDICAP);
+                fitnesses[i] = (2 * fitnessScore + roundFitness) / 3;
             } else {
                 fitnesses[i] = fitnessScore;    // take average of each round score
             }
