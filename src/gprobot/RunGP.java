@@ -79,7 +79,6 @@ public class RunGP {
             scoreFitnessOnSet(opponents);
 
             double totalFitness = 0;
-            double avgFitness = 0;
             int best = 0;
             double avgNodeCount = 0;
 
@@ -91,7 +90,7 @@ public class RunGP {
 
             avgNumNodes[genCount] = (avgNodeCount /= POP_SIZE);
 
-            avgFitness = totalFitness / POP_SIZE;
+            final double avgFitness = totalFitness / POP_SIZE;
             allAvgFitnesses[genCount] = avgFitness;
 
             // store the best-in-generation
@@ -110,8 +109,7 @@ public class RunGP {
             storeRunData(genCount, avgFitness, bestLastGen.fitness, avgNodeCount, bestLastGen.nodeCount, bestLastGen.fileName);
 
             if (seedPool == null) {
-                double finalAvgFitness = avgFitness;
-                seedPool = Arrays.stream(pool).filter(b -> b.fitness > finalAvgFitness).toArray(MetaBot[]::new);
+                seedPool = Arrays.stream(pool).filter(b -> b.fitness > avgFitness).toArray(MetaBot[]::new);
             }
 
             genCount++;
