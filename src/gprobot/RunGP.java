@@ -270,7 +270,7 @@ public class RunGP {
 
 
     public static MetaBot candidateSelect() {
-        return random.nextDouble() > PROB_SEED
+        return random.nextDouble() < PROB_SEED
                 ? seedPool[random.nextInt(seedPool.length)]
                 : tournementSelect();
 
