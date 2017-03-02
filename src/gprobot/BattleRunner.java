@@ -117,7 +117,7 @@ public class BattleRunner {
                 // More than one oponent is selected,
                 final String bot = bots[i];
                 RobotSpecification[] selectedBots = getRobotSpecification(bot, opponents);
-                BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS, battlefield, selectedBots);
+                BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.MELEE_ROUNDS, battlefield, selectedBots);
                 engine.runBattle(battleSpec, true);
                 BattleResults[] results = battleObserver.getResults();
                 int botScore = Stream.of(results).filter(br -> bot.equals(br.getTeamLeaderName()))
