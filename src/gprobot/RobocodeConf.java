@@ -41,7 +41,7 @@ public class RobocodeConf {
 
     public static double PROB_CROSSOVER = 0.85;
     public static double PROB_MUTATION = 0.05;
-    public static double PROB_SEED = 0.15;
+    public static double PROB_SEED = 0.10;
 
     public static String CTX_FILE = "GP_ctx.bin";
 

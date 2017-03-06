@@ -15,9 +15,9 @@ public class ExpressionNode implements Serializable {
         PROB_TERM_CONST = 0.15,
         PROB_TERM_ERC = 0.1,
         PROB_TERM[] = {
+                PROB_TERM_CONST,
             PROB_TERM_UNIV,
-            PROB_TERM_EVENT,
-            PROB_TERM_CONST
+                PROB_TERM_EVENT
         },
         PROB_FUNC_A1 = 0.2,
         PROB_FUNC_A2 = 0.6,
@@ -358,15 +358,23 @@ public class ExpressionNode implements Serializable {
     final static String HIT_BY_BULLET_EVENT_TERMINALS[] = {
         "e.getBearingRadians()", // Returns difference between bullet and robot heading
         "e.getPower()", // Returns power of bullet
-        "e.getHeadingRadians()", // Returns direction enemy is facing
+        "e.getHeadingRadians()", // Returns direction bullet is facing
         "e.getVelocity()" // Returns the velocity of bullet
     };
 
     final static String[][] TERMINALS = {
+        CONSTANT_TERMINALS,
         UNIVERSAL_TERMINALS,
-        SCANNED_EVENT_TERMINALS,
-        CONSTANT_TERMINALS
+        SCANNED_EVENT_TERMINALS
     };
+
+    public static void setScanEventTerminal() {
+        TERMINALS[2] = SCANNED_EVENT_TERMINALS;
+    }
+
+    public static void setHitEventTerminal() {
+        TERMINALS[2] = HIT_BY_BULLET_EVENT_TERMINALS;
+    }
 
     final static String FUNCTIONS_A1[][] = {
         {"Math.abs(", ")"}, // Absolute Value

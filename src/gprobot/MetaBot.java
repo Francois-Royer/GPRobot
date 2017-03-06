@@ -8,7 +8,9 @@ import static gprobot.RobocodeConf.*;
 public class MetaBot implements Serializable {
 
     private static final long serialVersionUID = 5625044536646095912L;
-    final static int NUM_CHROMOS = 5;
+    final static int SCAN_CHROMOS = 5;
+    final static int HIT_CHROMOS = 5;
+    final static int NUM_CHROMOS = SCAN_CHROMOS + HIT_CHROMOS;
     final static double
             PROB_CROSS_ROOT = 0.3,
             PROB_CROSS_TERMINAL = 0.1,
@@ -43,7 +45,13 @@ public class MetaBot implements Serializable {
     }
 
     public void init() {
-        for (int i = 0; i < NUM_CHROMOS; i++) {
+        ExpressionNode.setScanEventTerminal();
+        for (int i = 0; i < SCAN_CHROMOS; i++) {
+            genome[i] = new ExpressionNode(0);
+            genome[i].grow(0, 0);
+        }
+        ExpressionNode.setHitEventTerminal();
+        for (int i = SCAN_CHROMOS; i < NUM_CHROMOS; i++) {
             genome[i] = new ExpressionNode(0);
             genome[i].grow(0, 0);
         }
@@ -79,8 +87,12 @@ public class MetaBot implements Serializable {
         }
         //*****************************************************************
         int xChromo1 = random.nextInt(NUM_CHROMOS);
-        int xChromo2 = random.nextInt(NUM_CHROMOS);
-        while (xChromo2 == xChromo1) xChromo2 = random.nextInt(NUM_CHROMOS);
+        int xChromo2 = xChromo1;
+        while (xChromo2 == xChromo1)
+            xChromo2 = (xChromo1 < SCAN_CHROMOS)
+                    ? random.nextInt(SCAN_CHROMOS)
+                    : random.nextInt(HIT_CHROMOS) + SCAN_CHROMOS;
+
 
         if (random.nextDouble() < PROB_CROSS_ROOT) {    // swap entire chromosome
             if (random.nextDouble() < PROB_JUMP_GENOMES) {    // do not use the same chromosome
@@ -113,6 +125,12 @@ public class MetaBot implements Serializable {
 
         int m = random.nextInt(NUM_CHROMOS);
 
+        if (m < SCAN_CHROMOS) {
+            ExpressionNode.setScanEventTerminal();
+        } else {
+            ExpressionNode.setHitEventTerminal();
+        }
+
         if (random.nextDouble() < PROB_MUTATE_ROOT) {    // mutate entire chromosome
             child.genome[m] = new ExpressionNode(0);
             child.genome[m].grow(0, 0);
@@ -130,8 +148,7 @@ public class MetaBot implements Serializable {
         MetaBot child = new MetaBot(gen, botID);
 
         for (int i = 0; i < NUM_CHROMOS; i++) {
-            child.genome[i] = new ExpressionNode(0);
-            child.genome[i].replaceWith(this.genome[i]);
+            child.genome[i] = this.genome[i].clone();
         }
 
         child.setDepths();
@@ -143,8 +160,7 @@ public class MetaBot implements Serializable {
     // FileIO Methods ///////////////////////////////////////////////////////////////////////////
 
     private void setCode() {
-        sourceCode
-                = "package " + targetPakage + ";"
+        sourceCode = "package " + targetPakage + ";"
                 + "\nimport robocode.*;"
                 + "\nimport static robocode.Rules.*;"
                 + "\nimport java.awt.Color;\n"
@@ -168,17 +184,16 @@ public class MetaBot implements Serializable {
                 + "\n    }"
                 + "\n"
                 + "\n    public void onScannedRobot(ScannedRobotEvent e) {"
-                + "\n"
                 + "\n        // --- PHENOME 1 ---"
                 + "\n        double ahead = " + phenome[0] + ";"
                 + "\n        // --- PHENOME 2 ---"
-                + "\n        double turnRight = " + phenome[1]+ ";"
+                + "\n        double turnRight = " + phenome[1] + ";"
                 + "\n        // --- PHENOME 3 ---"
-                + "\n        double turnGunRight = " + phenome[2]+ ";"
+                + "\n        double turnGunRight = " + phenome[2] + ";"
                 + "\n        // --- PHENOME 4 ---"
-                + "\n        double turnRadarRight = " + phenome[3]+ ";"
+                + "\n        double turnRadarRight = " + phenome[3] + ";"
                 + "\n        // --- PHENOME 5 ---"
-                + "\n        double fire = " + phenome[4]+ ";"
+                + "\n        double fire = " + phenome[4] + ";"
                 + "\n"
                 + "\n        // out.println(\"ahead=\" +ahead+ \", fire=\" + fire);"
                 + "\n        // out.println(\"turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
@@ -195,18 +210,26 @@ public class MetaBot implements Serializable {
                 //+ "\n		runVar2 = " + phenome[6] + ";"
                 //+ "\n"
                 + "\n	}"
-                /*"\npublic void onHitByBullet(HitByBulletEvent e) {" +
-				"\n" +
-				"\n // --- PHENOME 6 ---" +
-				"\n		setTurnRadarRight("+ phenome[7] +");"  +
-				"\n"
-				"\n	}" +
-				"\n" +
-				"\npublic void onHitWall(HitWallEvent e) {" +
-				"\n		back(20);" +
-				"\n		setAhead("+ phenome[8] +");"  +
-				"\n	}" +
-                 */
+                + "\npublic void onHitByBullet(HitByBulletEvent e) {"
+                + "\n        // --- PHENOME 6 ---"
+                + "\n        double ahead = " + phenome[5] + ";"
+                + "\n        // --- PHENOME 7 ---"
+                + "\n        double turnRight = " + phenome[6] + ";"
+                + "\n        // --- PHENOME 8 ---"
+                + "\n        double turnGunRight = " + phenome[7] + ";"
+                + "\n        // --- PHENOME 9 ---"
+                + "\n        double turnRadarRight = " + phenome[8] + ";"
+                + "\n        // --- PHENOME 10 ---"
+                + "\n        double fire = " + phenome[9] + ";"
+                + "\n"
+                + "\n        // out.println(\"ahead=\" +ahead+ \", fire=\" + fire);"
+                + "\n        // out.println(\"turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
+                + "\n        setAhead(ahead);"
+                + "\n        setTurnRightRadians(turnRight);"
+                + "\n        setTurnGunRightRadians(turnGunRight);"
+                + "\n        setTurnRadarRightRadians(turnRadarRight);"
+                + "\n        setFire(fire);"
+                + "\n	}"
                 + "\n}";
     }
 
