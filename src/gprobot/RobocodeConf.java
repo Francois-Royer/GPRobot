@@ -30,13 +30,13 @@ public class RobocodeConf {
 
     // constant that can be tunned
     public final static int POP_SIZE = 300;
-    public final static int MAX_GENS = 4000;
+    public final static int MAX_GENS = 1000;
     public final static int MIN_DEPTH = 2;
     public final static int MAX_DEPTH = 8;
     public final static int ROUNDS = 10;
     public final static int MELEE_ROUNDS = 25;
-    public final static int TOURNY_SIZE = 24; // Selection Pressure
-    public final static int BATTLE_HANDICAP = 20;
+    public final static int TOURNY_SIZE = 12; // Selection Pressure
+    public final static int BATTLE_HANDICAP = 1;
     public final static int RUNNERS_COUNT = 4; // /!\ POP_SIZE % RUNNER_COUNT must be 0
 
     public static double PROB_CROSSOVER = 0.85;
@@ -63,6 +63,7 @@ public class RobocodeConf {
             //"sample.VelociRobot",
             "sample.Walls"
     };
+
     static String[] skilledRobots = {
         "voidious.Diamond"
     };

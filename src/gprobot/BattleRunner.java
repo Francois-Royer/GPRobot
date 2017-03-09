@@ -125,7 +125,7 @@ public class BattleRunner {
                 int totalScore = Stream.of(results).mapToInt(br -> br.getScore()).sum();
 
                 double roundFitness = ((double) botScore+ RobocodeConf.BATTLE_HANDICAP) / (totalScore + RobocodeConf.BATTLE_HANDICAP);
-                fitnesses[i] = (2 * fitnessScore + roundFitness) / 3;
+                fitnesses[i] = (fitnessScore + roundFitness) / 2;
             } else {
                 fitnesses[i] = fitnessScore;    // take average of each round score
             }

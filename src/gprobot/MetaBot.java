@@ -9,7 +9,7 @@ public class MetaBot implements Serializable {
 
     private static final long serialVersionUID = 5625044536646095912L;
     final static int SCAN_CHROMOS = 5;
-    final static int HIT_CHROMOS = 5;
+    final static int HIT_CHROMOS = 2;
     final static int NUM_CHROMOS = SCAN_CHROMOS + HIT_CHROMOS;
     final static double
             PROB_CROSS_ROOT = 0.3,
@@ -195,8 +195,8 @@ public class MetaBot implements Serializable {
                 + "\n        // --- PHENOME 5 ---"
                 + "\n        double fire = " + phenome[4] + ";"
                 + "\n"
-                + "\n        // out.println(\"ahead=\" +ahead+ \", fire=\" + fire);"
-                + "\n        // out.println(\"turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
+                + "\n        //out.println(\"ahead=\" +ahead+ \", fire=\" + fire);"
+                + "\n        //out.println(\"turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
                 + "\n        setAhead(ahead);"
                 + "\n        setTurnRightRadians(turnRight);"
                 + "\n        setTurnGunRightRadians(turnGunRight);"
@@ -216,19 +216,11 @@ public class MetaBot implements Serializable {
                 + "\n        // --- PHENOME 7 ---"
                 + "\n        double turnRight = " + phenome[6] + ";"
                 + "\n        // --- PHENOME 8 ---"
-                + "\n        double turnGunRight = " + phenome[7] + ";"
-                + "\n        // --- PHENOME 9 ---"
-                + "\n        double turnRadarRight = " + phenome[8] + ";"
-                + "\n        // --- PHENOME 10 ---"
-                + "\n        double fire = " + phenome[9] + ";"
                 + "\n"
-                + "\n        // out.println(\"ahead=\" +ahead+ \", fire=\" + fire);"
-                + "\n        // out.println(\"turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
+                + "\n        //out.println(\"ohbb ahead=\" +ahead+ \", fire=\" + fire);"
+                + "\n        //out.println(\"ohbb turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
                 + "\n        setAhead(ahead);"
                 + "\n        setTurnRightRadians(turnRight);"
-                + "\n        setTurnGunRightRadians(turnGunRight);"
-                + "\n        setTurnRadarRightRadians(turnRadarRight);"
-                + "\n        setFire(fire);"
                 + "\n	}"
                 + "\n}";
     }
