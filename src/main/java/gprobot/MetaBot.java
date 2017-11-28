@@ -1,9 +1,12 @@
 package gprobot;
 
-import java.io.*;
-import java.lang.reflect.Array;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Serializable;
 
-import static gprobot.RobocodeConf.*;
+import static gprobot.RobocodeConf.random;
+import static gprobot.RobocodeConf.targetPakage;
 
 public class MetaBot implements Serializable {
 
@@ -177,7 +180,10 @@ public class MetaBot implements Serializable {
                 + "\n"
                 + "\n        setColors(Color.red,Color.blue,Color.green);"
                 + "\n        while(true) {"
-                + "\n            turnRadarRight(Double.POSITIVE_INFINITY);"
+                + "\n            if (getRadarTurnRemainingRadians() == 0)"
+                + "\n               turnRadarRight(360);"
+                + "\n            else"
+                + "\n               doNothing();"
                 //+ "\n            turnRight(runVar1);"
                 //+ "\n            setAhead(runVar2);"
                 + "\n        }"
@@ -215,7 +221,6 @@ public class MetaBot implements Serializable {
                 + "\n        double ahead = " + phenome[5] + ";"
                 + "\n        // --- PHENOME 7 ---"
                 + "\n        double turnRight = " + phenome[6] + ";"
-                + "\n        // --- PHENOME 8 ---"
                 + "\n"
                 + "\n        //out.println(\"ohbb ahead=\" +ahead+ \", fire=\" + fire);"
                 + "\n        //out.println(\"ohbb turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"

@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Class-Path: robocode.jar roborumble.jar codesize-1.1.jar robocode.ui-1
+ .9.2.6.jar picocontainer-2.14.2.jar robocode.core-1.9.2.6.jar robocod
+ e.host-1.9.2.6.jar robocode.sound-1.9.2.6.jar robocode.battle-1.9.2.6
+ .jar robocode.ui.editor-1.9.2.6.jar robocode.repository-1.9.2.6.jar c
+ ommons-io-2.5.jar
+Main-Class: gprobot.RunGP
+

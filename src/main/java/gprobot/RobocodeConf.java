@@ -28,20 +28,19 @@ public class RobocodeConf {
     public static final String targetFolder = roboCodePath + File.separator + "robots" + File.separator + targetPakage;
     public static final BattlefieldSpecification battlefield = new BattlefieldSpecification(800, 600);
 
+    public static final int nbProcs = Runtime.getRuntime().availableProcessors();
+
     // constant that can be tunned
-    public final static int POP_SIZE = 300;
-    public final static int MAX_GENS = 1000;
+    public final static int POP_SIZE = 600;
+    public final static int MAX_GENS = 4000;
     public final static int MIN_DEPTH = 2;
     public final static int MAX_DEPTH = 8;
-    public final static int ROUNDS = 10;
-    public final static int MELEE_ROUNDS = 25;
+    public final static int ROUNDS = 5;
     public final static int TOURNY_SIZE = 12; // Selection Pressure
-    public final static int BATTLE_HANDICAP = 1;
-    public final static int RUNNERS_COUNT = 4; // /!\ POP_SIZE % RUNNER_COUNT must be 0
-
-    public static double PROB_CROSSOVER = 0.85;
-    public static double PROB_MUTATION = 0.05;
-    public static double PROB_SEED = 0.10;
+    public final static int BATTLE_HANDICAP = 0;
+    public final static int RUNNERS_COUNT = nbProcs/2;
+    public static double PROB_CROSSOVER = 0.80;
+    public static double PROB_MUTATION = 0.10;
 
     public static String CTX_FILE = "GP_ctx.bin";
 

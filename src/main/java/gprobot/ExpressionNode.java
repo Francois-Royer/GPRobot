@@ -3,9 +3,7 @@ package gprobot;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import static gprobot.RobocodeConf.random;
-import static gprobot.RobocodeConf.MIN_DEPTH;
-import static gprobot.RobocodeConf.MAX_DEPTH;
+import static gprobot.RobocodeConf.*;
 
 public class ExpressionNode implements Serializable {
     private static final long serialVersionUID = 8049660827041716275L;
@@ -34,8 +32,8 @@ public class ExpressionNode implements Serializable {
         PROB_CROSS_TERMINAL = 0.1,
         PROB_CROSS_FUNC = 0.6,
         PROB_MUTATE_ROOT = 0.05,
-        PROB_MUTATE_FUNC = 0.4,
-        PROB_MUTATE_TERMINAL = 0.15;
+        PROB_MUTATE_FUNC = 0.6,
+        PROB_MUTATE_TERMINAL = 0.25;
 
     // Class Fields ///////////////////////////////////////////////////////////
     int depth, arity = -1;
@@ -324,25 +322,26 @@ public class ExpressionNode implements Serializable {
     };
 
     final static String CONSTANT_TERMINALS[] = {
-        // Rules Constants
-        "ACCELERATION",
-        "DECELERATION",
-        "MAX_VELOCITY",
-        "MIN_BULLET_POWER",
-        "MAX_BULLET_POWER",
-        "MAX_TURN_RATE_RADIANS",
-        "GUN_TURN_RATE_RADIANS",
-        "RADAR_TURN_RATE_RADIANS",
-        "ROBOT_HIT_DAMAGE",
-        "ROBOT_HIT_BONUS",
-        "0.00001", // Zero, offset to avoid division issues
-        "Math.random()", // random value from [0, 1]
-        "(Math.random()*2 - 1)", // random value from [-1, 1]
-        "Math.floor((Math.random()*10))", // random integer from [1, 10]
-        "Math.PI" // 3.14...
-        //"runVar1",				// static variables
-        //"runVar2"				// 	- the GP defines these
-        // Ephemeral Random Constants: Double.toString(random.nextDouble());
+            // Rules Constants
+            "ACCELERATION",
+            "DECELERATION",
+            "MAX_VELOCITY",
+            "MIN_BULLET_POWER",
+            "MAX_BULLET_POWER",
+            "MAX_TURN_RATE_RADIANS",
+            "GUN_TURN_RATE_RADIANS",
+            "RADAR_TURN_RATE_RADIANS",
+            "ROBOT_HIT_DAMAGE",
+            "ROBOT_HIT_BONUS",
+            "0",
+            "1",
+            "-1",
+            "Math.random()", // random value from [0, 1]
+            "(Math.random()*2 - 1)", // random value from [-1, 1]
+            "Math.PI" // 3.14...
+            //"runVar1",				// static variables
+            //"runVar2"				// 	- the GP defines these
+            // Ephemeral Random Constants: Double.toString(random.nextDouble());
     };
 
     // terminals that can only be called during a ScannedRobotEvent
@@ -385,8 +384,7 @@ public class ExpressionNode implements Serializable {
         {"Math.sin(", ")"}, // Sine
         {"Math.sqrt(Math.abs(", "))"}, // square root
         {"Math.exp(", ")"}, // e^x
-        {"Math.log(Math.abs(", "))"}, // logarithm
-        {"", " * -1"} // Flip sign
+        {"Math.log(Math.abs(", "))"}
     };
 
     final static String FUNCTIONS_A2[][] = {
@@ -399,7 +397,8 @@ public class ExpressionNode implements Serializable {
     };
 
     final static String FUNCTIONS_A3[][] = {
-        {"", " > 0 ? ", " : ", ""} // X > 0 ? ifYes : ifNo
+            {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
+            {"", " == 0 ? ", " : ", ""} // X == 0 ? ifYes : ifNo
     };
 
     final static String FUNCTIONS_A4[][] = {

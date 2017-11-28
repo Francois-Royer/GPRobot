@@ -1,0 +1,34 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'java-library-distribution'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:1.5.8.RELEASE"
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+def robotcode_home = "$System.env.HOME/robocode"
+
+dependencies {
+    compile 'commons-io:commons-io:2.5'
+    compile files("$robotcode_home/libs/robocode.jar")
+}
+
+jar {
+    baseName = 'gprobot'
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+    manifest {
+        attributes 'Main-Class': 'gprobot.RunGP',
+                'Class-Path': configurations.runtime.files.collect { "lib/$it.name" }.join(' ')
+    }}
