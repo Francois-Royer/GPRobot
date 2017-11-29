@@ -254,7 +254,7 @@ public class RunGP {
                                 updateRunner(getRunnerDir(runnerId), genCount, robotID);
                                 try {
                                     fitnesses[robotID] = runner.getRobotFitness(gRobotName(genCount, robotID));
-                                    synchronized (fitnesses) {rk
+                                    synchronized (fitnesses) {
                                         cdl.countDown();
                                         fitnesses.notify();
                                     }

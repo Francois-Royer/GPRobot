@@ -18,10 +18,9 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-def robotcode_home = "$System.env.HOME/robocode"
+def robotcode_home = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'c:/robocode' : "$System.env.HOME/robocode"
 
 dependencies {
-    compile 'commons-io:commons-io:2.5'
     compile files("$robotcode_home/libs/robocode.jar")
 }
 

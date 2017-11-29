@@ -5,14 +5,11 @@
  */
 package gprobot;
 
-import org.apache.commons.io.FileUtils;
-
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -26,6 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static gprobot.RobocodeConf.roboCodeJar;
 import static gprobot.RobocodeConf.targetPakage;
@@ -175,12 +173,12 @@ public class RobotCodeUtil {
     public static void copyDir(File src, File target, String dir) throws IOException {
         File dest = new File(target, dir);
         dest.mkdirs();
-        FileUtils.copyDirectory(new File(src, dir), dest);
+        copyFolder(new File(src, dir).toPath(), dest.toPath());
     }
 
     static void updateRunner(File runnerDir, int gen, int robotid) throws IOException {
         File runnerBotsFolder = runnerDir.toPath().resolve("robots").resolve(targetPakage).toFile();
-        FileUtils.cleanDirectory(runnerBotsFolder);
+        cleanDirectory(runnerBotsFolder);
         String name = gRobotName(gen, robotid);
 
         File srcClass = new File(botClassFilePath(name));
@@ -202,19 +200,19 @@ public class RobotCodeUtil {
         try {
             File runnerDirs = getRunnersDir();
             if (runnerDirs.exists()) {
-                FileUtils.deleteDirectory(runnerDirs);
+                delete(runnerDirs);
             }
             runnerDirs.mkdir();
             runnerProcess = new Process[count];
             for (int i = 0; i < count; i++) {
                 File workerFolder = getRunnerDir(i);
                 workerFolder.mkdir();
-                RobotCodeUtil.copyOrLinkDir(new File(RobocodeConf.roboCodePath), workerFolder, "config");
-                RobotCodeUtil.copyOrLinkDir(new File(RobocodeConf.roboCodePath), workerFolder, "libs");
+                copyOrLinkDir(new File(RobocodeConf.roboCodePath), workerFolder, "config");
+                copyOrLinkDir(new File(RobocodeConf.roboCodePath), workerFolder, "libs");
                 new File(workerFolder, "robots" + File.separator + "sampleex").mkdirs();
-                RobotCodeUtil.copyOrLinkDir(new File(RobocodeConf.roboCodePath), workerFolder, "robots" + File.separator + "sample");
+                copyOrLinkDir(new File(RobocodeConf.roboCodePath), workerFolder, "robots" + File.separator + "sample");
                 copyOrLinkFile(new File(RobocodeConf.roboCodePath).toPath().resolve("robots").resolve("voidious.Diamond_1.8.22.jar"),
-                        workerFolder.toPath().resolve("robots").resolve("voidious.Diamond_1.8.22.jar"));
+                    workerFolder.toPath().resolve("robots").resolve("voidious.Diamond_1.8.22.jar"));
                 String cmd[] = makeRunnerCmd(workerFolder, i);
                 runnerProcess[i] = execute("runner-" + i, cmd);
             }
@@ -249,4 +247,39 @@ public class RobotCodeUtil {
         return String.format("rmi://%s/GRunner%d", runnerAddr, runnerId);
     }
 
+    public static void cleanDirectory(File dir) {
+        if (dir.isDirectory()) {
+            Stream.of(dir.listFiles()).forEach(File::delete);
+        }
+    }
+
+    public static void delete(File f) throws IOException {
+        Files.walk(f.toPath())
+            .map(Path::toFile)
+            .sorted((o1, o2) -> -o1.compareTo(o2))
+            .forEach(File::delete);
+
+    }
+
+    public static void copyFolder(Path src, Path dest) {
+        try {
+            Files.walk(src)
+                .forEach(s ->
+                {
+                    try {
+                        Path d = dest.resolve(src.relativize(s));
+                        if (Files.isDirectory(s)) {
+                            if (!Files.exists(d))
+                                Files.createDirectory(d);
+                            return;
+                        }
+                        Files.copy(s, d);// use flag to override existing
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 }
