@@ -69,6 +69,12 @@ public class RunGP {
             System.out.println("Prepare " + RUNNERS_COUNT + " Runners");
             prepareBattleRunners(RUNNERS_COUNT);
 
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    killallRunner();
+                }
+            }));
 
             // -- EC loop
             long begin = 0;
@@ -284,10 +290,10 @@ public class RunGP {
             }
 
             synchronized (fitnesses) {
-                displayBattleProgress(queue.size());
+                displayBattleProgress((int) cdl.getCount());
                 while (cdl.getCount() > 0) {
                     fitnesses.wait(5000);
-                    displayBattleProgress(queue.size());
+                    displayBattleProgress((int) cdl.getCount());
                 }
             }
         } catch (Exception e) {

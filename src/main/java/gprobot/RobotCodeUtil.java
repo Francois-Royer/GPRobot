@@ -80,10 +80,14 @@ public class RobotCodeUtil {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                    StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-                    Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(srcs);
-                    compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
+                    try {
+                        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+                        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+                        Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(srcs);
+                        compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
                 }
             });
         }
@@ -280,6 +284,12 @@ public class RobotCodeUtil {
                 });
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    public static void killallRunner() {
+        for (int i = 0; i < runnerProcess.length; i++) {
+            runnerProcess[i].destroyForcibly();
         }
     }
 }
