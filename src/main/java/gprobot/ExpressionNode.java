@@ -2,46 +2,50 @@ package gprobot;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static gprobot.RobocodeConf.*;
 
 public class ExpressionNode implements Serializable {
+    private static final Logger log = Logger.getLogger(ExpressionNode.class.getName());
     private static final long serialVersionUID = 8049660827041716275L;
 
-    final static double PROB_TERM_UNIV = 0.35,
-        PROB_TERM_EVENT = 0.4,
-        PROB_TERM_CONST = 0.15,
-        PROB_TERM_ERC = 0.1,
-        PROB_TERM[] = {
-                PROB_TERM_CONST,
+    static final double PROB_TERM_UNIV = 0.35;
+    static final double PROB_TERM_EVENT = 0.4;
+    static final double PROB_TERM_CONST = 0.15;
+    static final double PROB_TERM_ERC = 0.1;
+    static final double[] PROB_TERM = {
+            PROB_TERM_CONST,
             PROB_TERM_UNIV,
-                PROB_TERM_EVENT
-        },
-        PROB_FUNC_A1 = 0.2,
-        PROB_FUNC_A2 = 0.6,
-        PROB_FUNC_A3 = 0.05,
-        PROB_FUNC_A4 = 0.15,
-        PROB_FUNC[] = {
+            PROB_TERM_EVENT
+    };
+    static final double PROB_FUNC_A1 = 0.2;
+    static final double PROB_FUNC_A2 = 0.6;
+    static final double PROB_FUNC_A3 = 0.05;
+    static final double PROB_FUNC_A4 = 0.15;
+    static final double[] PROB_FUNC = {
             PROB_FUNC_A1,
             PROB_FUNC_A2,
             PROB_FUNC_A3,
             PROB_FUNC_A4
-        },
-        PROB_MIDTREE_TERM = 0.35,
-        PROB_CROSS_ROOT = 0.3,
-        PROB_CROSS_TERMINAL = 0.1,
-        PROB_CROSS_FUNC = 0.6,
-        PROB_MUTATE_ROOT = 0.05,
-        PROB_MUTATE_FUNC = 0.6,
-        PROB_MUTATE_TERMINAL = 0.25;
+    };
+    static final double PROB_MIDTREE_TERM = 0.35;
+    static final double PROB_CROSS_ROOT = 0.3;
+    static final double PROB_CROSS_TERMINAL = 0.1;
+    static final double PROB_CROSS_FUNC = 0.6;
+    static final double PROB_MUTATE_ROOT = 0.05;
+    static final double PROB_MUTATE_FUNC = 0.6;
+    static final double PROB_MUTATE_TERMINAL = 0.25;
 
     // Class Fields ///////////////////////////////////////////////////////////
-    int depth, arity = -1;
+    int depth;
+    int arity = -1;
     boolean isTerminal;
 
-    ExpressionNode child[];
-
-    String expression[];
+    ExpressionNode[] child;
+    String[] expression;
 
     // Class Methods //////////////////////////////////////////////////////////
     public ExpressionNode(int depth) {
@@ -59,7 +63,7 @@ public class ExpressionNode implements Serializable {
         composed.append(expression[0]);
 
         if (this.arity == -1) {
-            System.out.println("Error: arity uninitiated in ExpressionNode");
+            log.severe("Arity uninitiated in ExpressionNode");
         }
 
         // for each child node, recursively compose its arguments
@@ -90,13 +94,14 @@ public class ExpressionNode implements Serializable {
             // pigeon-hole selection
             double pigeon = random.nextDouble();
             for (int i = 0; i < PROB_FUNC.length; i++) {
-                if ((pigeon -= PROB_FUNC[i]) <= 0) {
+                pigeon -= PROB_FUNC[i];
+                if (pigeon <= 0) {
                     this.arity = i + 1;
                     break;
                 }
             }
             if (pigeon > 0) {
-                System.out.println("Warning: Pigeon-hole overstepped in setArity by " + pigeon);
+                log.log(Level.WARNING, "Pigeon-hole overstepped in setArity by %d", pigeon);
                 this.arity = PROB_FUNC.length;
             }
             child = new ExpressionNode[this.arity];
@@ -123,7 +128,8 @@ public class ExpressionNode implements Serializable {
         this.child = null;
         double pigeon = random.nextDouble();
         for (int i = 0; i < TERMINALS.length; i++) {
-            if ((pigeon -= PROB_TERM[i]) <= 0) {
+            pigeon -= PROB_TERM[i];
+            if (pigeon <= 0) {
                 expression[0] = EXPRESSIONS[0][i][random.nextInt(EXPRESSIONS[0][i].length)];
                 break;
             }
@@ -132,7 +138,7 @@ public class ExpressionNode implements Serializable {
         if (pigeon > 0) {
             if (PROB_TERM_ERC < pigeon) // check that it is not here by mistake
             {
-                System.out.println("Warning: Pigeon-hole overstepped in assignTerminal by " + (pigeon - PROB_TERM_ERC));
+                log.log(Level.WARNING, "Pigeon-hole overstepped in assignTerminal by %d", (pigeon - PROB_TERM_ERC));
             }
             // Generate new Ephemeral Random Constant
             expression[0] = Double.toString(random.nextDouble());
@@ -181,7 +187,7 @@ public class ExpressionNode implements Serializable {
         if (this.depth == target) {
             this.replaceWith(newNode);
         } else {
-            ArrayList<Integer> candidates = new ArrayList<Integer>();
+            ArrayList<Integer> candidates = new ArrayList<>();
             for (int i = 0; i < this.arity; i++) {
                 if (child[i].deepestNode() >= target) {
                     candidates.add(i);
@@ -198,7 +204,7 @@ public class ExpressionNode implements Serializable {
         // if useTerminal, navigate tree and return a terminal
         if (useTerminal) {
             if (arity == 0) {
-                return this.clone();
+                return this.gClone();
             } else {
                 return child[random.nextInt(arity)].getSubTree(true);
             }
@@ -212,7 +218,7 @@ public class ExpressionNode implements Serializable {
         if (this.depth == target) {
             return this;
         } else {
-            ArrayList<Integer> candidates = new ArrayList<Integer>();
+            List<Integer> candidates = new ArrayList<>();
             for (int i = 0; i < this.arity; i++) {
                 if (child[i].deepestNode() > target) {
                     candidates.add(i);
@@ -223,7 +229,7 @@ public class ExpressionNode implements Serializable {
         }
     }
 
-    public ExpressionNode clone() {
+    public ExpressionNode gClone() {
         ExpressionNode clone = new ExpressionNode(this.depth, this.arity, this.isTerminal);
         clone.expression = new String[expression.length];
 
@@ -236,7 +242,7 @@ public class ExpressionNode implements Serializable {
         } else {
             clone.child = new ExpressionNode[this.child.length];
             for (int i = 0; i < child.length; i++) {
-                clone.child[i] = this.child[i].clone();
+                clone.child[i] = this.child[i].gClone();
             }
         }
 
@@ -302,26 +308,26 @@ public class ExpressionNode implements Serializable {
     }
 
     // Zero-Arity Expressions (terminals)
-    final static String UNIVERSAL_TERMINALS[] = {
-        "getEnergy()",
-        "getHeight()",
-        "getVelocity()", //???
-        "getWidth()",
-        "getX()",
-        "getY()",
-        "getGunHeat()",
-        "getGunCoolingRate()",
-        "(double) getOthers()",
-        "getDistanceRemaining()",
-        "getHeadingRadians()",
-        "getTurnRemainingRadians()",
-        "getGunHeadingRadians()",
-        "getGunTurnRemainingRadians()",
-        "getRadarHeadingRadians()",
-        "getRadarTurnRemainingRadians()"
+    static final String[] UNIVERSAL_TERMINALS = {
+            "getEnergy()",
+            "getHeight()",
+            "getVelocity()", //???
+            "getWidth()",
+            "getX()",
+            "getY()",
+            "getGunHeat()",
+            "getGunCoolingRate()",
+            "(double) getOthers()",
+            "getDistanceRemaining()",
+            "getHeadingRadians()",
+            "getTurnRemainingRadians()",
+            "getGunHeadingRadians()",
+            "getGunTurnRemainingRadians()",
+            "getRadarHeadingRadians()",
+            "getRadarTurnRemainingRadians()"
     };
 
-    final static String CONSTANT_TERMINALS[] = {
+    static final String[] CONSTANT_TERMINALS = {
             // Rules Constants
             "ACCELERATION",
             "DECELERATION",
@@ -339,32 +345,31 @@ public class ExpressionNode implements Serializable {
             "Math.random()", // random value from [0, 1]
             "(Math.random()*2 - 1)", // random value from [-1, 1]
             "Math.PI" // 3.14...
-            //"runVar1",				// static variables
-            //"runVar2"				// 	- the GP defines these
-            // Ephemeral Random Constants: Double.toString(random.nextDouble());
+            //"runVar1",	// static variables
+            //"runVar2"
     };
 
     // terminals that can only be called during a ScannedRobotEvent
-    final static String SCANNED_EVENT_TERMINALS[] = {
-        "e.getBearingRadians()", // Returns difference between enemy and robot heading
-        "e.getDistance()", // Returns distance to enemy
-        "e.getEnergy()", // Returns energy (life) of enemy
-        "e.getHeadingRadians()", // Returns direction enemy is facing
-        "e.getVelocity()" // Returns the velocity of enemy
+    static final String[] SCANNED_EVENT_TERMINALS = {
+            "e.getBearingRadians()", // Returns difference between enemy and robot heading
+            "e.getDistance()", // Returns distance to enemy
+            "e.getEnergy()", // Returns energy (life) of enemy
+            "e.getHeadingRadians()", // Returns direction enemy is facing
+            "e.getVelocity()" // Returns the velocity of enemy
     };
 
     // terminals that can only be called during a HitByBulletEvent
-    final static String HIT_BY_BULLET_EVENT_TERMINALS[] = {
-        "e.getBearingRadians()", // Returns difference between bullet and robot heading
-        "e.getPower()", // Returns power of bullet
-        "e.getHeadingRadians()", // Returns direction bullet is facing
-        "e.getVelocity()" // Returns the velocity of bullet
+    static final String[] HIT_BY_BULLET_EVENT_TERMINALS = {
+            "e.getBearingRadians()", // Returns difference between bullet and robot heading
+            "e.getPower()", // Returns power of bullet
+            "e.getHeadingRadians()", // Returns direction bullet is facing
+            "e.getVelocity()" // Returns the velocity of bullet
     };
 
-    final static String[][] TERMINALS = {
-        CONSTANT_TERMINALS,
-        UNIVERSAL_TERMINALS,
-        SCANNED_EVENT_TERMINALS
+    static final String[][] TERMINALS = {
+            CONSTANT_TERMINALS,
+            UNIVERSAL_TERMINALS,
+            SCANNED_EVENT_TERMINALS
     };
 
     public static void setScanEventTerminal() {
@@ -375,43 +380,43 @@ public class ExpressionNode implements Serializable {
         TERMINALS[2] = HIT_BY_BULLET_EVENT_TERMINALS;
     }
 
-    final static String FUNCTIONS_A1[][] = {
-        {"Math.abs(", ")"}, // Absolute Value
-        // Too much Nan caused by Arc so add %1
-        {"Math.acos(", "%1)"}, // ArcCosine
-        {"Math.asin(", "%1)"}, // ArcSine
-        {"Math.cos(", ")"}, // Cosine
-        {"Math.sin(", ")"}, // Sine
-        {"Math.sqrt(Math.abs(", "))"}, // square root
-        {"Math.exp(", ")"}, // e^x
-        {"Math.log(Math.abs(", "))"}
+    static final String[][] FUNCTIONS_A1 = {
+            {"Math.abs(", ")"}, // Absolute Value
+            // Too much Nan caused by Arc so add %1
+            {"Math.acos(", "%1)"}, // ArcCosine
+            {"Math.asin(", "%1)"}, // ArcSine
+            {"Math.cos(", ")"}, // Cosine
+            {"Math.sin(", ")"}, // Sine
+            {"Math.sqrt(Math.abs(", "))"}, // square root
+            {"Math.exp(", ")"}, // e^x
+            {"Math.log(Math.abs(", "))"}
     };
 
-    final static String FUNCTIONS_A2[][] = {
-        {"", " - ", ""}, // add
-        {"", " + ", ""}, // subtract
-        {"", " * ", ""}, // multiply
-        {"", " / ", ""}, // divide (CHECK FOR ZERO!)
-        {"Math.min(", ", ", ")"}, // minimum
-        {"Math.max(", ", ", ")"}, // maximum
+    static final String[][] FUNCTIONS_A2 = {
+            {"", " - ", ""}, // add
+            {"", " + ", ""}, // subtract
+            {"", " * ", ""}, // multiply
+            {"", " / ", ""}, // divide (CHECK FOR ZERO!)
+            {"Math.min(", ", ", ")"}, // minimum
+            {"Math.max(", ", ", ")"}, // maximum
     };
 
-    final static String FUNCTIONS_A3[][] = {
+    static final String[][] FUNCTIONS_A3 = {
             {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
             {"", " == 0 ? ", " : ", ""} // X == 0 ? ifYes : ifNo
     };
 
-    final static String FUNCTIONS_A4[][] = {
-        {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
-        {"", " == ", " ? ", " : ", ""}, // X == Y ? ifYes : ifNo
+    static final String[][] FUNCTIONS_A4 = {
+            {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
+            {"", " == ", " ? ", " : ", ""}, // X == Y ? ifYes : ifNo
     };
 
     // All expressions available to the GP
-    final static String[][][] EXPRESSIONS = {
-        TERMINALS,
-        FUNCTIONS_A1,
-        FUNCTIONS_A2,
-        FUNCTIONS_A3,
-        FUNCTIONS_A4
+    static final String[][][] EXPRESSIONS = {
+            TERMINALS,
+            FUNCTIONS_A1,
+            FUNCTIONS_A2,
+            FUNCTIONS_A3,
+            FUNCTIONS_A4
     };
 }

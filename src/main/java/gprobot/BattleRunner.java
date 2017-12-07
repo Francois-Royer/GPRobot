@@ -15,23 +15,24 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static gprobot.RobocodeConf.targetPakage;
+import static gprobot.RobocodeConf.TARGET_PACKAGE;
 import static gprobot.RobotCodeUtil.getRunnerUrl;
 import static gprobot.RunGP.opponents;
 
 public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattleRunner {
 
-    RobocodeEngine engine;
-    BattlefieldSpecification battlefield;
-    String runnerPath;
-    String[] opponentsName;
-    double[] opponentsSkill;
+    transient RobocodeEngine engine;
+    transient BattlefieldSpecification battlefield;
+    transient String runnerPath;
+    transient String[] opponentsName;
+    transient double[] opponentsSkill;
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         try {
             int runnerId = Integer.parseInt(args[0]);
             String runnerPath = args[1];
@@ -45,6 +46,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     }
 
     public BattleRunner(String runnerPath) throws RemoteException {
+        super();
         this.runnerPath = runnerPath;
         engine = new RobocodeEngine(new File(runnerPath));
         battlefield = new BattlefieldSpecification(800, 600);
@@ -55,7 +57,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         return engine.getLocalRepository(robotNames);
     }
 
-    int getTotalScore(BattleResults result) {
+    static int getTotalScore(BattleResults result) {
         return result.getSurvival()
             + result.getLastSurvivorBonus()
             + result.getBulletDamage()
@@ -76,7 +78,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
 
     @Override
     public double getRobotFitness(String robot) throws RemoteException {
-        String robotClass = targetPakage+ "."+ robot;
+        String robotClass = TARGET_PACKAGE + "."+ robot;
         BattleObserver battleObserver = new BattleObserver();
         engine.addBattleListener(battleObserver);
 
@@ -108,13 +110,34 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     }
 
     private double computeFitness(String robot, BattleResults[] results) {
-        int botScore = getTotalScore(Stream.of(results).filter(br -> robot.equals(br.getTeamLeaderName()))
-            .findFirst().get());
-        int totalScore = getTotalScore(results[0]) + Stream.of(results).mapToInt(br -> getTotalScore(br)).sum();
-
-        return ((double) botScore + RobocodeConf.BATTLE_HANDICAP) / (totalScore + RobocodeConf.BATTLE_HANDICAP);
+        Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
+        int botScore = br.isPresent() ? getTotalScore(br.get()) : 0;
+        int totalScore = Stream.of(results).mapToInt(BattleRunner::getTotalScore).sum();
+        return (double) botScore / totalScore * 100;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        BattleRunner that = (BattleRunner) o;
+
+        if (!runnerPath.equals(that.runnerPath)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(opponentsName, that.opponentsName)) return false;
+        return Arrays.equals(opponentsSkill, that.opponentsSkill);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + runnerPath.hashCode();
+        result = 31 * result + Arrays.hashCode(opponentsName);
+        result = 31 * result + Arrays.hashCode(opponentsSkill);
+        return result;
+    }
 }
 
 // based on example from Robocode Control API JavaDocs
@@ -130,11 +153,10 @@ class BattleObserver extends BattleAdaptor {
     @Override
     public void onBattleError(BattleErrorEvent e) {
 
-        System.out.println("Error running battle: " + e.getError());
+        Logger.getLogger(this.getClass().getName()).severe("Battle error: " + e.getError());
     }
 
     public BattleResults[] getResults() {
         return results;
     }
-
 }

@@ -1,7 +1,6 @@
 package gprobot;
 
 import java.io.File;
-import java.net.URL;
 import java.util.Random;
 
 import robocode.control.BattlefieldSpecification;
@@ -10,39 +9,40 @@ import robocode.control.BattlefieldSpecification;
  * Created by gprobot on 17/01/17.
  */
 public class RobocodeConf {
+    private RobocodeConf() {
+        // Const class
+    }
 
     public static final Random random = new Random(System.currentTimeMillis());
 
-    public static final String roboCodePath = System.getProperty("ROBOCODE_PATH", 
+    public static final String ROBO_CODE_PATH = System.getProperty("ROBOCODE_PATH",
             System.getProperty("os.name").toLowerCase().contains("win")
                 ? "c:\\robocode"
                 : System.getProperty("user.home") + File.separator + "robocode");
-    public static final String roboCodeVersion = "1.9.2.6";
 
     // Jars
-    public static final String roboCodeJar = "robocode.jar";
-    public static final String roboCodeLibsPath = roboCodePath + File.separator + "libs" + File.separator;
-    public static final String roboCodeJarPath = roboCodeLibsPath + roboCodeJar;
+    public static final String ROBOCODE_JAR = "robocode.jar";
 
-    public static final String targetPakage = "sampleex";
-    public static final String targetFolder = roboCodePath + File.separator + "robots" + File.separator + targetPakage;
-    public static final BattlefieldSpecification battlefield = new BattlefieldSpecification(800, 600);
 
-    public static final int nbProcs = Runtime.getRuntime().availableProcessors();
+    public static final String ROBOTS_FOLDER = "robots";
+    public static final String TARGET_PACKAGE = "sampleex";
+    public static final String TARGET_FOLDER = ROBO_CODE_PATH + File.separator + ROBOTS_FOLDER + File.separator + TARGET_PACKAGE;
+    public static final BattlefieldSpecification BATTLEFIELD = new BattlefieldSpecification(800, 600);
+
+    public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     // constant that can be tunned
-    public final static int POP_SIZE = 600;
-    public final static int MAX_GENS = 4000;
-    public final static int MIN_DEPTH = 2;
-    public final static int MAX_DEPTH = 8;
-    public final static int ROUNDS = 5;
-    public final static int TOURNY_SIZE = 12; // Selection Pressure
-    public final static int BATTLE_HANDICAP = 0;
-    public final static int RUNNERS_COUNT = nbProcs/2;
-    public static double PROB_CROSSOVER = 0.80;
-    public static double PROB_MUTATION = 0.10;
+    public static final int POP_SIZE = 300;
+    public static final int MAX_GENS = 4000;
+    public static final int MIN_DEPTH = 2;
+    public static final int MAX_DEPTH = 8;
+    public static final int ROUNDS = 1;
+    public static final int TOURNY_SIZE = 6; // Selection Pressure
+    public static final int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
+    public static final double PROB_CROSSOVER = 0.80;
+    public static final double PROB_MUTATION = 0.10;
 
-    public static String CTX_FILE = "GP_ctx.bin";
+    public static final String CTX_FILE = "GP_ctx.bin";
 
     static String[] sampleRobots = {
             //"sample.Corners",
@@ -59,7 +59,7 @@ public class RobocodeConf {
             //"sample.Target",
             "sample.Tracker",
             //"sample.TrackFire",
-            //"sample.VelociRobot",
+            "sample.VelociRobot",
             "sample.Walls"
     };
 

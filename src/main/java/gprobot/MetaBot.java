@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import static gprobot.RobocodeConf.random;
-import static gprobot.RobocodeConf.targetPakage;
+import static gprobot.RobocodeConf.TARGET_PACKAGE;
 
 public class MetaBot implements Serializable {
 
@@ -22,29 +22,30 @@ public class MetaBot implements Serializable {
             PROB_MUTATE_TERMINAL = 0.15;
 
     //Class Fields //////////////////////////////////////////////////////////
+    transient String[] phenome;
+    transient String sourceCode;
+    transient String botName;
 
     int memberGen = 0, memberID = 0, nodeCount;
-
-    String
-            botName = new String(),
-            phenome[] = new String[NUM_CHROMOS],
-            sourceCode = new String(),
-            fileName;
+    double fitness;
 
     ExpressionNode genome[] = new ExpressionNode[NUM_CHROMOS];
 
-    double fitness;
-    int selection;
-
     // Class Methods /////////////////////////////////////////////////////////
-
     public MetaBot(int gen, int botID) {
         memberGen = gen;
         memberID = botID;
-        botName = "X_GPbot_" + memberGen + "_" + memberID;
-        fileName = targetPakage + "." + botName;
-        selection=0;
         init();
+    }
+
+    String getBotName() {
+        if (botName == null)
+            botName = "X_GPbot_" + memberGen + "_" + memberID;
+        return botName;
+    }
+
+    public String getFileName() {
+        return TARGET_PACKAGE+ "." + getBotName();
     }
 
     public void init() {
@@ -61,6 +62,7 @@ public class MetaBot implements Serializable {
     }
 
     public void construct() {
+        phenome = new String[NUM_CHROMOS];
         for (int i = 0; i < NUM_CHROMOS; i++) {
             phenome[i] = genome[i].compose();
             setCode();
@@ -86,7 +88,7 @@ public class MetaBot implements Serializable {
         MetaBot child = new MetaBot(gen, botID);
 
         for (int i = 0; i < NUM_CHROMOS; i++) {
-            child.genome[i] = this.genome[i].clone();
+            child.genome[i] = this.genome[i].gClone();
         }
         //*****************************************************************
         int xChromo1 = random.nextInt(NUM_CHROMOS);
@@ -123,7 +125,7 @@ public class MetaBot implements Serializable {
         MetaBot child = new MetaBot(gen, botID);
 
         for (int i = 0; i < NUM_CHROMOS; i++) {
-            child.genome[i] = this.genome[i].clone();
+            child.genome[i] = this.genome[i].gClone();
         }
 
         int m = random.nextInt(NUM_CHROMOS);
@@ -151,7 +153,7 @@ public class MetaBot implements Serializable {
         MetaBot child = new MetaBot(gen, botID);
 
         for (int i = 0; i < NUM_CHROMOS; i++) {
-            child.genome[i] = this.genome[i].clone();
+            child.genome[i] = this.genome[i].gClone();
         }
 
         child.setDepths();
@@ -163,12 +165,12 @@ public class MetaBot implements Serializable {
     // FileIO Methods ///////////////////////////////////////////////////////////////////////////
 
     private void setCode() {
-        sourceCode = "package " + targetPakage + ";"
+        sourceCode = "package " + TARGET_PACKAGE + ";"
                 + "\nimport robocode.*;"
                 + "\nimport static robocode.Rules.*;"
                 + "\nimport java.awt.Color;\n"
                 + "\n"
-                + "\npublic class " + botName + " extends AdvancedRobot {"
+                + "\npublic class " + getBotName() + " extends AdvancedRobot {"
                 + "\n"
                 //+ "\n static double runVar1 = 0;"
                 //+ "\n static double runVar2 = 0;"
@@ -231,7 +233,7 @@ public class MetaBot implements Serializable {
     }
 
     String writeSource() throws IOException {
-        String sourceFile = RobotCodeUtil.botsrcFilePath(botName);
+        String sourceFile = RobotCodeUtil.botsrcFilePath(getBotName());
         try (BufferedWriter out = new BufferedWriter(new FileWriter(sourceFile))) {
             out.write(sourceCode);
         }
