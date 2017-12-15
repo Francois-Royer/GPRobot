@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static gprobot.RobocodeConf.*;
 import static gprobot.RobotCodeUtil.*;
@@ -47,7 +48,7 @@ public class RunGP {
     private static MetaBot bestSoFar = new MetaBot(-1, 0);
     private static MetaBot bestLastGen = new MetaBot(-1, 0);
 
-    private static String[] botNames = new String[POP_SIZE];
+    private static String[] botNames;
     private static int genCount = 0;
 
     static double[] skills;
@@ -81,8 +82,7 @@ public class RunGP {
                 long endComp = System.currentTimeMillis();
                 console.println(sDuration(endComp - beginGen));
 
-                for (int i = 0; i < POP_SIZE; i++)
-                    botNames[i] = pool[i].getFileName();
+                botNames = Stream.of(pool).map(MetaBot::getFileName).toArray(String[]::new);
 
                 scoreFitnessOnSet();
 

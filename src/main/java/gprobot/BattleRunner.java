@@ -25,7 +25,7 @@ import static gprobot.RobotCodeUtil.getRunnerUrl;
 import static gprobot.RunGP.opponents;
 
 public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattleRunner {
-
+    static Logger log = Logger.getLogger(BattleRunner.class.getName());
     transient RobocodeEngine engine;
     transient BattlefieldSpecification battlefield;
     transient String runnerPath;
@@ -40,7 +40,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             BattleRunner runner = new BattleRunner(runnerPath);
             Naming.rebind(url, runner);
         } catch (Exception ex) {
-            Logger.getLogger(BattleRunner.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, "main", ex);
             System.exit(1);
         }
     }
@@ -86,7 +86,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS, battlefield, selectedBots);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
-        if (opponents.length > 1) {
+        /*if (opponents.length > 1) {
             // More than one oponents, make also one to one battle against each oppenents
             double fitness121 = 0;
             for (int j = 0; j < opponentsName.length; j++) {
@@ -99,7 +99,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             }
             fitnessScore += fitness121;
             fitnessScore /= 2;
-        }
+        } */
         engine.close();
         return fitnessScore;
     }
@@ -109,10 +109,27 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         System.exit(0);
     }
 
+    private static void dumResult(BattleResults result) {
+        log.info(String.format("%s: %d %d %d %d %d %d",
+                result.getTeamLeaderName(),
+                result.getSurvival(),
+                result.getLastSurvivorBonus(),
+                result.getBulletDamage(),
+                result.getBulletDamageBonus(),
+                result.getRamDamage(),
+                result.getRamDamageBonus() ));
+    }
     private double computeFitness(String robot, BattleResults[] results) {
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
         int botScore = br.isPresent() ? getTotalScore(br.get()) : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getTotalScore).sum();
+
+        if (totalScore == 0) {
+            // dump results
+            Stream.of(results).forEach(BattleRunner::dumResult);
+            return 0;
+        }
+
         return (double) botScore / totalScore * 100;
     }
 
