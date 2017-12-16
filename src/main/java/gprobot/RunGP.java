@@ -8,6 +8,8 @@ import robocode.control.RobotSpecification;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -77,7 +79,7 @@ public class RunGP {
                 long beginGen = System.currentTimeMillis();
 
                 console.println("#####################################################################");
-                console.print(String.format("Compile %d Robots: ", POP_SIZE));
+                console.print(String.format("Compile %d Robots for generation %d: ", POP_SIZE, genCount));
                 compilePool();
                 long endComp = System.currentTimeMillis();
                 console.println(sDuration(endComp - beginGen));
@@ -106,9 +108,9 @@ public class RunGP {
                 if (pool[best].fitness > bestSoFar.fitness) bestSoFar = pool[best];
 
                 console.println("\nAvg. Fitness:\t" + avgFitness + "\t Avg # of nodes: " + avgNumNodes[genCount]
-                        + "\nBest In Round:\t" + bestLastGen.getBotName() + " - " + bestLastGen.fitness + " (" + pool[0].fitness + ") "
-                        + "\t# nodes " + bestLastGen.nodeCount
-                        + "\nBest So Far:\t" + bestSoFar.getBotName() + " - " + bestSoFar.fitness + "(" + pool[1].fitness + ")\t# nodes " + bestSoFar.nodeCount + "\n");
+                    + "\nBest In Round:\t" + bestLastGen.getBotName() + " - " + bestLastGen.fitness + " (" + pool[0].fitness + ") "
+                    + "\t# nodes " + bestLastGen.nodeCount
+                    + "\nBest So Far:\t" + bestSoFar.getBotName() + " - " + bestSoFar.fitness + "(" + pool[1].fitness + ")\t# nodes " + bestSoFar.nodeCount + "\n");
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -137,15 +139,13 @@ public class RunGP {
                 Date finished = new Date(end + eta);
                 console.println("-------Time stat ---------- ");
                 console.println("last gen=" + sDuration(genTime) +
-                        ", avg=" + sDuration(avgTime) +
-                        ", eta= " + sDuration(eta));
+                    ", avg=" + sDuration(avgTime) +
+                    ", eta= " + sDuration(eta));
                 console.println("Date Finished: " + finished.toString());
 
             }
 
-            for (int i = 0; i < RUNNERS_COUNT; i++) {
-                getGPRobotRunner(i).stopRunner();
-            }
+            killallRunner();
 
             console.println("-------Second Round Complete!-------");
             for (int i = 0; i < genCount; i++) {
@@ -229,8 +229,6 @@ public class RunGP {
     }
 
     private static void scoreFitnessOnSet() {
-        console.println("Run " + POP_SIZE + " Battle for generation " + genCount);
-
         try {
             fitnesses = new double[POP_SIZE];
             final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE).boxed().collect(Collectors.toList()));
@@ -329,31 +327,27 @@ public class RunGP {
     }
 
     public static void initOrRestoreCtx() {
-        File f = new File(CTX_FILE);
-        if (f.exists()) {
-            console.println("Restore GP Robot Context");
-            try {
+        try {
+            File f = new File(CTX_FILE);
+            if (f.exists()) {
+                console.println("Restore GP Robot Context");
                 loadCtx();
-            } catch (ClassNotFoundException | IOException e) {
-                Logger.getLogger(RunGP.class.getName()).log(Level.SEVERE, "Unable to restore context", e);
-                System.exit(1);
+
+            } else {
+                console.println("Initializing population");
+                initPool();
+                cleanRunData();
             }
-        } else {
-            console.println("Initializing population");
-            initPool();
-            cleanRunData();
+        } catch (ClassNotFoundException | IOException e) {
+            Logger.getLogger(RunGP.class.getName()).log(Level.SEVERE, "initOrRestoreCtx", e);
+            System.exit(1);
         }
     }
 
-    public static void cleanRunData() {
-        String[] runData = new String[] {
-                "run_data.txt",
-                "run_data_candidates.txt"
-        };
-
-        for (String s : runData) {
-            new File(s).delete();
-        }
+    public static void cleanRunData() throws IOException {
+        Stream.of(new File(".").listFiles())
+            .filter(f -> f.getName().matches("run_data.*.txt"))
+            .forEach(File::delete);
     }
 
     public static void appendStringToFile(String file, String s) {
@@ -382,6 +376,6 @@ public class RunGP {
     private static void displayBattleProgress(int remain) {
         char spin = anim.charAt((POP_SIZE - remain) % anim.length());
         int percent = 100 * (POP_SIZE - remain) / POP_SIZE;
-        console.print(String.format("\r%c %s %d remaining battles   ", spin, progressBar(percent), remain));
+        console.print(String.format("\rBattles: %s %d  ", progressBar(percent), remain));
     }
 }

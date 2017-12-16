@@ -318,13 +318,13 @@ public class ExpressionNode implements Serializable {
             "getGunHeat()",
             "getGunCoolingRate()",
             "(double) getOthers()",
-            "getDistanceRemaining()",
+            //"getDistanceRemaining()",
             "getHeadingRadians()",
-            "getTurnRemainingRadians()",
+            //"getTurnRemainingRadians()",
             "getGunHeadingRadians()",
-            "getGunTurnRemainingRadians()",
-            "getRadarHeadingRadians()",
-            "getRadarTurnRemainingRadians()"
+            // "getGunTurnRemainingRadians()",
+            "getRadarHeadingRadians()"/*,
+            "getRadarTurnRemainingRadians()"*/
     };
 
     static final String[] CONSTANT_TERMINALS = {
@@ -360,10 +360,16 @@ public class ExpressionNode implements Serializable {
 
     // terminals that can only be called during a HitByBulletEvent
     static final String[] HIT_BY_BULLET_EVENT_TERMINALS = {
-            "e.getBearingRadians()", // Returns difference between bullet and robot heading
-            "e.getPower()", // Returns power of bullet
-            "e.getHeadingRadians()", // Returns direction bullet is facing
-            "e.getVelocity()" // Returns the velocity of bullet
+        "e.getBearingRadians()", // Returns difference between bullet and robot heading
+        "e.getPower()", // Returns power of bullet
+        "e.getHeadingRadians()", // Returns direction bullet is facing
+        "e.getVelocity()" // Returns the velocity of bullet
+    };
+
+    // terminals that can only be called during a HitRobotEvent
+    static final String[] HIT_ROBOT_EVENT_TERMINALS = {
+        "e.getBearingRadians()", // Returns difference between bullet and robot heading
+        "e.getEnergy()" // Returns energy (life) of enemy
     };
 
     static final String[][] TERMINALS = {
@@ -372,12 +378,15 @@ public class ExpressionNode implements Serializable {
             SCANNED_EVENT_TERMINALS
     };
 
-    public static void setScanEventTerminal() {
+    public static void setScanEventTerminals() {
         TERMINALS[2] = SCANNED_EVENT_TERMINALS;
     }
 
-    public static void setHitEventTerminal() {
+    public static void setHitByBulletEventTerminals() {
         TERMINALS[2] = HIT_BY_BULLET_EVENT_TERMINALS;
+    }
+    public static void setHitRobotEventTerminals() {
+        TERMINALS[2] = HIT_ROBOT_EVENT_TERMINALS;
     }
 
     static final String[][] FUNCTIONS_A1 = {

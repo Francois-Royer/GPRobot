@@ -12,5 +12,4 @@ public interface RMIGPRobotBattleRunner extends Remote {
     void setOpponentsSkills(double []skills) throws RemoteException;
     
     double getRobotFitness(String robot) throws RemoteException;
-    void stopRunner() throws RemoteException;
 }

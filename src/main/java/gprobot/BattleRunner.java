@@ -104,11 +104,6 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         return fitnessScore;
     }
 
-    @Override
-    public void stopRunner() throws RemoteException {
-        System.exit(0);
-    }
-
     private static void dumResult(BattleResults result) {
         log.info(String.format("%s: %d %d %d %d %d %d",
                 result.getTeamLeaderName(),
@@ -119,6 +114,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
                 result.getRamDamage(),
                 result.getRamDamageBonus() ));
     }
+
     private double computeFitness(String robot, BattleResults[] results) {
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
         int botScore = br.isPresent() ? getTotalScore(br.get()) : 0;
