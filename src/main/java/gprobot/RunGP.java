@@ -107,10 +107,16 @@ public class RunGP {
                 bestLastGen = pool[best];
                 if (pool[best].fitness > bestSoFar.fitness) bestSoFar = pool[best];
 
-                console.println("\nAvg. Fitness:\t" + avgFitness + "\t Avg # of nodes: " + avgNumNodes[genCount]
-                    + "\nBest In Round:\t" + bestLastGen.getBotName() + " - " + bestLastGen.fitness + " (" + pool[0].fitness + ") "
-                    + "\t# nodes " + bestLastGen.nodeCount
-                    + "\nBest So Far:\t" + bestSoFar.getBotName() + " - " + bestSoFar.fitness + "(" + pool[1].fitness + ")\t# nodes " + bestSoFar.nodeCount + "\n");
+                console.println(String.format("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %2.02f",
+                        avgFitness, avgNumNodes[genCount]));
+                console.println(String.format("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d",
+                        bestLastGen.getBotName(),bestLastGen.fitness, pool[0].fitness,bestLastGen.nodeCount));
+                console.println(String.format("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d",
+                        bestSoFar.getBotName(),bestSoFar.fitness, pool[1].fitness,bestSoFar.nodeCount));
+                /*console.println("\nAvg. Fitness:\t" + avgFitness + "\t Avg # of nodes: " + avgNumNodes[genCount]
+                        + "\nBest In Round:\t" + bestLastGen.getBotName() + " - " + bestLastGen.fitness + " (" + pool[0].fitness + ") "
+                        + "\t# nodes " + bestLastGen.nodeCount
+                        + "\nBest So Far:\t" + bestSoFar.getBotName() + " - " + bestSoFar.fitness + "(" + pool[1].fitness + ")\t# nodes " + bestSoFar.nodeCount + "\n");*/
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -186,10 +192,12 @@ public class RunGP {
         newPool[0] = bestLastGen.replicate(genCount, 0);
         // replicate best so far
         newPool[1] = bestSoFar.replicate(genCount, 1);
-        // breed next generation
+        // cross bestSoFar with best lastGen
+        newPool[2] = bestSoFar.crossover(bestLastGen, genCount, 2);
 
+        // breed next generation
         double geneticOperator;
-        int newPop = 2;
+        int newPop = 3;
 
         while (newPop < POP_SIZE) {
             geneticOperator = random.nextDouble();

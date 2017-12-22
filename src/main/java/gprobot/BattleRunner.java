@@ -86,7 +86,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS, battlefield, selectedBots);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
-        /*if (opponents.length > 1) {
+        if (opponents.length > 1) {
             // More than one oponents, make also one to one battle against each oppenents
             double fitness121 = 0;
             for (int j = 0; j < opponentsName.length; j++) {
@@ -99,20 +99,9 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             }
             fitnessScore += fitness121;
             fitnessScore /= 2;
-        } */
+        }
         engine.close();
         return fitnessScore;
-    }
-
-    private static void dumResult(BattleResults result) {
-        log.info(String.format("%s: %d %d %d %d %d %d",
-                result.getTeamLeaderName(),
-                result.getSurvival(),
-                result.getLastSurvivorBonus(),
-                result.getBulletDamage(),
-                result.getBulletDamageBonus(),
-                result.getRamDamage(),
-                result.getRamDamageBonus() ));
     }
 
     private double computeFitness(String robot, BattleResults[] results) {
@@ -121,8 +110,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getTotalScore).sum();
 
         if (totalScore == 0) {
-            // dump results
-            Stream.of(results).forEach(BattleRunner::dumResult);
+            // No robots make score...
             return 0;
         }
 

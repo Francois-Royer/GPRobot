@@ -290,5 +290,10 @@ public class RobotCodeUtil {
 
     public static void killallRunner() {
         Stream.of(runnerProcess).forEach(Process::destroy);
+        try {
+            delete(getRunnersDir());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

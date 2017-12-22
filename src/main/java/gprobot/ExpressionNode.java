@@ -344,7 +344,9 @@ public class ExpressionNode implements Serializable {
             "-1",
             "Math.random()", // random value from [0, 1]
             "(Math.random()*2 - 1)", // random value from [-1, 1]
-            "Math.PI" // 3.14...
+            "Math.PI", // 3.14...
+            "(2*Math.PI)", // 3.14...
+            "(Math.PI/2)" // 3.14...
             //"runVar1",	// static variables
             //"runVar2"
     };
@@ -412,12 +414,16 @@ public class ExpressionNode implements Serializable {
 
     static final String[][] FUNCTIONS_A3 = {
             {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
-            {"", " == 0 ? ", " : ", ""} // X == 0 ? ifYes : ifNo
+            {"", " >= 0 ? ", " : ", ""}, // X >= 0 ? ifYes : ifNo
+            {"", " == 0 ? ", " : ", ""}, // X == 0 ? ifYes : ifNo
+            {"", " != 0 ? ", " : ", ""} // X != 0 ? ifYes : ifNo
     };
 
     static final String[][] FUNCTIONS_A4 = {
             {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
+            {"", " >= ", " ? ", " : ", ""}, // X >= Y ? ifYes : ifNo
             {"", " == ", " ? ", " : ", ""}, // X == Y ? ifYes : ifNo
+            {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
     };
 
     // All expressions available to the GP

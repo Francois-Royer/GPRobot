@@ -1,14 +1,22 @@
 package gprobot;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 
 import static gprobot.RobocodeConf.random;
 import static gprobot.RobocodeConf.TARGET_PACKAGE;
 
 public class MetaBot implements Serializable {
+
+    static String robotTemplate;
+    static {
+        try (InputStream is = MetaBot.class.getClassLoader().getResourceAsStream("RobotTemplate.java")) {
+            byte []buff = new byte[is.available()];
+            is.read(buff);
+            robotTemplate = new String(buff);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private static final long serialVersionUID = 5625044536646095912L;
     final static int SCAN_CHROMOS = 5;
@@ -175,91 +183,10 @@ public class MetaBot implements Serializable {
     // FileIO Methods ///////////////////////////////////////////////////////////////////////////
 
     private void setCode() {
-        sourceCode = "package " + TARGET_PACKAGE + ";"
-            + "\nimport robocode.*;"
-            + "\nimport static robocode.Rules.*;"
-            + "\nimport java.awt.Color;\n"
-            + "\n"
-            + "\npublic class " + getBotName() + " extends AdvancedRobot {"
-            + "\n"
-            //+ "\n static double runVar1 = 0;"
-            //+ "\n static double runVar2 = 0;"
-            //+ "\n"
-            + "\n    public void run() {"
-            + "\n"
-            + "\n        setAdjustGunForRobotTurn(true);"
-            + "\n        setAdjustRadarForGunTurn(true);"
-            + "\n"
-            + "\n        setColors(Color.red,Color.blue,Color.green);"
-            + "\n        while(true) {"
-            + "\n            if (getRadarTurnRemainingRadians() == 0)"
-            + "\n               turnRadarRight(360);"
-            + "\n            else"
-            + "\n               doNothing();"
-            //+ "\n            turnRight(runVar1);"
-            //+ "\n            setAhead(runVar2);"
-            + "\n        }"
-            + "\n    }"
-            + "\n"
-            + "\n    public void onScannedRobot(ScannedRobotEvent e) {"
-            + "\n        // --- PHENOME 1 ---"
-            + "\n        double ahead = " + phenome[0] + " - getDistanceRemaining();"
-            + "\n        // --- PHENOME 2 ---"
-            + "\n        double turnRight = " + phenome[1] + " - getTurnRemainingRadians();"
-            + "\n        // --- PHENOME 3 ---"
-            + "\n        double turnGunRight = " + phenome[2] + " - getGunTurnRemainingRadians();"
-            + "\n        // --- PHENOME 4 ---"
-            + "\n        double turnRadarRight = " + phenome[3] + " - getRadarTurnRemainingRadians();"
-            + "\n        // --- PHENOME 5 ---"
-            + "\n        double fire = " + phenome[4] + ";"
-            + "\n"
-            + "\n        //out.println(\"ahead=\" +ahead+ \", fire=\" + fire);"
-            + "\n        //out.println(\"turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
-            + "\n        setAhead(ahead);"
-            + "\n        setTurnRightRadians(turnRight);"
-            + "\n        setTurnGunRightRadians(turnGunRight);"
-            + "\n        setTurnRadarRightRadians(turnRadarRight);"
-            + "\n        setFire(fire);"
-            //+ "\n}"
-            + "\n"
-            //+ "\n // --- PHENOME 6,7 ---"
-            //+ "\n		runVar1 = " + phenome[5] + ";"
-            //+ "\n"
-            //+ "\n		runVar2 = " + phenome[6] + ";"
-            //+ "\n"
-            + "\n	}"
-            + "\npublic void onHitByBullet(HitByBulletEvent e) {"
-            + "\n        // --- PHENOME 6 ---"
-            + "\n        double ahead = " + phenome[5] + " - getDistanceRemaining();"
-            + "\n        // --- PHENOME 7 ---"
-            + "\n        double turnRight = " + phenome[6] + " - getTurnRemainingRadians();"
-            + "\n"
-            + "\n        //out.println(\"ohbb ahead=\" +ahead+ \", fire=\" + fire);"
-            + "\n        //out.println(\"ohbb turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
-            + "\n        setAhead(ahead);"
-            + "\n        setTurnRightRadians(turnRight);"
-            + "\n	}"
-            + "\npublic void onHitRobot(HitRobotEvent e) {"
-            + "\n        // --- PHENOME 8 ---"
-            + "\n        double ahead = " + phenome[7] + " - getDistanceRemaining();"
-            + "\n        // --- PHENOME 9 ---"
-            + "\n        double turnRight = " + phenome[8] + " - getTurnRemainingRadians();"
-            + "\n        // --- PHENOME 10 ---"
-            + "\n        double turnGunRight = " + phenome[9] + " - getGunTurnRemainingRadians();"
-            + "\n        // --- PHENOME 11 ---"
-            + "\n        double turnRadarRight = " + phenome[10] + " - getRadarTurnRemainingRadians();"
-            + "\n        // --- PHENOME 12 ---"
-            + "\n        double fire = " + phenome[11] + ";"
-            + "\n"
-            + "\n        //out.println(\"ohbb ahead=\" +ahead+ \", fire=\" + fire);"
-            + "\n        //out.println(\"ohbb turnRight=\" +turnRight+ \", turnGunRight=\" + turnGunRight + \", turnRadarRight=\" + turnRadarRight);"
-            + "\n        setAhead(ahead);"
-            + "\n        setTurnRightRadians(turnRight);"
-            + "\n        setTurnGunRightRadians(turnGunRight);"
-            + "\n        setTurnRadarRightRadians(turnRadarRight);"
-            + "\n        setFire(fire);"
-            + "\n	}"
-            + "\n}";
+        sourceCode = String.format(robotTemplate, getBotName(),
+                phenome[0], phenome[1], phenome[2], phenome[3], phenome[4],
+                phenome[5], phenome[6],
+                phenome[7], phenome[8], phenome[9], phenome[10], phenome[11]);
     }
 
     String writeSource() throws IOException {
