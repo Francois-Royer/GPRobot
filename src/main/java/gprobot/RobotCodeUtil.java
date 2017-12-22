@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static gprobot.RobocodeConf.*;
+import static java.nio.file.Files.*;
 
 /**
  * @author froyer
@@ -43,7 +44,7 @@ public class RobotCodeUtil {
     static {
         try {
             File symLink = new File("./symLinkTest" + UUID.randomUUID());
-            Files.createSymbolicLink(symLink.toPath(), new File(".").toPath());
+            createSymbolicLink(symLink.toPath(), new File(".").toPath());
             symLink.delete();
 
             fsSupportSimLink = true;
@@ -159,9 +160,9 @@ public class RobotCodeUtil {
 
     public static void copyOrLinkFile(Path src, Path target) throws IOException {
         if (fsSupportSimLink) {
-            Files.createSymbolicLink(target, src);
+            createSymbolicLink(target, src);
         } else {
-            Files.copy(src, target);
+            copy(src, target);
         }
     }
 
@@ -169,7 +170,7 @@ public class RobotCodeUtil {
         if (fsSupportSimLink) {
             File ltarget = new File(target, dir);
             File link = new File(src, dir);
-            Files.createSymbolicLink(ltarget.toPath(), link.toPath());
+            createSymbolicLink(ltarget.toPath(), link.toPath());
         } else {
             copyDir(src, target, dir);
         }
@@ -259,7 +260,7 @@ public class RobotCodeUtil {
     }
 
     public static void delete(File f) throws IOException {
-        Files.walk(f.toPath())
+        walk(f.toPath())
             .map(Path::toFile)
             .sorted((o1, o2) -> -o1.compareTo(o2))
             .forEach(File::delete);
@@ -268,7 +269,7 @@ public class RobotCodeUtil {
 
     public static void copyFolder(Path src, Path dest) {
         try {
-            Files.walk(src).forEach(s -> copyFolderEntry(src, dest, s));
+            walk(src).forEach(s -> copyFolderEntry(src, dest, s));
         } catch (Exception ex) {
             log.log(Level.SEVERE, "copyFolder", ex);
         }
@@ -279,10 +280,10 @@ public class RobotCodeUtil {
             Path d = dest.resolve(src.relativize(s));
             if (s.toFile().isDirectory()) {
                 if (!d.toFile().exists())
-                    Files.createDirectory(d);
+                    createDirectory(d);
                 return;
             }
-            Files.copy(s, d);// use flag to override existing
+            copy(s, d);// use flag to override existing
         } catch (Exception e) {
             log.log(Level.SEVERE, "copyFolder", e);
         }

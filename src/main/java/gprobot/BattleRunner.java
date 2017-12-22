@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 import static gprobot.RobocodeConf.TARGET_PACKAGE;
 import static gprobot.RobotCodeUtil.getRunnerUrl;
-import static gprobot.RunGP.opponents;
+import static gprobot.RobocodeConf.opponents;
 
 public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattleRunner {
     static Logger log = Logger.getLogger(BattleRunner.class.getName());

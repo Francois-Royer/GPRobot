@@ -39,27 +39,28 @@ import static gprobot.RobotCodeUtil.*;
  */
 public class RunGP {
     private static Logger log = Logger.getLogger(RunGP.class.getName());
-    private static String anim = "|/-\\";
-    private static String host;
-    private static double[] fitnesses = new double[POP_SIZE];
-    private static double[] allAvgFitnesses = new double[MAX_GENS];
-    private static double[] avgNumNodes = new double[MAX_GENS];
+    private String host;
+    private double[] fitnesses = new double[POP_SIZE];
+    private double[] allAvgFitnesses = new double[MAX_GENS];
+    private double[] avgNumNodes = new double[MAX_GENS];
 
-    private static MetaBot[] pool = new MetaBot[POP_SIZE];
-    private static MetaBot[] newPool = new MetaBot[POP_SIZE];
-    private static MetaBot bestSoFar = new MetaBot(-1, 0);
-    private static MetaBot bestLastGen = new MetaBot(-1, 0);
+    private MetaBot[] pool = new MetaBot[POP_SIZE];
+    private MetaBot[] newPool = new MetaBot[POP_SIZE];
+    private MetaBot bestSoFar = new MetaBot(-1, 0);
+    private MetaBot bestLastGen = new MetaBot(-1, 0);
 
-    private static String[] botNames;
-    private static int genCount = 0;
+    private int genCount = 0;
 
-    static double[] skills;
-    static String[] opponents = sampleRobots;
-    //static String[] opponents = skilledRobots;
+    double[] skills;
     static PrintStream console = System.out;
 
     public static void main(String[] args) {
-        try {
+        new RunGP().runGP();
+    }
+
+    public void runGP() {
+
+            try {
             bestSoFar.fitness = 0;
 
             skills = getOpponentsSkill(opponents);
@@ -83,8 +84,6 @@ public class RunGP {
                 compilePool();
                 long endComp = System.currentTimeMillis();
                 console.println(sDuration(endComp - beginGen));
-
-                botNames = Stream.of(pool).map(MetaBot::getFileName).toArray(String[]::new);
 
                 scoreFitnessOnSet();
 
@@ -131,7 +130,6 @@ public class RunGP {
                 // set newPool as pool, clear newPool
                 pool = newPool;
                 newPool = new MetaBot[POP_SIZE];
-
                 saveCtx();
 
                 // Time stat
@@ -166,15 +164,10 @@ public class RunGP {
     }
 
 
-    private static void initPool() {
-        for (int i = 0; i < POP_SIZE; i++) {
-            pool[i] = new MetaBot(0, i);
-        }
-    }
-
-    private static void compilePool() {
+    private void compilePool() {
         try {
             String[] srcpool = new String[pool.length];
+
             for (int i = 0; i < pool.length; i++) {
                 pool[i].construct();
                 srcpool[i] = pool[i].writeSource();
@@ -187,7 +180,7 @@ public class RunGP {
         }
     }
 
-    private static void breedPool() {
+    private void breedPool() {
         // replicate best in last round
         newPool[0] = bestLastGen.replicate(genCount, 0);
         // replicate best so far
@@ -219,7 +212,7 @@ public class RunGP {
         }
     }
 
-    private static double[] getOpponentsSkill(String[] opponents) {
+    private double[] getOpponentsSkill(String[] opponents) {
         if (opponents.length == 1) return new double[]{1};
 
         RobocodeEngine engine = new RobocodeEngine(new File(ROBO_CODE_PATH));
@@ -236,7 +229,7 @@ public class RunGP {
         return Arrays.stream(results).mapToDouble(BattleResults::getScore).map(d -> d / totalScore).toArray();
     }
 
-    private static void scoreFitnessOnSet() {
+    private void scoreFitnessOnSet() {
         try {
             fitnesses = new double[POP_SIZE];
             final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE).boxed().collect(Collectors.toList()));
@@ -262,18 +255,7 @@ public class RunGP {
                                 Logger.getLogger(RunGP.class.getName()).log(Level.SEVERE, "Exception in runner " + runnerId + " restarting it", e);
                                 // Runner may have crash, put back the robot in queue and restart runner
                                 queue.addFirst(robotID);
-                                restartProcess(runnerId);
-                                do {
-                                    try {
-                                        runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
-                                        runner.setOpponentsName(opponents);
-                                        runner.setOpponentsSkills(skills);
-                                    } catch (NotBoundException | ConnectException rmie) {
-                                        Thread.sleep(1000);
-                                        runner = null;
-                                    }
-                                } while (runner == null);
-                                Logger.getLogger(RunGP.class.getName()).log(Level.INFO, "Runner " + runnerId + " is up again it");
+                                runner = restartRunner(runnerId);
                             }
                         }
                     } catch (Exception e) {
@@ -294,12 +276,28 @@ public class RunGP {
         }
     }
 
+    private RMIGPRobotBattleRunner restartRunner(int runnerId) throws RemoteException, MalformedURLException, InterruptedException {
+        restartProcess(runnerId);
+        RMIGPRobotBattleRunner runner;
+        do
+            try {
+                runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
+                runner.setOpponentsName(opponents);
+                runner.setOpponentsSkills(skills);
+            } catch (NotBoundException | ConnectException rmie) {
+                Thread.sleep(1000);
+                runner = null;
+            }
+            while (runner == null);
+        Logger.getLogger(RunGP.class.getName()).log(Level.INFO, "Runner " + runnerId + " is up again it");
+        return runner;
+    }
 
-    public static MetaBot candidateSelect() {
+    public MetaBot candidateSelect() {
         return tournementSelect();
     }
 
-    public static MetaBot tournementSelect() {
+    public MetaBot tournementSelect() {
         int[] subPool = new int[TOURNY_SIZE];
         for (int i = 0; i < TOURNY_SIZE; i++)
             subPool[i] = random.nextInt(POP_SIZE);
@@ -316,7 +314,7 @@ public class RunGP {
         appendStringToFile("run_data_candidates.txt", bestBotName + "\n");
     }
 
-    public static void saveCtx() {
+    public void saveCtx() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(CTX_FILE))) {
             oos.writeInt(genCount);
             oos.writeObject(pool);
@@ -325,7 +323,7 @@ public class RunGP {
         }
     }
 
-    public static void loadCtx() throws IOException, ClassNotFoundException {
+    public void loadCtx() throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(CTX_FILE)))) {
             genCount = ois.readInt();
             pool = (MetaBot[]) ois.readObject();
@@ -334,7 +332,7 @@ public class RunGP {
         }
     }
 
-    public static void initOrRestoreCtx() {
+    public void initOrRestoreCtx() {
         try {
             File f = new File(CTX_FILE);
             if (f.exists()) {
@@ -343,7 +341,7 @@ public class RunGP {
 
             } else {
                 console.println("Initializing population");
-                initPool();
+                Arrays.setAll(pool, i -> new MetaBot(0, i));
                 cleanRunData();
             }
         } catch (ClassNotFoundException | IOException e) {
@@ -366,10 +364,6 @@ public class RunGP {
         }
     }
 
-    private static RMIGPRobotBattleRunner getGPRobotRunner(int runnerId) throws RemoteException, NotBoundException, MalformedURLException {
-        return (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
-    }
-
     private static String progressBar(int i) {
         StringBuilder sb = new StringBuilder();
         int x = i / 2;
@@ -382,7 +376,6 @@ public class RunGP {
     }
 
     private static void displayBattleProgress(int remain) {
-        char spin = anim.charAt((POP_SIZE - remain) % anim.length());
         int percent = 100 * (POP_SIZE - remain) / POP_SIZE;
         console.print(String.format("\rBattles: %s %d  ", progressBar(percent), remain));
     }

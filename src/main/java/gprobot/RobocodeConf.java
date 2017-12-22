@@ -66,4 +66,6 @@ public class RobocodeConf {
     static String[] skilledRobots = {
         "voidious.Diamond"
     };
+    static String[] opponents = sampleRobots;
+    //static String[] opponents = skilledRobots;
 }
