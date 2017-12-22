@@ -87,7 +87,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
         if (opponents.length > 1) {
-            // More than one oponents, make also one to one battle against each oppenents
+            // More than one opponents, make also one to one battle against each opponents
             double fitness121 = 0;
             for (int j = 0; j < opponentsName.length; j++) {
                 String opponent = opponentsName[j];
@@ -110,7 +110,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getTotalScore).sum();
 
         if (totalScore == 0) {
-            // No robots make score...
+            // OMG, these robots are so poor that they do not score a single point
             return 0;
         }
 
