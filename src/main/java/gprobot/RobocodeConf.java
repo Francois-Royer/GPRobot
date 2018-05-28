@@ -33,11 +33,11 @@ public class RobocodeConf {
 
     // constant that can be tunned
     public static final int POP_SIZE = 300;
-    public static final int MAX_GENS = 4000;
+    public static final int MAX_GENS = 40000;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 8;
-    public static final int ROUNDS = 10;
-    public static final int TOURNY_SIZE = 6; // Selection Pressure
+    public static final int ROUNDS = 20;
+    public static final int TOURNY_SIZE = 6 ; // Selection Pressure
     public static final int RUNNERS_COUNT = AVAILABLE_PROCESSORS*3/4;
     public static final double PROB_CROSSOVER = 0.80;
     public static final double PROB_MUTATION = 0.10;

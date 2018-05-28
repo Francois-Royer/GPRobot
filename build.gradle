@@ -22,6 +22,7 @@ def robotcode_home = org.gradle.internal.os.OperatingSystem.current().isWindows(
 
 dependencies {
     compile files("$robotcode_home/libs/robocode.jar")
+    compile 'de.ruedigermoeller:fst:2.56'
 }
 
 jar {

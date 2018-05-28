@@ -30,7 +30,6 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     transient BattlefieldSpecification battlefield;
     transient String runnerPath;
     transient String[] opponentsName;
-    transient double[] opponentsSkill;
 
     public static void main(String[] args) {
         try {
@@ -72,34 +71,15 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     }
 
     @Override
-    public void setOpponentsSkills(double[] skills) throws RemoteException {
-        this.opponentsSkill = skills;
-    }
-
-    @Override
     public double getRobotFitness(String robot) throws RemoteException {
         String robotClass = TARGET_PACKAGE + "."+ robot;
         BattleObserver battleObserver = new BattleObserver();
         engine.addBattleListener(battleObserver);
 
         RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponents);
-        BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS, battlefield, selectedBots);
+        BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS*opponents.length, battlefield, selectedBots);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
-        if (opponents.length > 1) {
-            // More than one opponents, make also one to one battle against each opponents
-            double fitness121 = 0;
-            for (int j = 0; j < opponentsName.length; j++) {
-                String opponent = opponentsName[j];
-
-                selectedBots = engine.getLocalRepository(robotClass+ ", " + opponent);
-                battleSpec = new BattleSpecification(RobocodeConf.ROUNDS, battlefield, selectedBots);
-                engine.runBattle(battleSpec, true);
-                fitness121 += computeFitness(robotClass, battleObserver.getResults()) * opponentsSkill[j];
-            }
-            fitnessScore += fitness121;
-            fitnessScore /= 2;
-        }
         engine.close();
         return fitnessScore;
     }
@@ -127,8 +107,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
 
         if (!runnerPath.equals(that.runnerPath)) return false;
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
-        if (!Arrays.equals(opponentsName, that.opponentsName)) return false;
-        return Arrays.equals(opponentsSkill, that.opponentsSkill);
+        return Arrays.equals(opponentsName, that.opponentsName);
     }
 
     @Override
@@ -136,7 +115,6 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         int result = super.hashCode();
         result = 31 * result + runnerPath.hashCode();
         result = 31 * result + Arrays.hashCode(opponentsName);
-        result = 31 * result + Arrays.hashCode(opponentsSkill);
         return result;
     }
 }

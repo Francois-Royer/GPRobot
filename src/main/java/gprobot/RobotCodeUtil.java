@@ -57,7 +57,7 @@ public class RobotCodeUtil {
         List<String> cmdList = new ArrayList();
         cmdList.add("java");
         cmdList.add("-DNOSECURITY=true"); // RMI cause security exception
-        cmdList.add("-Xmx256m");
+        cmdList.add("-Xmx384m");
         cmdList.add("-cp");
 
         StringBuilder cpBuilder = new StringBuilder(workerDir.toPath().resolve("libs").resolve(ROBOCODE_JAR).toString());

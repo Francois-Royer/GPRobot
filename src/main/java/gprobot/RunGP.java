@@ -1,5 +1,8 @@
 package gprobot;
 
+import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.FSTObjectInput;
+import org.nustaq.serialization.FSTObjectOutput;
 import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
@@ -39,10 +42,11 @@ import static gprobot.RobotCodeUtil.*;
  */
 public class RunGP {
     private static Logger log = Logger.getLogger(RunGP.class.getName());
+    static FSTConfiguration fst = FSTConfiguration.createDefaultConfiguration();
+    static PrintStream console = System.out;
+
     private String host;
     private double[] fitnesses = new double[POP_SIZE];
-    private double[] allAvgFitnesses = new double[MAX_GENS];
-    private double[] avgNumNodes = new double[MAX_GENS];
 
     private MetaBot[] pool = new MetaBot[POP_SIZE];
     private MetaBot[] newPool = new MetaBot[POP_SIZE];
@@ -50,9 +54,6 @@ public class RunGP {
     private MetaBot bestLastGen = new MetaBot(-1, 0);
 
     private int genCount = 0;
-
-    double[] skills;
-    static PrintStream console = System.out;
 
     public static void main(String[] args) {
         new RunGP().runGP();
@@ -63,7 +64,6 @@ public class RunGP {
             try {
             bestSoFar.fitness = 0;
 
-            skills = getOpponentsSkill(opponents);
             initOrRestoreCtx();
 
             host = InetAddress.getLocalHost().getHostAddress();
@@ -86,10 +86,12 @@ public class RunGP {
                 console.println(sDuration(endComp - beginGen));
 
                 scoreFitnessOnSet();
+                long endBattle = System.currentTimeMillis();
+                console.println(sDuration(endBattle - endComp));
 
                 double totalFitness = 0;
                 int best = 0;
-                double avgNodeCount = 0;
+                int avgNodeCount = 0;
 
                 for (int i = 0; i < POP_SIZE; i++) {
                     totalFitness += (pool[i].fitness = fitnesses[i]);
@@ -97,25 +99,19 @@ public class RunGP {
                     avgNodeCount += pool[i].countNodes();
                 }
 
-                avgNumNodes[genCount] = (avgNodeCount /= POP_SIZE);
-
+                avgNodeCount /= POP_SIZE;
                 final double avgFitness = totalFitness / POP_SIZE;
-                allAvgFitnesses[genCount] = avgFitness;
 
                 // store the best-in-generation
                 bestLastGen = pool[best];
                 if (pool[best].fitness > bestSoFar.fitness) bestSoFar = pool[best];
 
-                console.println(String.format("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %2.02f",
-                        avgFitness, avgNumNodes[genCount]));
+                console.println(String.format("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %d",
+                        avgFitness, avgNodeCount));
                 console.println(String.format("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d",
                         bestLastGen.getBotName(),bestLastGen.fitness, pool[0].fitness,bestLastGen.nodeCount));
                 console.println(String.format("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d",
                         bestSoFar.getBotName(),bestSoFar.fitness, pool[1].fitness,bestSoFar.nodeCount));
-                /*console.println("\nAvg. Fitness:\t" + avgFitness + "\t Avg # of nodes: " + avgNumNodes[genCount]
-                        + "\nBest In Round:\t" + bestLastGen.getBotName() + " - " + bestLastGen.fitness + " (" + pool[0].fitness + ") "
-                        + "\t# nodes " + bestLastGen.nodeCount
-                        + "\nBest So Far:\t" + bestSoFar.getBotName() + " - " + bestSoFar.fitness + "(" + pool[1].fitness + ")\t# nodes " + bestSoFar.nodeCount + "\n");*/
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -150,14 +146,6 @@ public class RunGP {
             }
 
             killallRunner();
-
-            console.println("-------Second Round Complete!-------");
-            for (int i = 0; i < genCount; i++) {
-                console.println("Round " + i + " average:\t" + allAvgFitnesses[i]);
-            }
-            for (int i = 0; i < genCount; i++) {
-                console.println("Round " + i + " avg # nodes:\t" + avgNumNodes[i]);
-            }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Fatal error", e);
         }
@@ -197,7 +185,10 @@ public class RunGP {
             MetaBot b1 = candidateSelect();
 
             if (geneticOperator <= PROB_CROSSOVER) {
-                MetaBot b2 = candidateSelect();
+                MetaBot b2;
+                do {
+                    b2 = candidateSelect();
+                } while (b2 == b1);
                 newPool[newPop] = b1.crossover(b2, genCount, newPop);
             } else if (geneticOperator <= PROB_MUTATION) {
                 newPool[newPop] = b1.mutate(genCount, newPop);
@@ -241,7 +232,6 @@ public class RunGP {
                     try {
                         RMIGPRobotBattleRunner runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
                         runner.setOpponentsName(opponents);
-                        runner.setOpponentsSkills(skills);
 
                         while ((robotID = queue.pollFirst()) != null) {
                             updateRunner(getRunnerDir(runnerId), genCount, robotID);
@@ -283,7 +273,6 @@ public class RunGP {
             try {
                 runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
                 runner.setOpponentsName(opponents);
-                runner.setOpponentsSkills(skills);
             } catch (NotBoundException | ConnectException rmie) {
                 Thread.sleep(1000);
                 runner = null;
@@ -308,25 +297,31 @@ public class RunGP {
         return pool[best];
     }
 
-    public static void storeRunData(int round, double avgFit, double bestFit, double avgNode, int bestNode, String bestBotName) {
+    public void storeRunData(int round, double avgFit, double bestFit, double avgNode, int bestNode, String bestBotName) {
         // store each variable in its own file (for graphs)
-        appendStringToFile("run_data.txt", round + "\t" + avgFit + "\t" + bestFit + "\t" + avgNode + "\t" + bestNode + "\n");
-        appendStringToFile("run_data_candidates.txt", bestBotName + "\n");
+        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName+"\n");
     }
 
     public void saveCtx() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(CTX_FILE))) {
-            oos.writeInt(genCount);
-            oos.writeObject(pool);
+        File tmpFile = new File(CTX_FILE+ ".tmp");
+
+        try (FSTObjectOutput out = new FSTObjectOutput(new FileOutputStream(tmpFile))) {
+            out.writeInt(genCount);
+            out.writeObject(pool);
         } catch (IOException e) {
             Logger.getLogger("GPRobot").log(Level.SEVERE, "Unable to save context for restart", e);
         }
+
+        File ctxFile = new File(CTX_FILE);
+        ctxFile.delete();
+        tmpFile.renameTo(ctxFile);
+
     }
 
     public void loadCtx() throws IOException, ClassNotFoundException {
-        try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(CTX_FILE)))) {
-            genCount = ois.readInt();
-            pool = (MetaBot[]) ois.readObject();
+        try (FSTObjectInput in = new FSTObjectInput(new FileInputStream(CTX_FILE))) {
+            genCount = in.readInt();
+            pool = (MetaBot[]) in.readObject();
             bestSoFar = pool[1];
             bestLastGen = pool[0];
         }
@@ -350,13 +345,15 @@ public class RunGP {
         }
     }
 
-    public static void cleanRunData() throws IOException {
+    public void cleanRunData() throws IOException {
         Stream.of(new File(".").listFiles())
             .filter(f -> f.getName().matches("run_data.*.txt"))
             .forEach(File::delete);
+
+        appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness,Average nodes,Best nodes,Best name\n");
     }
 
-    public static void appendStringToFile(String file, String s) {
+    public void appendStringToFile(String file, String s) {
         try (FileWriter dataStream = new FileWriter(file, true)) {
             dataStream.write(s);
         } catch (IOException ex) {
@@ -364,7 +361,7 @@ public class RunGP {
         }
     }
 
-    private static String progressBar(int i) {
+    private String progressBar(int i) {
         StringBuilder sb = new StringBuilder();
         int x = i / 2;
         sb.append("|");
@@ -375,7 +372,7 @@ public class RunGP {
         return sb.toString();
     }
 
-    private static void displayBattleProgress(int remain) {
+    private void displayBattleProgress(int remain) {
         int percent = 100 * (POP_SIZE - remain) / POP_SIZE;
         console.print(String.format("\rBattles: %s %d  ", progressBar(percent), remain));
     }
