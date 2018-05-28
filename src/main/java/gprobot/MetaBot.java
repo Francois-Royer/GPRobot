@@ -129,7 +129,6 @@ public class MetaBot implements Serializable {
             // cross-over the subtrees
             child.genome[xChromo1].insert(p2.genome[xChromo1].getSubTree(useTerminal1));
             child.genome[xChromo2].insert(p2.genome[xChromo2].getSubTree(useTerminal2));
-
         }
 
         child.setDepths();

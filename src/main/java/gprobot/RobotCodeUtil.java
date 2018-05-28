@@ -56,6 +56,7 @@ public class RobotCodeUtil {
     static String[] makeRunnerCmd(File workerDir, int number) {
         List<String> cmdList = new ArrayList();
         cmdList.add("java");
+        cmdList.add("-Djava.awt.headless=true");
         cmdList.add("-DNOSECURITY=true"); // RMI cause security exception
         cmdList.add("-Xmx384m");
         cmdList.add("-cp");
@@ -217,8 +218,8 @@ public class RobotCodeUtil {
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "libs");
                 new File(workerFolder, ROBOTS_FOLDER+ File.separator + "sampleex").mkdirs();
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
-                copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH).toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"),
-                    workerFolder.toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"));
+                /*copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH).toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"),
+                    workerFolder.toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"));*/
                 String[] cmd = makeRunnerCmd(workerFolder, i);
                 runnerProcess[i] = execute("runner-" + i, cmd);
             }
