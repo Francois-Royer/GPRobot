@@ -318,13 +318,13 @@ public class ExpressionNode implements Serializable {
             "getGunHeat()",
             "getGunCoolingRate()",
             "(double) getOthers()",
-            //"getDistanceRemaining()",
+            "getDistanceRemaining()",
             "getHeadingRadians()",
-            //"getTurnRemainingRadians()",
+            "getTurnRemainingRadians()",
             "getGunHeadingRadians()",
-            // "getGunTurnRemainingRadians()",
-            "getRadarHeadingRadians()"/*,
-            "getRadarTurnRemainingRadians()"*/
+             "getGunTurnRemainingRadians()",
+            "getRadarHeadingRadians()",
+            "getRadarTurnRemainingRadians()"
     };
 
     static final String[] CONSTANT_TERMINALS = {
@@ -339,7 +339,7 @@ public class ExpressionNode implements Serializable {
             "RADAR_TURN_RATE_RADIANS",
             "ROBOT_HIT_DAMAGE",
             "ROBOT_HIT_BONUS",
-            "0",
+            "0.001",
             "1",
             "-1",
             "Math.random()", // random value from [0, 1]
@@ -414,15 +414,10 @@ public class ExpressionNode implements Serializable {
 
     static final String[][] FUNCTIONS_A3 = {
             {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
-            {"", " >= 0 ? ", " : ", ""}, // X >= 0 ? ifYes : ifNo
-            {"", " == 0 ? ", " : ", ""}, // X == 0 ? ifYes : ifNo
-            {"", " != 0 ? ", " : ", ""} // X != 0 ? ifYes : ifNo
     };
 
     static final String[][] FUNCTIONS_A4 = {
             {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
-            {"", " >= ", " ? ", " : ", ""}, // X >= Y ? ifYes : ifNo
-            {"", " == ", " ? ", " : ", ""}, // X == Y ? ifYes : ifNo
             {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
     };
 

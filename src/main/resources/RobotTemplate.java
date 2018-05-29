@@ -12,12 +12,8 @@ public class %s extends AdvancedRobot {
         setAdjustRadarForGunTurn(true);
 
         setColors(Color.red,Color.blue,Color.green);
-        while(true) {
-            if (getRadarTurnRemainingRadians() == 0)
-               turnRadarRight(360);
-            else
-               execute();
-        }
+        while(true)
+            turnRadarRight(Double.POSITIVE_INFINITY);
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
@@ -28,7 +24,7 @@ public class %s extends AdvancedRobot {
         // --- PHENOME 3 ---
         double turnRight = %s;
         // --- PHENOME 4 ---
-        double turnGunRight = turnRadarRight + %s;
+        double turnGunRight = %s;
         // --- PHENOME 5 ---
         double fire = %s;
 
