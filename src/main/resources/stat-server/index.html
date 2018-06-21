@@ -1,0 +1,43 @@
+<html>
+<head>
+<script type="text/javascript"
+  src="dygraph.js"></script>
+<link rel="stylesheet" src="dygraph-min.css" />
+</head>
+<body>
+<div id="graphdiv"
+     style="width:100%; height:600px;"></div>
+<script type="text/javascript">
+    g = new Dygraph(
+        document.getElementById("graphdiv"),
+        "run_data.txt", // path to CSV file
+        {visibility: [true, true, false, false, false]}          // options
+    );
+    function setStatus() {
+        document.getElementById("visibility").innerHTML =
+            g.visibility().toString();
+    }
+
+    function change(el) {
+        g.setVisibility(parseInt(el.id), el.checked);
+        setStatus();
+    }
+
+    function reload() {
+        g.updateOptions({file: "run_data.txt"});
+    }
+</script>
+<p><b>Show Series:</b></p>
+<p>
+    <input type=checkbox id="0" checked onClick="change(this)">
+    <label for="0"> Average Fitness</label><br/>
+    <input type=checkbox id="1" checked onClick="change(this)">
+    <label for="1"> Best Fitness</label><br/>
+    <input type=checkbox id="2" onClick="change(this)">
+    <label for="2"> Average Node</label><br/>
+    <input type=checkbox id="3" onClick="change(this)">
+    <label for="3"> Best Node</label>
+</p>
+
+</body>
+</html>
