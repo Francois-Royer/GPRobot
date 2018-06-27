@@ -56,13 +56,14 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         return engine.getLocalRepository(robotNames);
     }
 
-    static int getTotalScore(BattleResults result) {
-        return result.getSurvival()
+    static int getScore(BattleResults result) {
+        /*return result.getSurvival()
             + result.getLastSurvivorBonus()
             + result.getBulletDamage()
             + result.getBulletDamageBonus()
             + result.getRamDamage()
-            + result.getRamDamageBonus();
+            + result.getRamDamageBonus();*/
+        return result.getSurvival();
     }
 
     @Override
@@ -86,8 +87,8 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
 
     private double computeFitness(String robot, BattleResults[] results) {
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
-        int botScore = br.isPresent() ? getTotalScore(br.get()) : 0;
-        int totalScore = Stream.of(results).mapToInt(BattleRunner::getTotalScore).sum();
+        int botScore = br.isPresent() ? getScore(br.get()) : 0;
+        int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
 
         if (totalScore == 0) {
             // OMG, these robots are so poor that they do not score a single point

@@ -1,18 +1,25 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'java-library-distribution'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
     dependencies {
         classpath "org.springframework.boot:spring-boot-gradle-plugin:1.5.8.RELEASE"
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
     }
 }
 
 repositories {
     mavenCentral()
+}
+
+shadowJar {
+    configurations = [project.configurations.compile]
 }
 
 sourceCompatibility = 1.8
@@ -31,4 +38,5 @@ jar {
     manifest {
         attributes 'Main-Class': 'gprobot.RunGP',
                 'Class-Path': configurations.runtime.files.collect { "lib/$it.name" }.join(' ')
-    }}
+    }
+}

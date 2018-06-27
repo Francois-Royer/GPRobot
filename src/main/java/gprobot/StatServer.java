@@ -24,23 +24,29 @@ public class StatServer {
     class MyHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
+            String cacheControl="public, max-age=3600";
             byte[] content = new byte[0];
             int status = 200;
             String path = t.getRequestURI().getPath();
             File f = new File(".", path);
             if (f.canRead()) {
                 content = Files.readAllBytes(f.toPath());
+                cacheControl = "no-cache, no-store, must-revalidate";
             } else {
-                try {
-                    InputStream is = getClass().getResourceAsStream("/stat-server" + path);
+                try (InputStream is = getClass().getResourceAsStream("/stat-server" + path)) {
+                    if (is == null) throw new Exception("not found");
                     content = new byte[is.available()];
-                    is.read(content);
+                    int len = 0;
+                    while (len < content.length)
+                        len += is.read(content,len, content.length-len);
                 } catch (Exception e) {
                     content = "Ressource not found".getBytes();
                     status = 404;
                 }
             }
+            t.getResponseHeaders().set("Cache-Control", cacheControl);
             t.sendResponseHeaders(status, content.length);
+
             OutputStream os = t.getResponseBody();
             os.write(content);
             os.close();
