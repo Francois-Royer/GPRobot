@@ -30,6 +30,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     transient BattlefieldSpecification battlefield;
     transient String runnerPath;
     transient String[] opponentsName;
+    transient boolean one2one = true;
 
     public static void main(String[] args) {
         try {
@@ -56,6 +57,11 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         return engine.getLocalRepository(robotNames);
     }
 
+    public RobotSpecification[] getRobotSpecification(String bot, String oponent) {
+        String robotNames = bot + ',' + oponent;
+        return engine.getLocalRepository(robotNames);
+    }
+
     static int getScore(BattleResults result) {
         /*return result.getSurvival()
             + result.getLastSurvivorBonus()
@@ -63,7 +69,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             + result.getBulletDamageBonus()
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
-        return result.getSurvival();
+        return result.getSurvival() + result.getLastSurvivorBonus()*10;
     }
 
     @Override
@@ -73,15 +79,31 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
 
     @Override
     public double getRobotFitness(String robot) throws RemoteException {
+        return getRobotFitness(robot, opponents);
+    }
+
+    public double getRobotFitness(String robot, String[] opponentsRobots) throws RemoteException {
         String robotClass = TARGET_PACKAGE + "."+ robot;
         BattleObserver battleObserver = new BattleObserver();
         engine.addBattleListener(battleObserver);
 
-        RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponents);
-        BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS*opponents.length, battlefield, selectedBots);
+        RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
+        BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS*opponentsRobots.length, battlefield, selectedBots);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
         engine.close();
+
+        if (opponentsRobots.length > 1 && one2one)
+            fitnessScore = (fitnessScore + Stream.of(opponentsRobots).mapToDouble(opponent -> {
+                try {
+                    return getRobotFitness(robot, new String[]{opponent});
+                } catch (RemoteException e) {
+                    log.log(Level.SEVERE, "main", e);
+                    System.exit(1);
+                }
+                return 0;
+            }).sum() / opponentsRobots.length) / 2;
+
         return fitnessScore;
     }
 
