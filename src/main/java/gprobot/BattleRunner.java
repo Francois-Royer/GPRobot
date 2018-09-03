@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import static gprobot.RobocodeConf.ONE2ONE;
 import static gprobot.RobocodeConf.TARGET_PACKAGE;
 import static gprobot.RobotCodeUtil.getRunnerUrl;
 import static gprobot.RobocodeConf.opponents;
@@ -30,7 +31,6 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     transient BattlefieldSpecification battlefield;
     transient String runnerPath;
     transient String[] opponentsName;
-    transient boolean one2one = true;
 
     public static void main(String[] args) {
         try {
@@ -69,7 +69,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             + result.getBulletDamageBonus()
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
-        return result.getSurvival() + result.getLastSurvivorBonus()*10;
+        return result.getScore();
     }
 
     @Override
@@ -93,7 +93,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
         engine.close();
 
-        if (opponentsRobots.length > 1 && one2one)
+        if (opponentsRobots.length > 1 && ONE2ONE)
             fitnessScore = (fitnessScore + Stream.of(opponentsRobots).mapToDouble(opponent -> {
                 try {
                     return getRobotFitness(robot, new String[]{opponent});

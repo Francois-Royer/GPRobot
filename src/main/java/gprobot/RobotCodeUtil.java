@@ -39,8 +39,7 @@ public class RobotCodeUtil {
     }
 
     static boolean fsSupportSimLink = false;
-    static int nbProcs = Runtime.getRuntime().availableProcessors();
-
+    static int nbProcs = RUNNERS_COUNT;
     static {
         try {
             File symLink = new File("./symLinkTest" + UUID.randomUUID());

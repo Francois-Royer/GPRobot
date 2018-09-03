@@ -57,6 +57,11 @@ public class RunGP {
 
     public static void main(String[] args) throws IOException {
 
+        if (args.length >= 2)  {
+            RUNNERS_COUNT = Integer.valueOf(args[0]);
+            ONE2ONE = Boolean.valueOf(args[1]);
+        }
+
         new StatServer().start();
         new RunGP().runGP();
     }

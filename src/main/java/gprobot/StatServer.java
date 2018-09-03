@@ -28,6 +28,9 @@ public class StatServer {
             byte[] content = new byte[0];
             int status = 200;
             String path = t.getRequestURI().getPath();
+            if (path.length() <= 1) {
+                path = "/index.html";
+            }
             File f = new File(".", path);
             if (f.canRead()) {
                 content = Files.readAllBytes(f.toPath());
