@@ -2,6 +2,7 @@ package gprobot;
 
 import java.io.*;
 
+import static gprobot.RobocodeConf.BOT_PRFFIX;
 import static gprobot.RobocodeConf.random;
 import static gprobot.RobocodeConf.TARGET_PACKAGE;
 
@@ -49,7 +50,7 @@ public class MetaBot implements Serializable {
 
     String getBotName() {
         if (botName == null)
-            botName = "X_GPbot_" + memberGen + "_" + memberID;
+            botName = BOT_PRFFIX + memberGen + "_" + memberID;
         return botName;
     }
 

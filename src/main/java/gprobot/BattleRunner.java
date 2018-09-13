@@ -88,7 +88,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         engine.addBattleListener(battleObserver);
 
         RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
-        BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS*opponentsRobots.length, battlefield, selectedBots);
+        BattleSpecification battleSpec = new BattleSpecification(RobocodeConf.ROUNDS*2, battlefield, selectedBots);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
         engine.close();

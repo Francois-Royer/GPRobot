@@ -353,8 +353,14 @@ public class RunGP {
     }
 
     public void cleanRunData() throws IOException {
-        Stream.of(new File(".").listFiles())
-            .filter(f -> f.getName().matches("run_data.*.txt"))
+        Stream.of(
+            new File(TARGET_FOLDER)
+                .listFiles((d, name) -> name.startsWith(BOT_PRFFIX)))
+            .forEach(File::delete);
+
+        Stream.of(
+            new File(".")
+                .listFiles((d,name) ->  name.matches("run_data.*.txt")))
             .forEach(File::delete);
 
         appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness,Average nodes,Best nodes,Best name\n");

@@ -30,15 +30,17 @@ public class RobocodeConf {
     public static final BattlefieldSpecification BATTLEFIELD = new BattlefieldSpecification(800, 600);
 
     public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+    public static final String BOT_PRFFIX = "X_GPbot_";
+
 
     // constant that can be tunned
     public static final int POP_SIZE = 300;
     public static final int MAX_GENS = 40000;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 7;
-    public static final int ROUNDS = 5;
-    public static final int TOURNY_SIZE = 6; // Selection Pressure
-    public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;//*3/4;
+    public static final int ROUNDS = 10;
+    public static final int TOURNY_SIZE =4; // Selection Pressure
+    public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
     public static boolean ONE2ONE = true;
     public static final double PROB_CROSSOVER = 0.85;
     public static final double PROB_MUTATION = 0.05;
@@ -68,5 +70,4 @@ public class RobocodeConf {
         "voidious.Diamond"
     };
     static String[] opponents = sampleRobots;
-    //static String[] opponents = skilledRobots;
 }
