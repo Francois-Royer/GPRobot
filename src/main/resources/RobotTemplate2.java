@@ -5,6 +5,7 @@ import static robocode.Rules.*;
 import java.awt.Color;
 
 public class %s extends AdvancedRobot {
+
     public void run() {
 
         setAdjustGunForRobotTurn(true);
@@ -28,25 +29,43 @@ public class %s extends AdvancedRobot {
         double fire = %s;
 
         //out.println("ahead=" +ahead+ ", fire=" + fire);
-        //out.println("turnRight=" +turnRight+ ", turnGunRight=" + turnGunRight + ", turnRadarRight=" + turnRadarRight);
+        //out.println("osr turnRight=" +turnRight+ ", turnGunRight=" + turnGunRight + ", turnRadarRight=" + turnRadarRight);
+        out.println("turnRight=" +turnRight+ ", turnGunRight=" + turnGunRight + ", turnRadarRight=" + turnRadarRight);
         robotSetActions(ahead, turnRight, turnGunRight, turnRadarRight, fire);
     }
 
-    public void onHitByBullet(HitByBulletEvent e) {
+    /*public void onHitByBullet(HitByBulletEvent e) {
         // --- PHENOME 6 ---
-        double ahead=%s;
+        double ahead = %s;
         // --- PHENOME 7 ---
-        double turnRadarRight=%s;
+        double turnRadarRight = %s;
         // --- PHENOME 8 ---
-        double turnRight=%s;
+        double turnRight = %s;
         // --- PHENOME 9 ---
-        double turnGunRight=%s;
+        double turnGunRight = %s;
         // --- PHENOME 10 ---
-        double fire=%s;
+        double fire = %s;
 
         //out.println("ohbb ahead=" +ahead+ ", fire=" + fire);
         //out.println("ohbb turnRight=" +turnRight+ ", turnGunRight=" + turnGunRight + ", turnRadarRight=" + turnRadarRight);
-        robotSetActions(ahead,turnRight,turnGunRight,turnRadarRight,fire);
+        robotSetActions(ahead, turnRight, turnGunRight, turnRadarRight, fire);
+    }
+
+    public void onHitRobot(HitRobotEvent e) {
+        // --- PHENOME 11 ---
+        double ahead = %s;
+        // --- PHENOME 12 ---
+        double turnRadarRight = %s;
+        // --- PHENOME 13 ---
+        double turnRight = %s;
+        // --- PHENOME 14 ---
+        double turnGunRight = turnRadarRight + %s;
+        // --- PHENOME 15 ---
+        double fire = %s;
+
+        //out.println("ohbb ahead=" +ahead+ ", fire=" + fire);
+        //out.println("ohbb turnRight=" +turnRight+ ", turnGunRight=" + turnGunRight + ", turnRadarRight=" + turnRadarRight);
+        robotSetActions(ahead, turnRight, turnGunRight, turnRadarRight, fire);*/
     }
 
     private void robotSetActions(double ahead, double turnRight, double turnGunRight, double turnRadarRight, double fire) {

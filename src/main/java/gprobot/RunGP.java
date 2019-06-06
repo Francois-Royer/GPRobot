@@ -3,6 +3,7 @@ package gprobot;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
+
 import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
@@ -76,7 +77,7 @@ public class RunGP {
             host = InetAddress.getLocalHost().getHostAddress();
             console.println("Start rmi registry on " + host);
             LocateRegistry.createRegistry(1099);
-            console.println("Prepare " + RUNNERS_COUNT + " Runners");
+            console.println("Prepare " + RUNNERS_COUNT + " Runners ");
             prepareBattleRunners(RUNNERS_COUNT);
 
             Runtime.getRuntime().addShutdownHook(new Thread(RobotCodeUtil::killallRunner));

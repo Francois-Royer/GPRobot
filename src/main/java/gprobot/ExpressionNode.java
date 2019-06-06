@@ -17,27 +17,27 @@ public class ExpressionNode implements Serializable {
     static final double PROB_TERM_CONST = 0.15;
     static final double PROB_TERM_ERC = 0.1;
     static final double[] PROB_TERM = {
-            PROB_TERM_CONST,
-            PROB_TERM_UNIV,
-            PROB_TERM_EVENT
+        PROB_TERM_CONST,
+        PROB_TERM_UNIV,
+        PROB_TERM_EVENT
     };
     static final double PROB_FUNC_A1 = 0.2;
     static final double PROB_FUNC_A2 = 0.6;
     static final double PROB_FUNC_A3 = 0.05;
     static final double PROB_FUNC_A4 = 0.15;
     static final double[] PROB_FUNC = {
-            PROB_FUNC_A1,
-            PROB_FUNC_A2,
-            PROB_FUNC_A3,
-            PROB_FUNC_A4
+        PROB_FUNC_A1,
+        PROB_FUNC_A2,
+        PROB_FUNC_A3,
+        PROB_FUNC_A4
     };
     static final double PROB_MIDTREE_TERM = 0.35;
     static final double PROB_CROSS_ROOT = 0.3;
     static final double PROB_CROSS_TERMINAL = 0.1;
     static final double PROB_CROSS_FUNC = 0.6;
     static final double PROB_MUTATE_ROOT = 0.05;
-    static final double PROB_MUTATE_FUNC = 0.6;
-    static final double PROB_MUTATE_TERMINAL = 0.25;
+    static final double PROB_MUTATE_FUNC = 0.4;
+    static final double PROB_MUTATE_TERMINAL = 0.15;
 
     // Class Fields ///////////////////////////////////////////////////////////
     int depth;
@@ -309,55 +309,54 @@ public class ExpressionNode implements Serializable {
 
     // Zero-Arity Expressions (terminals)
     static final String[] UNIVERSAL_TERMINALS = {
-            "getEnergy()",
-            "getHeight()",
-            "getVelocity()", //???
-            "getWidth()",
-            "getX()",
-            "getY()",
-            "getGunHeat()",
-            "getGunCoolingRate()",
-            "(double) getOthers()",
-            "getDistanceRemaining()",
-            "getHeadingRadians()",
-            "getTurnRemainingRadians()",
-            "getGunHeadingRadians()",
-             "getGunTurnRemainingRadians()",
-            "getRadarHeadingRadians()",
-            "getRadarTurnRemainingRadians()"
+        "getEnergy()",
+        "getHeight()",
+        "getVelocity()", //???
+        "getWidth()",
+        "getX()",
+        "getY()",
+        "getGunHeat()",
+        "getGunCoolingRate()",
+        "(double) getOthers()",
+        "getDistanceRemaining()",
+        "getHeadingRadians()",
+        "getTurnRemainingRadians()",
+        "getGunHeadingRadians()",
+        "getGunTurnRemainingRadians()",
+        "getRadarHeadingRadians()",
+        "getRadarTurnRemainingRadians()"
     };
 
     static final String[] CONSTANT_TERMINALS = {
-            // Rules Constants
-            "ACCELERATION",
-            "DECELERATION",
-            "MAX_VELOCITY",
-            "MIN_BULLET_POWER",
-            "MAX_BULLET_POWER",
-            "MAX_TURN_RATE_RADIANS",
-            "GUN_TURN_RATE_RADIANS",
-            "RADAR_TURN_RATE_RADIANS",
-            "ROBOT_HIT_DAMAGE",
-            "ROBOT_HIT_BONUS",
-            "0.001",
-            "1",
-            "-1",
-            "Math.random()", // random value from [0, 1]
-            "(Math.random()*2 - 1)", // random value from [-1, 1]
-            "Math.PI", // 3.14...
-            "(2*Math.PI)", // 3.14...
-            "(Math.PI/2)" // 3.14...
-            //"runVar1",	// static variables
-            //"runVar2"
+        // Rules Constants
+        "ACCELERATION",
+        "DECELERATION",
+        "MAX_VELOCITY",
+        "MIN_BULLET_POWER",
+        "MAX_BULLET_POWER",
+        "MAX_TURN_RATE_RADIANS",
+        "GUN_TURN_RATE_RADIANS",
+        "RADAR_TURN_RATE_RADIANS",
+        "ROBOT_HIT_DAMAGE",
+        "ROBOT_HIT_BONUS",
+        "0.00000001",
+        "1",
+        "2",
+        "Math.PI",
+        "Math.random()", // random value from [0, 1]
+        "(Math.random()*2 - 1)", // random value from [-1, 1]
+        "Math.floor((Math.random()*10))" // random int from [ 0, 10]
+        //"runVar1",	// static variables
+        //"runVar2"
     };
 
     // terminals that can only be called during a ScannedRobotEvent
     static final String[] SCANNED_EVENT_TERMINALS = {
-            "e.getBearingRadians()", // Returns difference between enemy and robot heading
-            "e.getDistance()", // Returns distance to enemy
-            "e.getEnergy()", // Returns energy (life) of enemy
-            "e.getHeadingRadians()", // Returns direction enemy is facing
-            "e.getVelocity()" // Returns the velocity of enemy
+        "e.getBearingRadians()", // Returns difference between enemy and robot heading
+        "e.getDistance()", // Returns distance to enemy
+        "e.getEnergy()", // Returns energy (life) of enemy
+        "e.getHeadingRadians()", // Returns direction enemy is facing
+        "e.getVelocity()" // Returns the velocity of enemy
     };
 
     // terminals that can only be called during a HitByBulletEvent
@@ -375,9 +374,9 @@ public class ExpressionNode implements Serializable {
     };
 
     static final String[][] TERMINALS = {
-            CONSTANT_TERMINALS,
-            UNIVERSAL_TERMINALS,
-            SCANNED_EVENT_TERMINALS
+        CONSTANT_TERMINALS,
+        UNIVERSAL_TERMINALS,
+        SCANNED_EVENT_TERMINALS
     };
 
     public static void setScanEventTerminals() {
@@ -387,46 +386,50 @@ public class ExpressionNode implements Serializable {
     public static void setHitByBulletEventTerminals() {
         TERMINALS[2] = HIT_BY_BULLET_EVENT_TERMINALS;
     }
+
     public static void setHitRobotEventTerminals() {
         TERMINALS[2] = HIT_ROBOT_EVENT_TERMINALS;
     }
 
     static final String[][] FUNCTIONS_A1 = {
-            {"Math.abs(", ")"}, // Absolute Value
-            // Too much Nan caused by Arc so add %1
-            {"Math.acos(", "%1)"}, // ArcCosine
-            {"Math.asin(", "%1)"}, // ArcSine
-            {"Math.cos(", ")"}, // Cosine
-            {"Math.sin(", ")"}, // Sine
-            {"Math.sqrt(Math.abs(", "))"}, // square root
-            {"Math.exp(", ")"}, // e^x
-            {"Math.log(Math.abs(", "))"}
+        {"Math.abs(", ")"}, // Absolute Value
+        // Too much Nan caused by Arc so add %1
+        {"Math.acos(", "%1)"}, // ArcCosine
+        {"Math.asin(", "%1)"}, // ArcSine
+        {"Math.cos(", ")"}, // Cosine
+        {"Math.sin(", ")"}, // Sine
+        {"Math.sqrt(Math.abs(", "))"}, // square root
+        {"Math.exp(", ")"}, // e^x
+        {"Math.log(Math.abs(", "))"},
+        {"Rules.getBulletDamage(", ")"},
+        {"Rules.getBulletSpeed(", ")"},
+        {"Rules.getGunHeat(", ")"}
     };
 
     static final String[][] FUNCTIONS_A2 = {
-            {"", " - ", ""}, // add
-            {"", " + ", ""}, // subtract
-            {"", " * ", ""}, // multiply
-            {"", " / ", ""}, // divide (CHECK FOR ZERO!)
-            {"Math.min(", ", ", ")"}, // minimum
-            {"Math.max(", ", ", ")"}, // maximum
+        {"", " - ", ""}, // add
+        {"", " + ", ""}, // subtract
+        {"", " * ", ""}, // multiply
+        {"", " / ", ""}, // divide (CHECK FOR ZERO!)
+        {"Math.min(", ", ", ")"}, // minimum
+        {"Math.max(", ", ", ")"}, // maximum
     };
 
     static final String[][] FUNCTIONS_A3 = {
-            {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
+        {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
     };
 
     static final String[][] FUNCTIONS_A4 = {
-            {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
-            {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
+        {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
+        {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
     };
 
     // All expressions available to the GP
     static final String[][][] EXPRESSIONS = {
-            TERMINALS,
-            FUNCTIONS_A1,
-            FUNCTIONS_A2,
-            FUNCTIONS_A3,
-            FUNCTIONS_A4
+        TERMINALS,
+        FUNCTIONS_A1,
+        FUNCTIONS_A2,
+        FUNCTIONS_A3,
+        FUNCTIONS_A4
     };
 }

@@ -34,12 +34,12 @@ public class RobocodeConf {
 
 
     // constant that can be tunned
-    public static final int POP_SIZE = 300;
+    public static final int POP_SIZE = 600;
     public static final int MAX_GENS = 40000;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 7;
-    public static final int ROUNDS = 10;
-    public static final int TOURNY_SIZE =4; // Selection Pressure
+    public static final int ROUNDS = 50;
+    public static final int TOURNY_SIZE =6; // Selection Pressure
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
     public static boolean ONE2ONE = true;
     public static final double PROB_CROSSOVER = 0.85;
@@ -49,7 +49,7 @@ public class RobocodeConf {
 
     static String[] sampleRobots = {
             //"sample.Corners",
-            "sample.Crazy",
+            //"sample.Crazy",
             //"sample.Fire",
             //"sample.Interactive",
             //"sample.Interactive_v2",
@@ -58,11 +58,11 @@ public class RobocodeConf {
             //"sample.PaintingRobot",
             //"sample.RamFire",
             //"sample.SittingDuck",
-            "sample.SpinBot",
+            //"sample.SpinBot",
             //"sample.Target",
-            "sample.Tracker",
+            //"sample.Tracker",
             //"sample.TrackFire",
-            "sample.VelociRobot",
+            //"sample.VelociRobot",
             "sample.Walls"
     };
 

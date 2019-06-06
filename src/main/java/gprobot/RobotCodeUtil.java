@@ -10,7 +10,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,18 +38,20 @@ public class RobotCodeUtil {
     }
 
     static boolean fsSupportSimLink = false;
-    static int nbProcs = RUNNERS_COUNT;
     static {
         try {
             File symLink = new File("./symLinkTest" + UUID.randomUUID());
             createSymbolicLink(symLink.toPath(), new File(".").toPath());
             symLink.delete();
 
-            fsSupportSimLink = true;
+            fsSupportSimLink = true;// && !System.getProperty("os.name").toLowerCase().contains("win");
+            log.log(Level.FINE, "Local file system support symbolic link");
         } catch (Exception e) {
+            log.log(Level.FINE, "Local file system don't support symbolic link");
             // fs may not support symlink, too bad...
         }
     }
+
 
     static String[] makeRunnerCmd(File workerDir, int number) {
         List<String> cmdList = new ArrayList();
@@ -58,6 +59,7 @@ public class RobotCodeUtil {
         cmdList.add("-Djava.awt.headless=true");
         cmdList.add("-DNOSECURITY=true"); // RMI cause security exception
         cmdList.add("-Xmx384m");
+
         cmdList.add("-cp");
 
         StringBuilder cpBuilder = new StringBuilder(workerDir.toPath().resolve("libs").resolve(ROBOCODE_JAR).toString());
@@ -65,8 +67,8 @@ public class RobotCodeUtil {
         Stream.of(currentClassPath)
                 .filter(p -> !p.contains(ROBOCODE_JAR))
                 .forEach(p -> cpBuilder.append(File.pathSeparator).append(p));
-
         cmdList.add(cpBuilder.toString());
+
         cmdList.add("gprobot.BattleRunner");
         cmdList.add(Integer.toString(number));
         cmdList.add(workerDir.toString());
@@ -77,7 +79,7 @@ public class RobotCodeUtil {
 
     public static void compileBots(final String[] sources) throws InterruptedException {
         // Compile code
-        ExecutorService executorService = new ThreadPoolExecutor(nbProcs, nbProcs, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         List<List<String>> chunks = chunkList(Arrays.asList(sources), 20);
 
         for (List<String> chunk : chunks) {
@@ -87,9 +89,11 @@ public class RobotCodeUtil {
                     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
                     StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
                     Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(srcs);
-                    compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
+                    JavaCompiler.CompilationTask t = compiler.getTask(null, fileManager, null, null, null, compilationUnits);
+                    t.call();
                 } catch (Exception e) {
                    log.log(Level.SEVERE,"CompileBots", e);
+
                 }
             });
         }
@@ -110,6 +114,7 @@ public class RobotCodeUtil {
     }
 
     public static Process execute(String name, String[] command) throws IOException {
+        log.log(Level.FINE, "execute " + name + ": " + String.join(" ", command));
         Process process = Runtime.getRuntime().exec(command);
         printMsg(name + " |", process.getInputStream());
         printMsg(name + " |", process.getErrorStream());
@@ -159,6 +164,7 @@ public class RobotCodeUtil {
     }
 
     public static void copyOrLinkFile(Path src, Path target) throws IOException {
+        log.log(Level.FINE, "copyOrLink " + src + " " + target);
         if (fsSupportSimLink) {
             createSymbolicLink(target, src);
         } else {
@@ -217,8 +223,8 @@ public class RobotCodeUtil {
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "libs");
                 new File(workerFolder, ROBOTS_FOLDER+ File.separator + "sampleex").mkdirs();
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
-                /*copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH).toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"),
-                    workerFolder.toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"));*/
+                //copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH).toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"),
+                    //workerFolder.toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"));
                 String[] cmd = makeRunnerCmd(workerFolder, i);
                 runnerProcess[i] = execute("runner-" + i, cmd);
             }
