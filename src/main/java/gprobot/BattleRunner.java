@@ -63,14 +63,14 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
     }
 
     static int getScore(BattleResults result) {
-        return result.getSurvival()
+        /*return result.getSurvival()
             + result.getLastSurvivorBonus()*4
             + result.getBulletDamage()
             + result.getBulletDamageBonus()
             + result.getRamDamage()
-            + result.getRamDamageBonus();
+            + result.getRamDamageBonus();*/
 
-        //return result.getScore();
+        return result.getScore();
     }
 
     @Override
@@ -89,7 +89,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         engine.addBattleListener(battleObserver);
 
         RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
-        int rounds = RobocodeConf.ROUNDS*opponentsRobots.length;
+        int rounds = RobocodeConf.ROUNDS * opponentsRobots.length;
         BattleSpecification battleSpec = new BattleSpecification(rounds, battlefield, selectedBots);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());

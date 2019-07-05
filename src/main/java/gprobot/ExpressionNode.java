@@ -318,13 +318,11 @@ public class ExpressionNode implements Serializable {
         "getGunHeat()",
         "getGunCoolingRate()",
         "(double) getOthers()",
-        "getDistanceRemaining()",
         "getHeadingRadians()",
-        "getTurnRemainingRadians()",
         "getGunHeadingRadians()",
-        "getGunTurnRemainingRadians()",
         "getRadarHeadingRadians()",
-        "getRadarTurnRemainingRadians()"
+        "getOpponentsX()",
+        "getOpponentsY()"
     };
 
     static final String[] CONSTANT_TERMINALS = {

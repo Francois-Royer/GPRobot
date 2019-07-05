@@ -4,32 +4,64 @@
         <title>Genetic Programming Robocade Statistics</title>
         <meta http-equiv="refresh" content="60" />
     </head>
-    <script type="text/javascript"
-            src="dygraph.js"></script>
-    <link rel="stylesheet" src="dygraph.css"/>
+    <script type="text/javascript" src="http://dygraphs.com/dygraph.min.js"></script>
+    <script type="text/javascript" src="http://dygraphs.com/src/extras/smooth-plotter.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="dygraph.css">
 </head>
 <body>
-<div id="graphdiv"
-     style="width:100%; height:600px;"></div>
+<style>.dygraph-legend { text-align: right; background: none; }</style>
+<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01" value="0.33"></p>
+<div id="graphdiv" class="chart" style="width:100%; height:300px"></div>
+<div id="graphdiv2" class="chart" style="width:100%; height:300px;"></div>
+
 <script type="text/javascript">
-    g = new Dygraph(
-        document.getElementById("graphdiv"),
-        "run_data.txt", // path to CSV file
-        {visibility: [true, true, false, false, false]}          // options
-    );
-    function setStatus() {
-        document.getElementById("visibility").innerHTML =
-            g.visibility().toString();
+    var g;
+    var g2;
+    function drawPlot() {
+        g = new Dygraph(
+            document.getElementById("graphdiv"),
+            "run_data.txt", {
+                legend: 'always',
+                xlabel: 'Generation',
+                ylabel: 'Fitness (%)',
+                plotter: smoothPlotter,
+                strokeWidth: 2,
+                visibility: [true, true, false, false, false]}
+        );
+
+        g2 = new Dygraph(
+            document.getElementById("graphdiv2"),
+            "run_data.txt", {
+                legend: 'always',
+                xlabel: 'Generation',
+                ylabel: 'Nodes',
+                plotter: smoothPlotter,
+                strokeWidth: 2,
+                visibility: [false, false, true, true, false]}
+        );
     }
+    drawPlot();
 
     function change(el) {
         g.setVisibility(parseInt(el.id), el.checked);
-        setStatus();
+    }
+
+    function change2(el) {
+        g2.setVisibility(parseInt(el.id), el.checked);
     }
 
     function reload() {
         g.updateOptions({file: "run_data.txt"});
+        g2.updateOptions({file: "run_data.txt"});
     }
+
+    var smoothRangeEl = document.getElementById('smoothing-amount');
+    smoothRangeEl.addEventListener('input', function() {
+        var param = parseFloat(smoothRangeEl.value);
+        smoothPlotter.smoothing = param;
+        drawPlot();
+    });
 
 </script>
 <p><b>Show Series:</b></p>
@@ -38,9 +70,9 @@
     <label for="0"> Average Fitness</label><br/>
     <input type=checkbox id="1" checked onClick="change(this)">
     <label for="1"> Best Fitness</label><br/>
-    <input type=checkbox id="2" onClick="change(this)">
+    <input type=checkbox id="2" checked onClick="change2(this)">
     <label for="2"> Average Node</label><br/>
-    <input type=checkbox id="3" onClick="change(this)">
+    <input type=checkbox id="3" checked onClick="change2(this)">
     <label for="3"> Best Node</label>
 </p>
 

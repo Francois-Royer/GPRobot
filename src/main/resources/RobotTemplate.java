@@ -4,7 +4,26 @@ import robocode.*;
 import static robocode.Rules.*;
 import java.awt.Color;
 
+import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
+
 public class %s extends AdvancedRobot {
+    class Opponent {
+        double x;
+        double y;
+        double energy;
+
+        public Opponent(double x, double y, double energy) {
+            this.x = x;
+            this.y = y;
+            this.energy = energy;
+        }
+    }
+
+    Map<String, Opponent>opponents = new HashMap<>();
+
     public void run() {
 
         setAdjustGunForRobotTurn(true);
@@ -16,6 +35,8 @@ public class %s extends AdvancedRobot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
+        updateOpponents(e);
+
         // --- PHENOME 1 ---
         double ahead = %s;
         // --- PHENOME 2 ---
@@ -55,5 +76,33 @@ public class %s extends AdvancedRobot {
         setTurnGunRightRadians(turnGunRight);
         setTurnRadarRightRadians(turnRadarRight);
         setFire(fire);
+    }
+
+    public void onRobotDeath(RobotDeathEvent event) {
+        opponents.remove(event.getName());
+    }
+
+    private void updateOpponents(ScannedRobotEvent e) {
+        double x = getX() + e.getDistance() * Math.cos(e.getHeadingRadians());
+        double y = getY() + e.getDistance() * Math.sin(e.getHeadingRadians());
+        opponents.put(e.getName(), new Opponent(x, y, e.getEnergy()));
+    }
+
+    private double getOppenentsEnergy() {
+        double sum=0;
+        for (Opponent o: opponents.values()) sum += o.energy;
+        return sum;
+    }
+
+    private double getOpponentsX() {
+        double sum=0;
+        for (Opponent o: opponents.values()) sum += o.x * o.energy;
+        return sum / getOppenentsEnergy() / getOthers();
+    }
+
+    private double getOpponentsY() {
+        double sum=0;
+        for (Opponent o: opponents.values()) sum += o.y * o.energy;
+        return sum / getOppenentsEnergy() / getOthers();
     }
 }

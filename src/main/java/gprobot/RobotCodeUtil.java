@@ -58,7 +58,7 @@ public class RobotCodeUtil {
         cmdList.add("java");
         cmdList.add("-Djava.awt.headless=true");
         cmdList.add("-DNOSECURITY=true"); // RMI cause security exception
-        cmdList.add("-Xmx384m");
+        cmdList.add("-Xmx512m");
 
         cmdList.add("-cp");
 
@@ -139,7 +139,7 @@ public class RobotCodeUtil {
     }
 
     public static void clearBots(int gen, int pop, int bestID) {
-        File oldJava;
+        File toDelete;
         File oldClass;
 
         for (int i = 0; i < pop; i++) {
@@ -148,10 +148,9 @@ public class RobotCodeUtil {
             }
             String oldName = gRobotName(gen, i);
 
-            oldJava = new File(botsrcFilePath(oldName));
-            oldClass = new File(botClassFilePath(oldName));
-            oldJava.delete();
-            oldClass.delete();
+            new File(botsrcFilePath(oldName)).delete();
+            new File(botClassFilePath(oldName)).delete();
+            new File(botOpponentClassFilePath(oldName)).delete();
         }
     }
 
@@ -161,6 +160,10 @@ public class RobotCodeUtil {
 
     public static final String botClassFilePath(String botName) {
         return RobocodeConf.TARGET_FOLDER + File.separator + botName + ".class";
+    }
+
+    public static final String botOpponentClassFilePath(String botName) {
+        return RobocodeConf.TARGET_FOLDER + File.separator + botName + "$Opponent.class";
     }
 
     public static void copyOrLinkFile(Path src, Path target) throws IOException {
@@ -195,6 +198,9 @@ public class RobotCodeUtil {
 
         File srcClass = new File(botClassFilePath(name));
         File destClass = new File(runnerBotsFolder, name + ".class");
+        copyOrLinkFile(srcClass.toPath(), destClass.toPath());
+        srcClass = new File(botClassFilePath(name + "$Opponent"));
+        destClass = new File(runnerBotsFolder, name + "$Opponent.class");
         copyOrLinkFile(srcClass.toPath(), destClass.toPath());
     }
 
