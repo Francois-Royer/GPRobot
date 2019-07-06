@@ -9,6 +9,7 @@ import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
 import robocode.control.RobotSpecification;
 
+import java.awt.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
