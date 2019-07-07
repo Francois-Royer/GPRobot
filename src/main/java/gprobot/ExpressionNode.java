@@ -320,7 +320,11 @@ public class ExpressionNode implements Serializable {
         "(double) getOthers()",
         "getHeadingRadians()",
         "getGunHeadingRadians()",
-        "getRadarHeadingRadians()"
+        "getRadarHeadingRadians()",
+        "getSafeTurn()",
+        "getSafeAhead()",
+        "getClosestTurn()",
+        "fireClosestIfPossible()"
     };
 
     static final String[] CONSTANT_TERMINALS = {

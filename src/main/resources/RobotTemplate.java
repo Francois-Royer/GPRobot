@@ -11,15 +11,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-
 public class %s extends AdvancedRobot {
-    int d=10;
     Point unsafePosition;
     Point safePosition;
     Point center;
+    Point closestPred;
 
     double forward=1;
-    double offset =30;
+    double offset =54;
+
+    double turnRadarRight = 0;
+    double turnRight = 0;
+    double ahead = 0;
+    double turnGunRight = 0;
+    double fire = 0;
+    ScannedRobotEvent e = null;
 
     public void run() {
 
@@ -27,36 +33,41 @@ public class %s extends AdvancedRobot {
         setAdjustRadarForGunTurn(true);
         center = new Point((int)getBattleFieldWidth()/2, (int)getBattleFieldHeight()/2);
         setColors(Color.red,Color.blue,Color.green);
-
         while(true) {
-            if (getRadarTurnRemainingRadians() == 0)
-                setTurnRadarRightRadians(PI * 2);
-            else
-                execute();
             updatePositions();
-            setTurnRightRadians(getSafeTurn());
-            setAhead(getSafeAhead());
+            if (e != null){
+                // --- PHENOME 1 ---
+                turnRadarRight=%s;
+                // --- PHENOME 2 ---
+                turnRight = %s;
+                // --- PHENOME 3 ---
+                ahead = %s;
+                // --- PHENOME 4 ---
+                turnGunRight = %s;
+                // --- PHENOME 5 ---
+                fire = %s;
+                e=null;
+            }
+            if (getRadarTurnRemainingRadians() == 0)
+                turnRadarRight = PI *2;
+
+            if (getOthers()>1){
+                turnRight=getSafeTurn();
+                ahead=getSafeAhead();
+                turnGunRight=getClosestTurn();
+                fire=fireClosestIfPossible();
+            }
+
+            robotSetActions();
+            execute();
         }
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
+        this.e = e;
         updateOpponents(e);
-
-        // --- PHENOME 1 ---
-        double turnRadarRight = %s;
-        // --- PHENOME 2 ---
-        double turnRight = getSafeTurn();
-        // --- PHENOME 3 ---
-        double ahead = getSafeAhead();
-        // --- PHENOME 4 ---
-        double turnGunRight = %s;
-        // --- PHENOME 5 ---
-        double fire = %s;
-
-        //out.println(String.format("ahead=%%.2f turnRight=%%.2f", ahead, turnRight));
-        //out.println("turnRight=" +turnRight+ ", turnGunRight=" + turnGunRight + ", turnRadarRight=" + turnRadarRight);
-        robotSetActions(ahead, turnRight, turnGunRight, turnRadarRight, fire);
     }
+
     public void onRobotDeath(RobotDeathEvent event) {
         opponents.remove(event.getName());
         updatePositions();
@@ -67,9 +78,11 @@ public class %s extends AdvancedRobot {
         drawCircle(g, Color.YELLOW, center);
         drawCircle(g, Color.GREEN, safePosition);
 
-        for (Opponent o: opponents.values()) {
-            drawCircle(g, Color.PINK, getPoint(o));
-        }
+        for (Opponent o: opponents.values())
+           drawCircle(g, (o == closest) ? Color.CYAN :Color.PINK, getPoint(o));
+
+        if (closestPred != null)
+            drawCircle(g, Color.MAGENTA, closestPred);
     }
     //public void onHitWall(HitWallEvent e) { forward *= -1; }
     //public void onHitRobot(HitRobotEvent e) { forward *= -1; }
@@ -93,13 +106,15 @@ public class %s extends AdvancedRobot {
     }
 
     Map<String, Opponent>opponents = new HashMap<>();
+    Opponent closest;
 
-    private void robotSetActions(double ahead, double turnRight, double turnGunRight, double turnRadarRight, double fire) {
+    private void robotSetActions() {
         setAhead(ahead);
         setTurnRightRadians(turnRight);
         setTurnGunRightRadians(turnGunRight);
         setTurnRadarRightRadians(turnRadarRight);
-        setFire(fire);
+        if (fire > 0)
+            setFire(fire);
     }
 
     private void updateOpponents(ScannedRobotEvent e) {
@@ -110,6 +125,7 @@ public class %s extends AdvancedRobot {
         opponents.put(e.getName(), new Opponent(x, y, e.getEnergy(), e.getVelocity(), mod2PI(PI/2 - e.getHeadingRadians()), getTime()));
         updatePositions();
     }
+
 
     private void moveOponent(Opponent o, long now) {
         if (o.lastUpdate >= now) return;
@@ -124,11 +140,18 @@ public class %s extends AdvancedRobot {
         double totalEnergy = getOpponentsEnergy();
         double x=0;
         double y=0;
+        double d=Double.POSITIVE_INFINITY;
 
         for (Opponent o: opponents.values()) {
             moveOponent(o, now);
             x += o.x * o.energy;
             y += o.y * o.energy;
+
+            double od = getCurrentPoint().distance(getPoint(o));
+            if (od < d) {
+                closest = o;
+                d=od;
+            }
         }
 
         unsafePosition = new Point((int) (x/totalEnergy), (int) (y/totalEnergy));
@@ -158,7 +181,11 @@ public class %s extends AdvancedRobot {
 
     private double getOpponentsEnergy() {
         double sum=0;
-        for (Opponent o: opponents.values()) sum += o.energy;
+        for (Opponent o: opponents.values()) {
+            if (o.energy == 0)
+                o.energy = 0.00000001; // Avoid zero div
+            sum += o.energy;
+        }
         return sum;
     }
 
@@ -212,8 +239,58 @@ public class %s extends AdvancedRobot {
     }
 
     private void drawCircle(Graphics2D g, Color c, Point p) {
+        int d=10;
         g.setColor(c);
         g.fillArc(p.x-d/2, p.y-d/2, d, d, 0, 360);
     }
 
+    private double fireClosestIfPossible() {
+        if (closestPred == null ||
+            closestPred.x < 0 || closest.x>getBattleFieldWidth() ||
+            closest.y < 0 || closest.y>getBattleFieldHeight() ||
+            getGunTurnRemainingRadians() > 0.001)
+            return 0;
+
+        return fireClosest();
+    }
+
+    private double fireClosest() {
+        return Math.min(1000 / getCurrentPoint().distance(getPoint(closest)), 3);
+    }
+
+    private double getClosestTurn() {
+        if (closest == null)
+            return 0;
+
+        // calculate firepower based on distance
+        double firePower = fireClosest();
+        // calculate speed of bullet
+        double bulletSpeed = 20 - firePower * 3;
+
+        // distance = rate * time, solved for time
+        long time = (long)(getCurrentPoint().distance(getPoint(closest)) / bulletSpeed);
+
+        double x=-1;
+        double y=-1;
+
+        for (int i=0; i<3 ; i++) {
+
+            Double d = closest.speed * time;
+
+            x = closest.x + d * cos(closest.direction);
+            y = closest.y + d * sin(closest.direction);
+            time = (long)(getCurrentPoint().distance(new Point((int)x, (int) y)) / bulletSpeed);
+        }
+
+        closestPred = new Point((int) x, (int) y);
+
+        double ga = mod2PI(PI/2 - getGunHeadingRadians());
+        double ta = getAngle(getCurrentPoint(), new Point((int) x, (int) y));
+
+        if (abs(ga - ta) < PI) {
+            return ga - ta;
+        }
+
+        return mod2PI(ta-ga);
+    }
 }
