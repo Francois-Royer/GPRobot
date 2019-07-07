@@ -264,8 +264,9 @@ public class %s extends AdvancedRobot {
 
         // calculate firepower based on distance
         double firePower = fireClosest();
+
         // calculate speed of bullet
-        double bulletSpeed = 20 - firePower * 3;
+        double bulletSpeed = Rules.getBulletSpeed(firePower);
 
         // distance = rate * time, solved for time
         long time = (long)(getCurrentPoint().distance(getPoint(closest)) / bulletSpeed);
@@ -280,6 +281,11 @@ public class %s extends AdvancedRobot {
             x = closest.x + d * cos(closest.direction);
             y = closest.y + d * sin(closest.direction);
             time = (long)(getCurrentPoint().distance(new Point((int)x, (int) y)) / bulletSpeed);
+        }
+
+        if (x < 0 || x>getBattleFieldWidth() || y < 0 || y>getBattleFieldHeight()) {
+            closestPred = null;
+            return 0;
         }
 
         closestPred = new Point((int) x, (int) y);
