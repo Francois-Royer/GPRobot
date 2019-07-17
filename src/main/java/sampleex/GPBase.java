@@ -47,9 +47,6 @@ public class GPBase extends AdvancedRobot {
 
         while(true) {
 
-            if (sre != null)
-                sre = null;
-            else
                 doTurn();
 
             execute();
