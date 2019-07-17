@@ -46,9 +46,7 @@ public class GPBase extends AdvancedRobot {
         setColors(Color.red,Color.blue,Color.green);
 
         while(true) {
-
-                doTurn();
-
+            doTurn();
             execute();
         }
 
@@ -71,7 +69,7 @@ public class GPBase extends AdvancedRobot {
 
                if (ra >= mostLeft) scandirection = -1;
                if (ra <= mostRight) scandirection = 1;
-               turnRadarLeft = Rules.RADAR_TURN_RATE_RADIANS*scandirection;
+               turnRadarLeft = PI * 2 *scandirection;
 
         } else
             turnRadarLeft = PI * 2;
@@ -160,8 +158,8 @@ public class GPBase extends AdvancedRobot {
         if (o.lastUpdate >= now) return;
         long time = now-o.lastUpdate;
         for (long i=0; i<time; i++) {
-            o.x += o.velocity * cos(o.direction);
-            o.y += o.velocity * sin(o.direction);
+            o.x = ensureXInBatleField(o.x  + o.velocity * cos(o.direction));
+            o.y = ensureYInBatleField(o.y + o.velocity * sin(o.direction));
             o.direction += o.rotationRate;
         }
         o.lastUpdate=now;
@@ -277,7 +275,7 @@ public class GPBase extends AdvancedRobot {
             return 0;
         }
 
-        for (int i=0; i<10 ; i++) {
+        for (int i=0; i<20 ; i++) {
             closestPred = getPoint(closest);
             double firePower = getFirePower(closestPred);
             double bulletSpeed = Rules.getBulletSpeed(firePower);
@@ -286,16 +284,11 @@ public class GPBase extends AdvancedRobot {
             double direction = closest.direction;
 
             for (long t=0; t<time; t++) {
-                closestPred.x += closest.velocity * cos(direction);
-                closestPred.y += closest.velocity * sin(direction);
+                closestPred.x = (int) ensureXInBatleField(closestPred.x + closest.velocity * cos(direction));
+                closestPred.y = (int) ensureYInBatleField(closestPred.y + closest.velocity * sin(direction));
                 direction += closest.rotationRate;
             }
             time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
-        }
-
-        if (closestPred.x < 0 || closestPred.x>getBattleFieldWidth() || closestPred.y < 0 || closestPred.y>getBattleFieldHeight()) {
-            closestPred = null;
-            return 0;
         }
 
         double ga = trigoAngle(getGunHeadingRadians());
@@ -314,6 +307,14 @@ public class GPBase extends AdvancedRobot {
 
     private Point getPoint(Opponent o) {
         return new Point((int) o.x,(int) o.y);
+    }
+
+    public double ensureXInBatleField(double x) {
+        return max(offset, min(getBattleFieldWidth()-offset, x));
+    }
+
+    public double ensureYInBatleField(double y) {
+        return max(offset, min(getBattleFieldHeight()-offset, y));
     }
 
     private void drawCircle(Graphics2D g, Color c, Point p) {
