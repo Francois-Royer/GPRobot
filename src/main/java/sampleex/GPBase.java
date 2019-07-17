@@ -12,18 +12,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GPBase extends AdvancedRobot {
-    Point unsafePosition;
-    Point safePosition;
-    Point center;
+    public static double TANK_SIZE=36;
 
-    Point closestPred;
+    Point.Double unsafePosition;
+    Point.Double safePosition;
+    Point.Double center;
+
+    Point.Double closestPred;
 
     public double mostLeft;
     public double mostRight;
 
     public double forward=1;
     public double scandirection=1;
-    public double offset =54;
+    public double offset =TANK_SIZE *3/2;
 
     public double turnLeft = 0;
     public double turnGunLeft = 0;
@@ -42,7 +44,7 @@ public class GPBase extends AdvancedRobot {
 
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
-        center = new Point((int)getBattleFieldWidth()/2, (int)getBattleFieldHeight()/2);
+        center = new Point.Double(getBattleFieldWidth()/2, getBattleFieldHeight()/2);
         setColors(Color.red,Color.blue,Color.green);
 
         while(true) {
@@ -108,7 +110,9 @@ public class GPBase extends AdvancedRobot {
         double velocity;
         double direction;
         double rotationRate;
+        double accel;
         long lastUpdate;
+        double vMax;
 
         public Opponent(String name, double x, double y, double energy, double velocity, double direction, long lastUpdate) {
             this.name = name;
@@ -120,10 +124,16 @@ public class GPBase extends AdvancedRobot {
             Opponent old = opponents.get(name);
             if (old != null && lastUpdate != old.lastUpdate) {
                 this.rotationRate = normalRelativeAngle( direction - old.direction ) / ( lastUpdate - old.lastUpdate);
-            } else
+                if (velocity == 0) accel = 0;
+                else
+                    accel = velocity - old.velocity;
+                this.vMax = max(old.vMax, abs(velocity));
+            } else {
                 this.rotationRate = 0;
-
+                this.vMax = abs(velocity);
+            }
             this.lastUpdate = lastUpdate;
+            out.printf("velocity=%.02f vmax=%.02f\n", this.velocity, this.vMax);
         }
     }
 
@@ -161,6 +171,7 @@ public class GPBase extends AdvancedRobot {
             o.x = ensureXInBatleField(o.x  + o.velocity * cos(o.direction));
             o.y = ensureYInBatleField(o.y + o.velocity * sin(o.direction));
             o.direction += o.rotationRate;
+            o.velocity = checkVelocity(o.velocity + o.accel, o.vMax);
         }
         o.lastUpdate=now;
     }
@@ -192,7 +203,7 @@ public class GPBase extends AdvancedRobot {
 
         }
 
-        unsafePosition = new Point((int) (x/totalEnergy), (int) (y/totalEnergy));
+        unsafePosition = new Point.Double(x/totalEnergy, y/totalEnergy);
 
         double a = oppositeAngle(getAngle(center, unsafePosition));
 
@@ -211,21 +222,20 @@ public class GPBase extends AdvancedRobot {
             x = offset;
             y=(sin(a)*getBattleFieldHeight()+getBattleFieldHeight())/2;
         }
-        safePosition=new Point((int) x,(int) y);
+        safePosition=new Point.Double( x, y);
     }
 
     private double getOpponentsEnergy() {
-        double sum=0;
-        for (Opponent o: opponents.values()) {
-            if (o.energy == 0)
-                o.energy = 0.00000001; // Avoid zero div
-            sum += o.energy;
-        }
+        double sum = 0;
+        for (Opponent o : opponents.values()) sum += o.energy;
+        if (sum == 0)
+            sum = 0.00000001; // Avoid zero div when last is disabled
+
         return sum;
     }
 
     // -PI -> PI
-    private double getAngle(Point s, Point d) {
+    private double getAngle(Point.Double s, Point.Double d) {
         double a = acos((d.x-s.x)/s.distance(d));
         if (d.y < s.y)
             a= 2*PI-a;
@@ -265,7 +275,7 @@ public class GPBase extends AdvancedRobot {
         return getFirePower(closestPred);
     }
 
-    private double getFirePower(Point p) {
+    private double getFirePower(Point.Double p) {
         return Math.min(1000 / getCurrentPoint().distance(p), 3);
     }
 
@@ -275,7 +285,7 @@ public class GPBase extends AdvancedRobot {
             return 0;
         }
 
-        for (int i=0; i<20 ; i++) {
+        for (int i=0; i<5 ; i++) {
             closestPred = getPoint(closest);
             double firePower = getFirePower(closestPred);
             double bulletSpeed = Rules.getBulletSpeed(firePower);
@@ -283,10 +293,13 @@ public class GPBase extends AdvancedRobot {
 
             double direction = closest.direction;
 
+            double v = closest.velocity;
+
             for (long t=0; t<time; t++) {
-                closestPred.x = (int) ensureXInBatleField(closestPred.x + closest.velocity * cos(direction));
-                closestPred.y = (int) ensureYInBatleField(closestPred.y + closest.velocity * sin(direction));
+                closestPred.x = (int) ensureXInBatleField(closestPred.x + v * cos(direction));
+                closestPred.y = (int) ensureYInBatleField(closestPred.y + v * sin(direction));
                 direction += closest.rotationRate;
+                v = checkVelocity(v+ closest.accel, closest.vMax);
             }
             time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
         }
@@ -301,25 +314,29 @@ public class GPBase extends AdvancedRobot {
         return ga-ta;
     }
 
-    private Point getCurrentPoint() {
-        return new Point((int) getX(),(int) getY());
+    private Point.Double getCurrentPoint() {
+        return new Point.Double(getX(),getY());
     }
 
-    private Point getPoint(Opponent o) {
-        return new Point((int) o.x,(int) o.y);
+    private Point.Double getPoint(Opponent o) {
+        return new Point.Double( o.x, o.y);
     }
 
     public double ensureXInBatleField(double x) {
-        return max(offset, min(getBattleFieldWidth()-offset, x));
+        return max(TANK_SIZE/2, min(getBattleFieldWidth()-TANK_SIZE/2, x));
     }
 
     public double ensureYInBatleField(double y) {
-        return max(offset, min(getBattleFieldHeight()-offset, y));
+        return max(TANK_SIZE/2, min(getBattleFieldHeight()-TANK_SIZE/2, y));
     }
 
-    private void drawCircle(Graphics2D g, Color c, Point p) {
+    public double checkVelocity(double v, double max) {
+        return max(-max, min(max, v));
+    }
+
+    private void drawCircle(Graphics2D g, Color c, Point.Double p) {
         int d=10;
         g.setColor(c);
-        g.fillArc(p.x-d/2, p.y-d/2, d, d, 0, 360);
+        g.fillArc((int) p.x-d/2, (int) p.y-d/2, d, d, 0, 360);
     }
 }
