@@ -57,6 +57,7 @@ public class GPBase extends AdvancedRobot {
     public void onScannedRobot(ScannedRobotEvent e) {
         this.sre = e;
         updateOpponents(e);
+        if (getOthers()==1) scandirection *= -1;
         doTurn();
     }
 
@@ -67,14 +68,15 @@ public class GPBase extends AdvancedRobot {
     public void doTurn() {
         updatePositions();
         double ra = trigoAngle(getRadarHeadingRadians());
-        /*if (getOthers()<=opponents.size()) {
+        int o = getOthers();
+        if (o<=opponents.size() && o>1) {
 
                if (ra >= mostLeft) scandirection = -1;
                if (ra <= mostRight) scandirection = 1;
                turnRadarLeft = PI * 2 *scandirection;
 
-        } else*/
-            turnRadarLeft = PI * 2;
+        } else
+            turnRadarLeft = PI * 2 * scandirection;
 
         turnLeft = getSafeTurn();
         ahead = getSafeAhead();
@@ -113,6 +115,7 @@ public class GPBase extends AdvancedRobot {
         double accel;
         long lastUpdate;
         double vMax;
+        double vMin;
 
         public Opponent(String name, double x, double y, double energy, double velocity, double direction, long lastUpdate) {
             this.name = name;
@@ -127,13 +130,15 @@ public class GPBase extends AdvancedRobot {
                 if (velocity == 0) accel = 0;
                 else
                     accel = velocity - old.velocity;
-                this.vMax = max(old.vMax, abs(velocity));
+                this.vMax = max(old.vMax, velocity);
+                this.vMin = min(old.vMin, velocity);
             } else {
                 this.rotationRate = 0;
-                this.vMax = abs(velocity);
+                this.vMax = max(0, velocity);
+                this.vMin = min(0, velocity);
             }
             this.lastUpdate = lastUpdate;
-            out.printf("velocity=%.02f vmax=%.02f\n", this.velocity, this.vMax);
+            out.printf("velocity=%.02f vmin=%.02f vmax=%.02f\n", this.velocity, this.vMin, this.vMax);
         }
     }
 
@@ -171,7 +176,7 @@ public class GPBase extends AdvancedRobot {
             o.x = ensureXInBatleField(o.x  + o.velocity * cos(o.direction));
             o.y = ensureYInBatleField(o.y + o.velocity * sin(o.direction));
             o.direction += o.rotationRate;
-            o.velocity = checkVelocity(o.velocity + o.accel, o.vMax);
+            o.velocity = checkVelocity(o.velocity + o.accel, o.vMin, o.vMax);
         }
         o.lastUpdate=now;
     }
@@ -285,23 +290,23 @@ public class GPBase extends AdvancedRobot {
             return 0;
         }
 
+        closestPred = getPoint(closest);
+        double firePower = getFirePower(closestPred);
+        double bulletSpeed = Rules.getBulletSpeed(firePower);
+        long time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
         for (int i=0; i<5 ; i++) {
             closestPred = getPoint(closest);
-            double firePower = getFirePower(closestPred);
-            double bulletSpeed = Rules.getBulletSpeed(firePower);
-            long time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
-
             double direction = closest.direction;
-            double velocity = closest.velocity;
-
             double v = closest.velocity;
 
             for (long t=0; t<time; t++) {
                 closestPred.x = (int) ensureXInBatleField(closestPred.x + v * cos(direction));
                 closestPred.y = (int) ensureYInBatleField(closestPred.y + v * sin(direction));
                 direction += closest.rotationRate;
-                v = checkVelocity(v+ closest.accel, closest.vMax);
+                v = checkVelocity(v+ closest.accel, closest.vMin, closest.vMax);
             }
+            bulletSpeed = Rules.getBulletSpeed(firePower);
+            firePower = getFirePower(closestPred);
             time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
         }
 
@@ -331,8 +336,8 @@ public class GPBase extends AdvancedRobot {
         return max(TANK_SIZE/2, min(getBattleFieldHeight()-TANK_SIZE/2, y));
     }
 
-    public double checkVelocity(double v, double max) {
-        return max(-max, min(max, v));
+    public double checkVelocity(double v, double min, double max) {
+        return max(min, min(max, v));
     }
 
     private void drawCircle(Graphics2D g, Color c, Point.Double p) {
