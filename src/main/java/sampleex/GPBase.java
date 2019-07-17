@@ -67,13 +67,13 @@ public class GPBase extends AdvancedRobot {
     public void doTurn() {
         updatePositions();
         double ra = trigoAngle(getRadarHeadingRadians());
-        if (getOthers()<=opponents.size()) {
+        /*if (getOthers()<=opponents.size()) {
 
                if (ra >= mostLeft) scandirection = -1;
                if (ra <= mostRight) scandirection = 1;
                turnRadarLeft = PI * 2 *scandirection;
 
-        } else
+        } else*/
             turnRadarLeft = PI * 2;
 
         turnLeft = getSafeTurn();
@@ -292,6 +292,7 @@ public class GPBase extends AdvancedRobot {
             long time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
 
             double direction = closest.direction;
+            double velocity = closest.velocity;
 
             double v = closest.velocity;
 
