@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GPBase extends AdvancedRobot {
+    public static final double ROBO_WIDTH = 36;
     Point unsafePosition;
     Point safePosition;
     Point center;
@@ -23,7 +24,7 @@ public class GPBase extends AdvancedRobot {
 
     public double forward=1;
     public double scandirection=1;
-    public double offset =54;
+    public double offset = ROBO_WIDTH * 3 / 2;
 
     public double turnLeft = 0;
     public double turnGunLeft = 0;
@@ -46,9 +47,7 @@ public class GPBase extends AdvancedRobot {
         setColors(Color.red,Color.blue,Color.green);
 
         while(true) {
-
-                doTurn();
-
+            doTurn();
             execute();
         }
 
@@ -67,13 +66,13 @@ public class GPBase extends AdvancedRobot {
     public void doTurn() {
         updatePositions();
         double ra = trigoAngle(getRadarHeadingRadians());
-        if (getOthers()<=opponents.size()) {
+        /*if (getOthers()<=opponents.size()) {
 
                if (ra >= mostLeft) scandirection = -1;
                if (ra <= mostRight) scandirection = 1;
                turnRadarLeft = Rules.RADAR_TURN_RATE_RADIANS*scandirection;
 
-        } else
+        } else*/
             turnRadarLeft = PI * 2;
 
         turnLeft = getSafeTurn();
@@ -111,6 +110,7 @@ public class GPBase extends AdvancedRobot {
         double direction;
         double rotationRate;
         long lastUpdate;
+        double accel;
 
         public Opponent(String name, double x, double y, double energy, double velocity, double direction, long lastUpdate) {
             this.name = name;
@@ -122,9 +122,14 @@ public class GPBase extends AdvancedRobot {
             Opponent old = opponents.get(name);
             if (old != null && lastUpdate != old.lastUpdate) {
                 this.rotationRate = normalRelativeAngle( direction - old.direction ) / ( lastUpdate - old.lastUpdate);
-            } else
+                if (velocity == 0)
+                    this.accel = 0;
+                else
+                    this.accel = (velocity > old.velocity) ? 1 : ((velocity < old.velocity) ? -1 : 0);
+            } else {
+                this.accel = 0;
                 this.rotationRate = 0;
-
+            }
             this.lastUpdate = lastUpdate;
         }
     }
@@ -160,9 +165,26 @@ public class GPBase extends AdvancedRobot {
         if (o.lastUpdate >= now) return;
         long time = now-o.lastUpdate;
         for (long i=0; i<time; i++) {
+            
             o.x += o.velocity * cos(o.direction);
             o.y += o.velocity * sin(o.direction);
+
+            if (o.x < ROBO_WIDTH/2) { o.x=ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+            if (o.y < ROBO_WIDTH/2) { o.y=ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+            if (o.x > getBattleFieldWidth() - ROBO_WIDTH/2) { o.x= getBattleFieldWidth() - ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+            if (o.y > getBattleFieldHeight() - ROBO_WIDTH/2) { o.y= getBattleFieldHeight() - ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+
             o.direction += o.rotationRate;
+            o.velocity += o.accel;
+            
+            if (o.velocity < -Rules.MAX_VELOCITY) {
+                o.velocity = -Rules.MAX_VELOCITY;
+                o.accel=0;
+            }
+            if (o.velocity > Rules.MAX_VELOCITY) {
+                o.velocity = Rules.MAX_VELOCITY; 
+                o.accel =0;
+            }
         }
         o.lastUpdate=now;
     }
@@ -284,12 +306,21 @@ public class GPBase extends AdvancedRobot {
             long time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
 
             double direction = closest.direction;
+            double velocity = closest.velocity;
 
             for (long t=0; t<time; t++) {
-                closestPred.x += closest.velocity * cos(direction);
-                closestPred.y += closest.velocity * sin(direction);
+                closestPred.x += velocity * cos(direction);
+                closestPred.y += velocity * sin(direction);
                 direction += closest.rotationRate;
-            }
+                velocity += closest.accel;
+                if (velocity < -Rules.MAX_VELOCITY) velocity = -Rules.MAX_VELOCITY;
+                if (velocity > Rules.MAX_VELOCITY) velocity = Rules.MAX_VELOCITY;
+
+                if (o.x < ROBO_WIDTH/2) o.x=ROBO_WIDTH/2;
+                if (o.y < ROBO_WIDTH/2) { o.y=ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+                if (o.x > getBattleFieldWidth() - ROBO_WIDTH/2) { o.x= getBattleFieldWidth() - ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+                if (o.y > getBattleFieldHeight() - ROBO_WIDTH/2) { o.y= getBattleFieldHeight() - ROBO_WIDTH/2; o.accel = o.velocity = 0;}
+                }
             time = (long)(getCurrentPoint().distance(closestPred) / bulletSpeed);
         }
 
