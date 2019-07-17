@@ -12,14 +12,14 @@ public class ExpressionNode implements Serializable {
     private static final Logger log = Logger.getLogger(ExpressionNode.class.getName());
     private static final long serialVersionUID = 8049660827041716275L;
 
-    static final double PROB_TERM_UNIV = 0.35;
+    static final double PROB_TERM_UNIV = 0.65;
     static final double PROB_TERM_EVENT = 0.4;
-    static final double PROB_TERM_CONST = 0.15;
+    static final double PROB_TERM_CONST = 0.25;
     static final double PROB_TERM_ERC = 0.1;
     static final double[] PROB_TERM = {
         PROB_TERM_CONST,
-        PROB_TERM_UNIV,
-        PROB_TERM_EVENT
+        PROB_TERM_UNIV/*,
+        PROB_TERM_EVENT*/
     };
     static final double PROB_FUNC_A1 = 0.2;
     static final double PROB_FUNC_A2 = 0.6;
@@ -311,7 +311,7 @@ public class ExpressionNode implements Serializable {
     static final String[] UNIVERSAL_TERMINALS = {
         "getEnergy()",
         "getHeight()",
-        "getVelocity()", //???
+        "getVelocity()",
         "getWidth()",
         "getX()",
         "getY()",
@@ -321,10 +321,15 @@ public class ExpressionNode implements Serializable {
         "getHeadingRadians()",
         "getGunHeadingRadians()",
         "getRadarHeadingRadians()",
-        "getSafeTurn()",
-        "getSafeAhead()",
-        "getClosestTurn()",
-        "fireClosestIfPossible()"
+        "mostLeft",
+        "mostRight",
+        "forward",
+        "scandirection",
+        "turnLeft",
+        "turnGunLeft",
+        "turnRadarLeft",
+        "ahead",
+        "fire"
     };
 
     static final String[] CONSTANT_TERMINALS = {
@@ -375,13 +380,13 @@ public class ExpressionNode implements Serializable {
 
     static final String[][] TERMINALS = {
         CONSTANT_TERMINALS,
-        UNIVERSAL_TERMINALS,
-        SCANNED_EVENT_TERMINALS
+        UNIVERSAL_TERMINALS/*,
+        SCANNED_EVENT_TERMINALS*/
     };
 
-    public static void setScanEventTerminals() {
+    /*public static void setScanEventTerminals() {
         TERMINALS[2] = SCANNED_EVENT_TERMINALS;
-    }
+    }*/
 
     public static void setHitByBulletEventTerminals() {
         TERMINALS[2] = HIT_BY_BULLET_EVENT_TERMINALS;
@@ -403,7 +408,10 @@ public class ExpressionNode implements Serializable {
         {"Math.log(Math.abs(", "))"},
         {"Rules.getBulletDamage(", ")"},
         {"Rules.getBulletSpeed(", ")"},
-        {"Rules.getGunHeat(", ")"}
+        {"Rules.getGunHeat(", ")"},
+        {"trigoAngle(", ")"},
+        {"oppositeAngle(", ")"},
+        {"normalRelativeAngle(", ")"}
     };
 
     static final String[][] FUNCTIONS_A2 = {

@@ -59,7 +59,7 @@ public class MetaBot implements Serializable {
     }
 
     public void init() {
-        ExpressionNode.setScanEventTerminals();
+        //ExpressionNode.setScanEventTerminals();
         for (int i = 0; i < SCAN_CHROMOS; i++) {
             genome[i] = new ExpressionNode(0);
             genome[i].grow(0, 0);
@@ -146,13 +146,13 @@ public class MetaBot implements Serializable {
 
         int m = random.nextInt(NUM_CHROMOS);
 
-        if (m < SCAN_CHROMOS) {
+        /*if (m < SCAN_CHROMOS) {
             ExpressionNode.setScanEventTerminals();
         } else if (m < SCAN_CHROMOS+HIT_BY_BULLET_CHROMOS) {
             ExpressionNode.setHitByBulletEventTerminals();
         } else {
             ExpressionNode.setHitRobotEventTerminals();
-        }
+        }*/
 
         if (random.nextDouble() < PROB_MUTATE_ROOT) {    // mutate entire chromosome
             child.genome[m] = new ExpressionNode(0);

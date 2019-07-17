@@ -91,6 +91,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
         int rounds = RobocodeConf.ROUNDS * opponentsRobots.length;
         BattleSpecification battleSpec = new BattleSpecification(rounds, battlefield, selectedBots);
+        //engine.setVisible(true);
         engine.runBattle(battleSpec, true);
         double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
         engine.close();
@@ -118,7 +119,6 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             // OMG, these robots are so poor that they do not score a single point
             return 0;
         }
-
         return (double) botScore / totalScore * 100;
     }
 

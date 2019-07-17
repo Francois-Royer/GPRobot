@@ -34,7 +34,7 @@ public class RobocodeConf {
 
 
     // constant that can be tunned
-    public static final int POP_SIZE = 600;
+    public static final int POP_SIZE = 300;
     public static final int MAX_GENS = 40000;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 7;

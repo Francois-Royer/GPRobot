@@ -89,11 +89,12 @@ public class RobotCodeUtil {
                     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
                     StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
                     Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(srcs);
-                    JavaCompiler.CompilationTask t = compiler.getTask(null, fileManager, null, null, null, compilationUnits);
+                    List<String> options = new ArrayList<>();
+                    options.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
+                    JavaCompiler.CompilationTask t = compiler.getTask(null, fileManager, null, options, null, compilationUnits);
                     t.call();
                 } catch (Exception e) {
-                   log.log(Level.SEVERE,"CompileBots", e);
-
+                    log.log(Level.SEVERE,"CompileBots", e);
                 }
             });
         }
@@ -199,8 +200,9 @@ public class RobotCodeUtil {
         File srcClass = new File(botClassFilePath(name));
         File destClass = new File(runnerBotsFolder, name + ".class");
         copyOrLinkFile(srcClass.toPath(), destClass.toPath());
-        srcClass = new File(botClassFilePath(name + "$Opponent"));
-        destClass = new File(runnerBotsFolder, name + "$Opponent.class");
+
+        srcClass = new File(botClassFilePath("GPBase"));
+        destClass = new File(runnerBotsFolder, "GPBase.class");
         copyOrLinkFile(srcClass.toPath(), destClass.toPath());
     }
 
