@@ -11,7 +11,6 @@
 </head>
 <body>
 <style>.dygraph-legend { text-align: right; background: none; }</style>
-<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01" value="0.33"></p>
 <div id="graphdiv" class="chart" style="width:100%; height:450px"></div>
 <div id="graphdiv2" class="chart" style="width:100%; height:450px;"></div>
 
@@ -27,7 +26,7 @@
                 ylabel: 'Fitness (%)',
                 plotter: smoothPlotter,
                 strokeWidth: 2,
-                visibility: [true, true, false, false, false]}
+                visibility: [true, true, true, false, false, false]}
         );
 
         g2 = new Dygraph(
@@ -38,7 +37,7 @@
                 ylabel: 'Nodes',
                 plotter: smoothPlotter,
                 strokeWidth: 2,
-                visibility: [false, false, true, true, false]}
+                visibility: [false, false, false, true, true, false]}
         );
     }
     drawPlot();
@@ -65,16 +64,19 @@
 
 </script>
 <p><b>Show Series:</b></p>
-<p>
+<Span><p>
     <input type=checkbox id="0" checked onClick="change(this)">
     <label for="0"> Average Fitness</label><br/>
     <input type=checkbox id="1" checked onClick="change(this)">
     <label for="1"> Best Fitness</label><br/>
-    <input type=checkbox id="2" checked onClick="change2(this)">
-    <label for="2"> Average Node</label><br/>
+    <input type=checkbox id="2" checked onClick="change(this)">
+    <label for="1"> Base Fitness</label><br/>
     <input type=checkbox id="3" checked onClick="change2(this)">
+    <label for="2"> Average Node</label><br/>
+    <input type=checkbox id="4" checked onClick="change2(this)">
     <label for="3"> Best Node</label>
-</p>
-
+</p></Span><span>
+<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01" value="0.33"></p>
+</span>
 </body>
 </html>

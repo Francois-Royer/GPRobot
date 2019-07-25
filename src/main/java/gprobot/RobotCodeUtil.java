@@ -10,7 +10,11 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.net.InetAddress;
 import java.nio.file.Path;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,7 +151,7 @@ public class RobotCodeUtil {
             if (i == bestID || gen == 0 && i < 10) {
                 continue;
             }
-            String oldName = gRobotName(gen, i);
+            String oldName = getRobotName(gen, i);
 
             new File(botsrcFilePath(oldName)).delete();
             new File(botClassFilePath(oldName)).delete();
@@ -192,17 +196,20 @@ public class RobotCodeUtil {
         copyFolder(new File(src, dir).toPath(), dest.toPath());
     }
 
-    static void updateRunner(File runnerDir, int gen, int robotid) throws IOException {
+    static void updateRunner(File runnerDir, String className) throws IOException {
         File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
         cleanDirectory(runnerBotsFolder);
-        String name = gRobotName(gen, robotid);
 
-        File srcClass = new File(botClassFilePath(name));
-        File destClass = new File(runnerBotsFolder, name + ".class");
-        copyOrLinkFile(srcClass.toPath(), destClass.toPath());
+        addClassRunner(runnerDir, className);
+        if (className != "GPBase")
+            addClassRunner(runnerDir, "GPBase");
+        addClassRunner(runnerDir, "GPBase$Enemy");
+    }
 
-        srcClass = new File(botClassFilePath("GPBase"));
-        destClass = new File(runnerBotsFolder, "GPBase.class");
+    static void addClassRunner(File runnerDir, String className) throws IOException {
+        File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
+        File srcClass = new File(botClassFilePath(className));
+        File destClass = new File(runnerBotsFolder, className + ".class");
         copyOrLinkFile(srcClass.toPath(), destClass.toPath());
     }
 
@@ -231,8 +238,6 @@ public class RobotCodeUtil {
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "libs");
                 new File(workerFolder, ROBOTS_FOLDER+ File.separator + "sampleex").mkdirs();
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
-                //copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH).toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"),
-                    //workerFolder.toPath().resolve(ROBOTS_FOLDER).resolve("voidious.Diamond_1.8.22.jar"));
                 String[] cmd = makeRunnerCmd(workerFolder, i);
                 runnerProcess[i] = execute("runner-" + i, cmd);
             }
@@ -259,7 +264,7 @@ public class RobotCodeUtil {
         return Duration.ofMillis(duration).toString().substring(2);
     }
 
-    public static String gRobotName(int gen, int id) {
+    public static String getRobotName(int gen, int id) {
         return String.format("X_GPbot_%d_%d", gen, id);
     }
 

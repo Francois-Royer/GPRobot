@@ -12,14 +12,14 @@ public class ExpressionNode implements Serializable {
     private static final Logger log = Logger.getLogger(ExpressionNode.class.getName());
     private static final long serialVersionUID = 8049660827041716275L;
 
-    static final double PROB_TERM_UNIV = 0.65;
-    static final double PROB_TERM_EVENT = 0.4;
-    static final double PROB_TERM_CONST = 0.25;
+    static final double PROB_TERM_UNIV = 0.35;
+    static final double PROB_TERM_BASE = 0.4;
+    static final double PROB_TERM_CONST = 0.15;
     static final double PROB_TERM_ERC = 0.1;
     static final double[] PROB_TERM = {
         PROB_TERM_CONST,
-        PROB_TERM_UNIV/*,
-        PROB_TERM_EVENT*/
+        PROB_TERM_UNIV,
+        PROB_TERM_BASE
     };
     static final double PROB_FUNC_A1 = 0.2;
     static final double PROB_FUNC_A2 = 0.6;
@@ -166,7 +166,7 @@ public class ExpressionNode implements Serializable {
         int highestTerm = newNode.highestTerminal();
         int adjustedHighestTerm = highestTerm - newNode.depth;
 
-        int floor = Math.max(1, MIN_DEPTH - deepity);    // offset selection to keep terminals below MIN_DEPTH
+        int floor = Math.max(1, MIN_DEPTH - deepity);    // BORDER_OFFSET selection to keep terminals below MIN_DEPTH
         int ceil = MAX_DEPTH - deepity;    // limit selection to keep terminals within MAX_DEPTH
         int targetDepth = random.nextInt(ceil - floor + 1) + floor;
         int deepestNode = this.deepestNode();
@@ -310,26 +310,15 @@ public class ExpressionNode implements Serializable {
     // Zero-Arity Expressions (terminals)
     static final String[] UNIVERSAL_TERMINALS = {
         "getEnergy()",
-        "getHeight()",
         "getVelocity()",
-        "getWidth()",
         "getX()",
         "getY()",
         "getGunHeat()",
         "getGunCoolingRate()",
         "(double) getOthers()",
-        "getHeadingRadians()",
-        "getGunHeadingRadians()",
-        "getRadarHeadingRadians()",
-        "mostLeft",
-        "mostRight",
-        "forward",
-        "scandirection",
-        "turnLeft",
-        "turnGunLeft",
-        "turnRadarLeft",
-        "ahead",
-        "fire"
+        "trigoAngle(getHeadingRadians())",
+        "trigoAngle(getGunHeadingRadians())",
+        "trigoAngle(getRadarHeadingRadians())",
     };
 
     static final String[] CONSTANT_TERMINALS = {
@@ -345,6 +334,8 @@ public class ExpressionNode implements Serializable {
         "ROBOT_HIT_DAMAGE",
         "ROBOT_HIT_BONUS",
         "0.00000001",
+        "getWidth()",
+        "getHeight()",
         "1",
         "2",
         "Math.PI",
@@ -355,6 +346,25 @@ public class ExpressionNode implements Serializable {
         //"runVar2"
     };
 
+    static final String[] BASE_TERMINAL = {
+        "safePosition.x",
+        "safePosition.y",
+        "target.x",
+        "target.y",
+        "targetPred.x",
+        "targetPred.y",
+        "target.velocity",
+        "target.direction",
+        "target.energy",
+        "target.getHitRate()",
+        "forward",
+        "scandirection",
+        "turnLeft",
+        "turnGunLeft",
+        "turnRadarLeft",
+        "ahead",
+        "fire"
+    };
     // terminals that can only be called during a ScannedRobotEvent
     static final String[] SCANNED_EVENT_TERMINALS = {
         "e.getBearingRadians()", // Returns difference between enemy and robot heading
@@ -380,8 +390,8 @@ public class ExpressionNode implements Serializable {
 
     static final String[][] TERMINALS = {
         CONSTANT_TERMINALS,
-        UNIVERSAL_TERMINALS/*,
-        SCANNED_EVENT_TERMINALS*/
+        UNIVERSAL_TERMINALS,
+        BASE_TERMINAL
     };
 
     /*public static void setScanEventTerminals() {

@@ -69,10 +69,8 @@ public class RunGP {
     }
 
     public void runGP() {
-
-            try {
+        try {
             bestSoFar.fitness = 0;
-
             initOrRestoreCtx();
 
             host = InetAddress.getLocalHost().getHostAddress();
@@ -125,7 +123,7 @@ public class RunGP {
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
 
-                storeRunData(genCount, avgFitness, bestLastGen.fitness, avgNodeCount, bestLastGen.nodeCount, bestLastGen.getBotName());
+                storeRunData(genCount, avgFitness, bestLastGen.fitness, fitnesses[POP_SIZE], avgNodeCount, bestLastGen.nodeCount, bestLastGen.getBotName());
 
                 genCount++;
                 // breed next generation
@@ -231,21 +229,22 @@ public class RunGP {
 
     private void scoreFitnessOnSet() {
         try {
-            fitnesses = new double[POP_SIZE];
-            final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE).boxed().collect(Collectors.toList()));
-            final CountDownLatch cdl = new CountDownLatch(POP_SIZE);
+            fitnesses = new double[POP_SIZE+1];
+            final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE+1).boxed().collect(Collectors.toList()));
+            final CountDownLatch cdl = new CountDownLatch(POP_SIZE+1);
             for (int i = 0; i < RUNNERS_COUNT; i++) {
                 final int runnerId = i;
                 new Thread(() -> {
-                    Integer robotID = -1;
+                    Integer robotID;
                     try {
                         RMIGPRobotBattleRunner runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
                         runner.setOpponentsName(opponents);
 
                         while ((robotID = queue.pollFirst()) != null) {
-                            updateRunner(getRunnerDir(runnerId), genCount, robotID);
+                            String robotName = (robotID < POP_SIZE) ? getRobotName(genCount, robotID) : "GPBase";
+                            updateRunner(getRunnerDir(runnerId), robotName);
                             try {
-                                fitnesses[robotID] = runner.getRobotFitness(gRobotName(genCount, robotID));
+                                fitnesses[robotID] = runner.getRobotFitness(robotName);
                                 synchronized (fitnesses) {
                                     cdl.countDown();
                                     fitnesses.notifyAll();
@@ -306,9 +305,9 @@ public class RunGP {
         return pool[best];
     }
 
-    public void storeRunData(int round, double avgFit, double bestFit, double avgNode, int bestNode, String bestBotName) {
+    public void storeRunData(int round, double avgFit, double bestFit, double baseFit, double avgNode, int bestNode, String bestBotName) {
         // store each variable in its own file (for graphs)
-        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName+"\n");
+        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + baseFit + "," + avgNode + "," + bestNode + "," + bestBotName+"\n");
     }
 
     public void saveCtx() {
@@ -316,6 +315,7 @@ public class RunGP {
 
         try (FSTObjectOutput out = new FSTObjectOutput(new FileOutputStream(tmpFile))) {
             out.writeInt(genCount);
+            out.writeObject(bestSoFar);
             out.writeObject(pool);
         } catch (IOException e) {
             Logger.getLogger("GPRobot").log(Level.SEVERE, "Unable to save context for restart", e);
@@ -330,8 +330,8 @@ public class RunGP {
     public void loadCtx() throws IOException, ClassNotFoundException {
         try (FSTObjectInput in = new FSTObjectInput(new FileInputStream(CTX_FILE))) {
             genCount = in.readInt();
+            bestSoFar = (MetaBot) in.readObject();;
             pool = (MetaBot[]) in.readObject();
-            bestSoFar = pool[1];
             bestLastGen = pool[0];
         }
     }
@@ -365,7 +365,7 @@ public class RunGP {
                 .listFiles((d,name) ->  name.matches("run_data.*.txt")))
             .forEach(File::delete);
 
-        appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness,Average nodes,Best nodes,Best name\n");
+        appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness, Base fitness, Average nodes,Best nodes,Best name\n");
     }
 
     public void appendStringToFile(String file, String s) {
