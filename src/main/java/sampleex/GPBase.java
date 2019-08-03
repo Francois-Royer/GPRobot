@@ -5,9 +5,10 @@ import robocode.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
-import static robocode.util.Utils.normalRelativeAngle;
+import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
 public class GPBase extends AdvancedRobot {
@@ -15,9 +16,11 @@ public class GPBase extends AdvancedRobot {
     public static double TANK_SIZE=36;
 
     public double BORDER_OFFSET =TANK_SIZE * 3 / 2;
+    public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS/4;
     public static double HIT_RATE_WATER_MARK = 0.3;
     public static double FIRE_POWER_FACTOR = 3;
     public static double FIRE_TOLERANCE = TANK_SIZE / 8;
+    public static long FIRE_STEP = 3;
 
     public double dmin= 100;
     public double dmax;
@@ -40,6 +43,9 @@ public class GPBase extends AdvancedRobot {
 
     static Map<String, Enemy> enemies = new HashMap<>();
     Enemy target;
+    Enemy mostLeft;
+    Enemy mostRight;
+
     static long fireCount = 0;
     static long bulletHitCount = 0;
     static long battleFireCount = 0;
@@ -57,8 +63,6 @@ public class GPBase extends AdvancedRobot {
         setAdjustRadarForGunTurn(true);
         setColors(Color.red,Color.blue,Color.green);
 
-        turnRadarLeftRadians(2*PI);
-
         while(true) {
             doTurn();
             execute();
@@ -69,7 +73,6 @@ public class GPBase extends AdvancedRobot {
     @Override
     public void onScannedRobot(ScannedRobotEvent e) {
         updateEnemy(e);
-        doTurn();
     }
 
     @Override
@@ -101,25 +104,37 @@ public class GPBase extends AdvancedRobot {
 
     @Override
     public void onPaint(Graphics2D g) {
-        if (unsafePosition != null) {
-            drawCircle(g, Color.RED, unsafePosition, 10);
-            drawCircle(g, Color.GREEN, safePosition, 10);
-        }
+        if (safePosition != null)
+            drawFillCircle(g, Color.GREEN, safePosition, 10);
 
         for (Enemy e: enemies.values())
             if (e.alive)
-                drawCircle(g, (e == target) ? Color.CYAN : Color.PINK, e, 10);
+                drawFillCircle(g, Color.PINK, e, 10);
 
-        for (Point.Double p:targetPreds)
-            drawCircle(g, Color.yellow, p, 5);
-
+        for (Point.Double p:targetPreds) 
+            drawFillCircle(g, Color.yellow, p, 5);
 
         if (targetPred != null)
-            drawCircle(g, Color.MAGENTA, targetPred, 10);
+            drawAimCircle(g, Color.CYAN, targetPred, 20);
+
+        if (mostLeft != null && mostRight != null) {
+            drawCircle(g, Color.RED, mostLeft, (int)TANK_SIZE*4/3);
+            drawCircle(g, Color.GREEN, mostRight, (int)TANK_SIZE*4/3);
+        }
     }
 
+    @Override
+    public void onSkippedTurn(SkippedTurnEvent event) {
+        out.printf("Skip turn: %d %d\n", event.getSkippedTurn(), event.getPriority());
+    }
     //public void onHitWall(HitWallEvent e) { forward *= -1; }
-    //public void onHitRobot(HitRobotEvent e) { forward *= -1; }
+    //
+    
+    public void onHitRobot(HitRobotEvent e) { 
+        forward *= -1; 
+        setTurnLeftRadians(PI/2);
+        setAhead(forward*TANK_SIZE*2);
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     // GPBase logic
@@ -128,22 +143,16 @@ public class GPBase extends AdvancedRobot {
     }
 
     public void doTurn() {
-        int oc = getOthers();
         updatePositions();
-        double ra = trigoAngle(getRadarHeadingRadians());
-        double da = getAngle(getCurrentPoint(), unsafePosition);
-        double  scan_arc = (oc == 2) ? PI : (oc == 1) ? Rules.RADAR_TURN_RATE_RADIANS : PI * 5 / 4;
-
-        double d= normalRelativeAngle(da-ra);
-
-        if (abs(d)+PI/16 >  scan_arc/2)
-            scandirection *= -1;
-
-        turnRadarLeft = d+scan_arc/2*scandirection;
-
-        //out.printf("scan_arc=%.2f , d=%.02f, scandirection=%.0f, turnRadarLeft=%.02f\n",
-                //scan_arc, ra-da, scandirection, turnRadarLeft);
-
+        int oc = getOthers();
+        if (oc > 0 && enemies.values().stream().filter(e -> e.alive).count() >= oc) {
+            updateLeftRightEnemies();
+            double ra = normalAbsoluteAngle(trigoAngle(getRadarHeadingRadians()));
+            turnRadarLeft = scanLeftRight(ra, mostLeft.angle, mostRight.angle);
+            //out.printf("ra=%.02f, ml=%.02f, mr=%.02f, scandir=%.0f, turn=%.02f\n", ra, mostLeft.angle, mostRight.angle, scandirection, turnRadarLeft);
+        } else
+            turnRadarLeft = 2*PI;
+        
         turnLeft = getTurn2Safe();
         ahead = getSafeAhead();
         turnGunLeft = getTurn2Targert();
@@ -203,7 +212,7 @@ public class GPBase extends AdvancedRobot {
                     } else {
                         this.rotationRate = normalRelativeAngle(this.scan_direction - old.scan_direction) / (lastUpdate - old.lastUpdate);
                     }
-                    this.rotationRate = checkMinMax(this.rotationRate, -Rules.MAX_TURN_RATE_RADIANS, Rules.MAX_TURN_RATE_RADIANS);
+                    this.rotationRate = checkMinMax(this.rotationRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
 
                     if (velocity == 0 || energy == 0) {
                         accel = 0;
@@ -225,7 +234,6 @@ public class GPBase extends AdvancedRobot {
                 this.vMax = max(0, velocity);
                 this.vMin = min(0, velocity);
             }
-            //out.printf("scan %20s: energy=%.02f\n", this.name, this.energy);
         }
 
         double getHitRate() {
@@ -237,12 +245,6 @@ public class GPBase extends AdvancedRobot {
         /*out.printf("robotSetActions turnRadarLeft=%.2f turnLeft=%.2f ahead=%.2f turnGunLeft=%.2f fire=%.2f\n",
             turnRadarLeft, turnLeft, ahead, turnGunLeft, fire);*/
 
-               /*if (random() >.9)
-            setMaxVelocity(Rules.MAX_VELOCITY/2);
-        else
-            setMaxVelocity(Rules.MAX_VELOCITY);*/
-
-
         setAhead(ahead);
         setTurnLeftRadians(turnLeft);
         setTurnGunLeftRadians(turnGunLeft);
@@ -251,8 +253,44 @@ public class GPBase extends AdvancedRobot {
             fireCount++;
             target.fireCount++;
             setFire(fire);
-            //out.printf("fire on %s , d=%.02f, power=%.03f\n", target.name, getCurrentPoint().distance(targetPred), fire);
         }
+    }
+
+    private double scanLeftRight(double ra, double ml, double mr) {
+        if ((ra >= ml && ra < ml + 2*SCAN_OFFSET) || (ra < 2*SCAN_OFFSET+ml-2*PI && ml > 2*PI - 2*SCAN_OFFSET))
+            scandirection = -1;
+        else if ((ra < mr && ra > mr - 2*SCAN_OFFSET) || (ra > 2*PI - 2*SCAN_OFFSET + mr && mr < 2*SCAN_OFFSET)) 
+            scandirection = 1;
+    
+        if (scandirection == 1)
+            return ml + SCAN_OFFSET - ((ml >= ra) ? ra : ra - 2*PI);
+        else 
+            return mr - SCAN_OFFSET - ((mr <= ra) ? ra : ra + 2*PI);
+    }
+
+    private void updateLeftRightEnemies() {
+        List<Enemy> sEnemies = enemies.values().stream().filter(e -> e.alive).collect(Collectors.toList());
+        sEnemies.sort(new Comparator<Enemy>() {
+            @Override
+            public int compare(final Enemy  e1, final Enemy e2) {
+                if (e1.angle < e2.angle) return -1;
+                if (e1.angle > e2.angle) return 1;
+                return 0;
+            }
+         });
+
+         Enemy prev = mostRight = sEnemies.get(0);
+         mostLeft = sEnemies.get(sEnemies.size() - 1);
+         double ba = abs(normalRelativeAngle(mostLeft.angle) - normalRelativeAngle(mostRight.angle));
+         for (Enemy enemy:sEnemies) {
+            final double a = enemy.angle - prev.angle;
+            if ( a > ba ) {
+                mostRight = enemy;
+                mostLeft = prev;
+                ba = a;
+            }
+            prev = enemy;
+         }
     }
 
     private void updateEnemy(ScannedRobotEvent e) {
@@ -262,7 +300,7 @@ public class GPBase extends AdvancedRobot {
         double y = getY() + e.getDistance() * sin(angle);
         long time = getTime();
 
-        enemies.put(e.getName(), new Enemy(e.getName(), x, y, e.getEnergy(), e.getVelocity(), direction, angle, time));
+        enemies.put(e.getName(), new Enemy(e.getName(), x, y, e.getEnergy(), e.getVelocity(), direction, normalAbsoluteAngle(angle), time));
     }
 
 
@@ -275,6 +313,7 @@ public class GPBase extends AdvancedRobot {
             e.direction += e.rotationRate;
             e.velocity = checkMinMax(e.velocity + e.accel, e.vMin, e.vMax);
         }
+        e.angle = normalAbsoluteAngle(getAngle(getCurrentPoint(), e));
         e.lastUpdate=now;
     }
 
@@ -297,7 +336,7 @@ public class GPBase extends AdvancedRobot {
                 target = e;
                 d=od;
             }
-            e.angle = getAngle(getCurrentPoint(), e);
+            e.angle = normalAbsoluteAngle(getAngle(getCurrentPoint(), e));
         }
 
         if (totalEnergy == 0)
@@ -362,22 +401,26 @@ public class GPBase extends AdvancedRobot {
     }
 
     private double getFirePower(Point.Double p) {
-        double d = getCurrentPoint().distance(p);
-        double power = range(d , dmin, dmax, Rules.MAX_BULLET_POWER, Rules.MIN_BULLET_POWER);
+        if (target.energy == 0)
+            return MAX_BULLET_POWER;
+
+            double d = getCurrentPoint().distance(p);
+        double power = range(d , dmin, dmax, MAX_BULLET_POWER, MIN_BULLET_POWER);
 
         power += power * FIRE_POWER_FACTOR * (target.getHitRate() - HIT_RATE_WATER_MARK);
 
-        return checkMinMax(power, Rules.MIN_BULLET_POWER, Rules.MAX_BULLET_POWER);
+        return checkMinMax(power, MIN_BULLET_POWER, MAX_BULLET_POWER);
     }
 
     private double getTurn2Targert() {
+        if (target == null) return 0;
 
         //out.printf("%20s: rotationRate=%.02f%% velocity=%.02f accel=%.02f\n", target.name, target.rotationRate, target.velocity, target.accel);
         targetPred = getPoint(target);
         targetPreds = new ArrayList<>();
         if (target.energy > 0) {
             double firePower = getFirePower(targetPred);
-            double bulletSpeed = Rules.getBulletSpeed(firePower);
+            double bulletSpeed = getBulletSpeed(firePower);
             long time = (long) (getCurrentPoint().distance(targetPred) / bulletSpeed);
             for (int i = 0; i < 5; i++) {
                 targetPred = getPoint(target);
@@ -385,16 +428,17 @@ public class GPBase extends AdvancedRobot {
                 targetPreds = new ArrayList<>();
                 double v = target.velocity;
 
-                //out.printf("target %s hitRate=%.2f%% vvar=%f\n", target.name,
-                //target.getHitRate()*100,
-                //target.vVar);
-                //if (target.fireCount > 0 && target.bulletHitCount > 0 && target.bulletHitCount / target.fireCount < 0.05)
-                //time /= target.fireCount % 3 + 1;
+                /*out.printf("target %s hitRate=%.2f%% vvar=%f\n", target.name,
+                target.getHitRate()*100,
+                target.vVar);*/
+
+                if (target.fireCount > 10 && target.getHitRate() < 0.2 && getCurrentPoint().distance(targetPred) > 400)
+                    time = time * (target.fireCount % FIRE_STEP) / (FIRE_STEP-1);
 
                 for (long t = 0; t < time; t++) {
 
                     v = checkMinMax(v + target.accel, target.vMin, target.vMax);
-                    double turnRate = min(abs(target.rotationRate),Rules.getTurnRateRadians(v));
+                    double turnRate = min(abs(target.rotationRate),getTurnRateRadians(v));
                     if (target.rotationRate<0)
                         turnRate *= -1;
                     direction += turnRate;
@@ -407,7 +451,7 @@ public class GPBase extends AdvancedRobot {
                     }
                     targetPreds.add(new Point.Double(targetPred.x, targetPred.y));
                 }
-                bulletSpeed = Rules.getBulletSpeed(firePower);
+                bulletSpeed = getBulletSpeed(firePower);
                 firePower = getFirePower(targetPred);
                 time = (long) (getCurrentPoint().distance(targetPred) / bulletSpeed);
             }
@@ -471,8 +515,24 @@ public class GPBase extends AdvancedRobot {
         return (v-minv) / (maxv-minv) *(maxr-minr)+ minr;
     }
 
-    static void drawCircle(Graphics2D g, Color c, Point.Double p, int d) {
+    static void drawFillCircle(Graphics2D g, Color c, Point.Double p, int d) {
         g.setColor(c);
         g.fillArc((int) p.x-d/2, (int) p.y-d/2, d, d, 0, 360);
     }
+
+    static void drawCircle(Graphics2D g, Color c, Point.Double p, int d) {
+        g.setColor(c);
+        g.drawArc((int) p.x-d/2, (int) p.y-d/2, d, d, 0, 360);
+    }
+    
+    static void drawAimCircle(Graphics2D g, Color c, Point.Double p, int d) {
+        int div=5;
+        g.setColor(c);
+        g.drawArc((int) p.x-d/2, (int) p.y-d/2, d, d, 0, 360);
+        g.drawLine((int) p.x+d/2, (int) p.y,(int) p.x-d/div, (int) p.y);
+        g.drawLine((int) p.x-d/2, (int) p.y,(int) p.x+d/div, (int) p.y);
+        g.drawLine((int) p.x, (int) p.y-d/2,(int) p.x, (int) p.y-d/div);
+        g.drawLine((int) p.x, (int) p.y+d/2,(int) p.x, (int) p.y+d/div);
+    }
+    
 }
