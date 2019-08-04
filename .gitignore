@@ -123,3 +123,8 @@ distribution
 run_data*
 battlerunners/
 *.bin
+.pytest_cache
+.settings
+bin
+.project
+.classpath

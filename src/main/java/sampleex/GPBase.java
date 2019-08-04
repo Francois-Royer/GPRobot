@@ -21,6 +21,7 @@ public class GPBase extends AdvancedRobot {
     public static double FIRE_POWER_FACTOR = 3;
     public static double FIRE_TOLERANCE = TANK_SIZE / 8;
     public static long FIRE_STEP = 3;
+    public static int waveArc = 10;
 
     public double dmin= 100;
     public double dmax;
@@ -42,6 +43,8 @@ public class GPBase extends AdvancedRobot {
     public double fire = 0;
 
     static Map<String, Enemy> enemies = new HashMap<>();
+    static List<Wave> waves = new ArrayList<>();
+
     Enemy target;
     Enemy mostLeft;
     Enemy mostRight;
@@ -62,6 +65,7 @@ public class GPBase extends AdvancedRobot {
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
         setColors(Color.red,Color.blue,Color.green);
+        for (Enemy e : enemies.values()) e.alive = false;
 
         while(true) {
             doTurn();
@@ -79,8 +83,38 @@ public class GPBase extends AdvancedRobot {
     public void onBulletHit(BulletHitEvent bhe) {
         bulletHitCount++;
         Enemy e = enemies.get(bhe.getName());
-        if (e != null)
+        if (e != null) {
             e.bulletHitCount++;
+            e.energy = bhe.getEnergy();
+        }
+    }
+
+    @Override
+    public void onBulletHitBullet(BulletHitBulletEvent bhbe) {
+        if (waves.size()>0) {
+            Bullet b = bhbe.getHitBullet();
+            Point.Double p = new Point.Double(b.getX(),b.getY());
+            Optional<Wave> ow = waves.stream().filter(w -> w.name == b.getName())
+                .sorted(new WaveComparator(p, getTime())).findFirst();
+            
+            if (ow.isPresent()) 
+                waves.remove(ow.get());
+        }
+    }
+
+    @Override
+    public void onHitByBullet(HitByBulletEvent hbbe) {
+        Enemy e = enemies.get(hbbe.getName());
+        if (e != null) 
+            e.energy += getBulletHitBonus(hbbe.getPower());
+        
+        if (waves.size()>0) {
+            Optional<Wave> ow = waves.stream().filter(w -> w.name == hbbe.getName())
+                .sorted(new WaveComparator(getCurrentPoint(), getTime())).findFirst();
+            
+            if (ow.isPresent()) 
+                waves.remove(ow.get());
+        }
     }
 
     @Override
@@ -121,6 +155,14 @@ public class GPBase extends AdvancedRobot {
             drawCircle(g, Color.RED, mostLeft, (int)TANK_SIZE*4/3);
             drawCircle(g, Color.GREEN, mostRight, (int)TANK_SIZE*4/3);
         }
+
+        long now = getTime();
+        for (Wave w:waves)
+            drawWave(g, Color.ORANGE, w, now);
+        if (waves.size()>0) {
+            Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
+            drawWave(g, Color.RED, w, now);
+        }
     }
 
     @Override
@@ -143,6 +185,7 @@ public class GPBase extends AdvancedRobot {
     }
 
     public void doTurn() {
+        updateWaves();
         updatePositions();
         int oc = getOthers();
         if (oc > 0 && enemies.values().stream().filter(e -> e.alive).count() >= oc) {
@@ -159,6 +202,45 @@ public class GPBase extends AdvancedRobot {
         fire = fireTargetIfPossible();
         doGP();
         robotSetActions();
+    }
+
+    class Wave extends Point.Double {
+        String name;
+        double velocity;
+        double direction;
+        long start;
+
+        public Wave(String name, Point.Double origin, double velocity, double direction, long start) {
+            this.name = name;
+            this.velocity = velocity;
+            this.direction = direction;
+            this.start = start;
+            this.x = origin.x;
+            this.y = origin.y;
+        }
+
+        double getDistance(long tick) {
+            return velocity * (tick-start);
+        }
+
+        Point.Double getPosition(long tick) {
+            double d = getDistance(tick);
+            return new Point.Double(x + d*cos(direction) , y + d*sin(direction));
+        }
+    }
+
+    class WaveComparator implements Comparator<Wave> {
+        Point.Double p;
+        long tick;
+        public WaveComparator(Point.Double p, long tick) {
+            this.p = p;
+            this.tick = tick;
+        }
+
+        @Override
+        public int compare(Wave w1, Wave w2) {
+            return (int) (p.distance(w1.getPosition(tick)) - p.distance(w2.getPosition(tick)));
+        }  
     }
 
     class Enemy extends Point.Double {
@@ -223,6 +305,11 @@ public class GPBase extends AdvancedRobot {
                     this.vVar = (energy > 0) ? (abs(velocity - old.velocity) + old.vVar) / scan_count : old.vVar;
                     this.vMax = max(old.vMax, velocity);
                     this.vMin = min(old.vMin, velocity);
+
+                    if (old.energy > energy) {
+                        double bspeed = getBulletSpeed(checkMinMax(old.energy - energy, MIN_BULLET_POWER, MAX_BULLET_POWER));
+                        waves.add(new Wave(name, old, bspeed, getAngle(this, getCurrentPoint()), old.lastUpdate));
+                    }
                 } else {
                     this.rotationRate = 0;
                     this.vVar = old.vVar;
@@ -266,6 +353,15 @@ public class GPBase extends AdvancedRobot {
             return ml + SCAN_OFFSET - ((ml >= ra) ? ra : ra - 2*PI);
         else 
             return mr - SCAN_OFFSET - ((mr <= ra) ? ra : ra + 2*PI);
+    }
+
+    private void updateWaves() {
+        long now = getTime();
+        List<Wave> newWaves = waves.stream().filter(w -> {
+            Point.Double p = w.getPosition(now);
+            return p.x >=0 && p.x <= getBattleFieldWidth() && p.y >= 0 && p.y <= getBattleFieldHeight(); 
+        }).collect(Collectors.toList());
+        waves = newWaves;
     }
 
     private void updateLeftRightEnemies() {
@@ -360,6 +456,13 @@ public class GPBase extends AdvancedRobot {
             y=(sin(a)*getBattleFieldHeight()+getBattleFieldHeight())/2;
         }
         safePosition=new Point.Double( x, y);
+
+        // ensure distance away from closest wave
+        if (waves.size()>0) {
+            Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
+            d = safePosition.distance(w.getPosition(now));
+            
+        }
     }
 
     private double getEmenmiesEnergy() {
@@ -394,7 +497,9 @@ public class GPBase extends AdvancedRobot {
         if (targetPred == null|| getGunHeat() > 0 || target.alive == false)
             return 0;
 
-        if ( getCurrentPoint().distance(targetPred) * sin(abs(getGunTurnRemainingRadians())) > FIRE_TOLERANCE)
+        double tolerance = target.getHitRate() < HIT_RATE_WATER_MARK ? 0 : FIRE_TOLERANCE;
+
+        if ( getCurrentPoint().distance(targetPred) * sin(abs(getGunTurnRemainingRadians())) > tolerance)
             return 0;
 
        return getFirePower(targetPred);
@@ -535,4 +640,11 @@ public class GPBase extends AdvancedRobot {
         g.drawLine((int) p.x, (int) p.y+d/2,(int) p.x, (int) p.y+d/div);
     }
     
+    static void drawWave(Graphics2D g, Color c, Wave w, long tick) {
+        g.setColor(c);
+        int d = (int) w.getDistance(tick);
+        int a = (int) (450 - normalAbsoluteAngle(w.direction) * 180 / PI) % 360;
+        g.drawArc((int) w.x-d, (int) w.y-d, 2*d, 2*d, a - waveArc,  2*waveArc);
+
+    }
 }
