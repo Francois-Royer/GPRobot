@@ -1,8 +1,8 @@
-package sampleex.dataStructures.trees.KD;
+package gpbase.dataStructures.trees.KD;
 
-import sampleex.dataStructures.BinaryHeap;
-import sampleex.dataStructures.IntervalHeap;
-import sampleex.dataStructures.MinHeap;
+import gpbase.dataStructures.BinaryHeap;
+import gpbase.dataStructures.IntervalHeap;
+import gpbase.dataStructures.MinHeap;
 
 import java.util.Arrays;
 import java.util.Iterator;

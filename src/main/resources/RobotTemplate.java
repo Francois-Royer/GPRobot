@@ -1,8 +1,4 @@
-package sampleex;
-
-import robocode.*;
-import static robocode.Rules.*;
-import static robocode.util.Utils.*;
+package gpbase;
 
 public class %s extends GPBase {
 

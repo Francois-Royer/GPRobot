@@ -37,7 +37,7 @@ import static gprobot.RobotCodeUtil.*;
 /**
  * This class represents the main genetic algorithm.
  * It assumes that Robocode is installed at ${user.home}/robocode,
- * and writes all files to the "${user.home}/robocode/robots/sampleex" directory.
+ * and writes all files to the "${user.home}/robocode/robots/gpbase" directory.
  * The robocode.jar library must be included in the build path (${user.home}/robocode/libs/robocode.jar by default)
  *
  * @author Ted Hunter

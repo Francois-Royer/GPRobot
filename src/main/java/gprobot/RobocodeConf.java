@@ -25,7 +25,7 @@ public class RobocodeConf {
 
 
     public static final String ROBOTS_FOLDER = "robots";
-    public static final String TARGET_PACKAGE = "sampleex";
+    public static final String TARGET_PACKAGE = "gpbase";
     public static final String TARGET_FOLDER = ROBO_CODE_PATH + File.separator + ROBOTS_FOLDER + File.separator + TARGET_PACKAGE;
     public static final BattlefieldSpecification BATTLEFIELD = new BattlefieldSpecification(800, 600);
 

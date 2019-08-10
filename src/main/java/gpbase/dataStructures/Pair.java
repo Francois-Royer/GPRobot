@@ -1,4 +1,4 @@
-package sampleex.dataStructures;
+package gpbase.dataStructures;
 
 /**
  *

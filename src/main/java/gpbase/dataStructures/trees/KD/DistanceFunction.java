@@ -1,4 +1,4 @@
-package sampleex.dataStructures.trees.KD;
+package gpbase.dataStructures.trees.KD;
 
 public interface DistanceFunction {
     public double distance(double[] p1, double[] p2);

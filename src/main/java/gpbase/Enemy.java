@@ -1,19 +1,19 @@
-package sampleex;
+package gpbase;
 
 import java.awt.*;
 import java.util.ArrayList;
 
 import robocode.*;
-import sampleex.dataStructures.trees.KD.KdTree;
-import sampleex.dataStructures.trees.KD.NearestNeighborIterator;
-import sampleex.dataStructures.trees.KD.SquareEuclideanDistanceFunction;
+import gpbase.dataStructures.trees.KD.KdTree;
+import gpbase.dataStructures.trees.KD.NearestNeighborIterator;
+import gpbase.dataStructures.trees.KD.SquareEuclideanDistanceFunction;
 
 import static java.lang.Math.*;
-import static sampleex.GPUtils.*;
+import static gpbase.GPUtils.*;
 import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
-class Enemy extends Point.Double {
+public class Enemy extends Point.Double {
     String name;
     double energy;
     double velocity;

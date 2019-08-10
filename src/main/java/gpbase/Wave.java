@@ -1,11 +1,9 @@
-package sampleex;
+package gpbase;
 
 import java.awt.Point;
 
-import static robocode.util.Utils.getRandom;
 import static robocode.util.Utils.normalRelativeAngle;
-import static sampleex.GPUtils.*;
-import static sampleex.GPBase.*;
+import static gpbase.GPUtils.*;
 import static java.lang.Math.*;
 
 public class Wave extends Point.Double {

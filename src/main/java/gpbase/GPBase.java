@@ -1,11 +1,10 @@
-package sampleex;
+package gpbase;
 
-import static sampleex.GPUtils.*;
+import static gpbase.GPUtils.*;
 
 import robocode.*;
 
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;

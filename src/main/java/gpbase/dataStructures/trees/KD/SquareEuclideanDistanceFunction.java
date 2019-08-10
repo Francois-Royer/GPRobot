@@ -1,4 +1,4 @@
-package sampleex.dataStructures.trees.KD;
+package gpbase.dataStructures.trees.KD;
 
 /**
  *

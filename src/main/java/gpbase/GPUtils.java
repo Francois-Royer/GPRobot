@@ -1,4 +1,4 @@
-package sampleex;
+package gpbase;
 
 import java.awt.*;
 

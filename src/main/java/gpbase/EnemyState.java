@@ -1,8 +1,8 @@
-package sampleex;
+package gpbase;
 
 import static robocode.util.Utils.*;
 
-import static sampleex.GPUtils.*;
+import static gpbase.GPUtils.*;
 
 public class EnemyState {
     double x, y, direction, velocity, dist, rDirection, rVelocity, turn;

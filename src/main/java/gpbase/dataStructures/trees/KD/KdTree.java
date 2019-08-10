@@ -1,8 +1,8 @@
-package sampleex.dataStructures.trees.KD;
+package gpbase.dataStructures.trees.KD;
 
-import sampleex.dataStructures.BinaryHeap;
-import sampleex.dataStructures.MaxHeap;
-import sampleex.dataStructures.MinHeap;
+import gpbase.dataStructures.BinaryHeap;
+import gpbase.dataStructures.MaxHeap;
+import gpbase.dataStructures.MinHeap;
 
 /**
  *
