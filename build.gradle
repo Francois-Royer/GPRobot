@@ -38,9 +38,9 @@ shadowJar {
     configurations = [project.configurations.compile]
 }
 
-task copyBaseToRobocode(type: Copy) {
+task copyGPBase(type: Copy) {
     from 'src/main/java'
     from 'build/classes/java/main'
-    include '**/GPBase*.*'
+    include '**/gpbase/**/*.*'
     into "$robotcode_home/robots"
 }

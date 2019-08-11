@@ -2,6 +2,10 @@ package gpbase;
 
 import static gpbase.GPUtils.*;
 
+import gpbase.gun.AimingData;
+import gpbase.gun.FireStat;
+import gpbase.gun.CircularGunner;
+import gpbase.gun.NearestNeighborGunner;
 import robocode.*;
 
 import java.awt.*;
@@ -21,7 +25,7 @@ public class GPBase extends AdvancedRobot {
     public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 3;
     public static double HIT_RATE_WATER_MARK = 0.3;
     public static double FIRE_POWER_FACTOR = 4;
-    public static double FIRE_TOLERANCE = TANK_SIZE / 8;
+    public static double FIRE_TOLERANCE = TANK_SIZE / 9;
     public static long FIRE_AGAIN_MIN_TIME;
     public static double waveArcRadians = PI / 16;
 
@@ -31,11 +35,9 @@ public class GPBase extends AdvancedRobot {
 
     public int phsz;
 
-    public int enemyCount;
     public int aliveCount;
 
     Point.Double unsafePosition;
-    Point.Double waveUnsafePosition;
     Point.Double safePosition;
     Point.Double waveSafePosition;
     Point.Double targetPred;
@@ -60,24 +62,32 @@ public class GPBase extends AdvancedRobot {
     Enemy mostRight;
 
     public long lastFireTime=-1;
+    FireStat globalFireStat = new FireStat();
+    FireStat roundFireStat;
+
     static long fireCount = 0;
     static long bulletHitCount = 0;
     static long battleFireCount = 0;
     static long battlebulletHitCount = 0;
-    boolean hitwallX = false;
-    boolean hitwallY = false;
+
+    CircularGunner circularGunner;
+    NearestNeighborGunner nearestNeighborGunner;
+
 
     @Override
     public void run() {
+        circularGunner = new CircularGunner(this);
+        nearestNeighborGunner = new NearestNeighborGunner(this);
+
         BATTLE_FIELD_CENTER = new Point.Double(getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
         dmax = BATTLE_FIELD_CENTER.distance(TANK_SIZE / 2, TANK_SIZE / 2) * 2;
-        phsz = (int) (dmax*2/getBulletSpeed(MIN_BULLET_POWER));
+        phsz = (int) (dmax/getBulletSpeed(MAX_BULLET_POWER) + 2);
         FIRE_AGAIN_MIN_TIME = (long) (Rules.getGunHeat(MIN_BULLET_POWER) / getGunCoolingRate());
         out.println ("dmax="+dmax);
         out.println ("phsz="+phsz);
         out.println ("FIRE_AGAIN_MIN_TIME="+FIRE_AGAIN_MIN_TIME);
 
-        aliveCount = enemyCount = getOthers();
+        aliveCount = getOthers();
 
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
@@ -309,13 +319,13 @@ public class GPBase extends AdvancedRobot {
                     rightWave = p;
             }
             p = new Point.Double((leftWave.x + rightWave.x) / 2, (leftWave.y + rightWave.y) / 2);
-            if (p.distance(safePosition) > leftWave.distance(rightWave)/1.8 ||
+            if (getCurrentPoint().distance(safePosition) > leftWave.distance(rightWave)/1.8 ||
                     safePosition.distance(getCurrentPoint()) > leftWave.distance(rightWave)/1.8)
                 waveSafePosition = safePosition;
             else {
-                Wave closet = waves.stream().sorted(new WaveComparator(getCurrentPoint(), now)).findFirst().get();
+                //Wave closet = waves.stream().sorted(new WaveComparator(getCurrentPoint(), now)).findFirst().get();
 
-                waveSafePosition = aliveCount >2 ? safePosition : leftCount> waves.size()/2 ? rightWave: leftWave;
+                waveSafePosition = aliveCount > 1 ? safePosition : leftCount> waves.size()/2 ? rightWave: leftWave;
             }
         } else {
             waveSafePosition = safePosition;
@@ -363,7 +373,7 @@ public class GPBase extends AdvancedRobot {
                 e.x = x;
                 e.y = y;
             } catch (Exception ex){
-                // NOOP
+                // HitWall
             }
         }
         e.angle = normalAbsoluteAngle(getAngle(getCurrentPoint(), e));
@@ -433,63 +443,38 @@ public class GPBase extends AdvancedRobot {
         if (targetPred == null || getGunHeat() > 0 || target.alive == false)
             return 0;
 
-        double tolerance = target.getHitRate() < HIT_RATE_WATER_MARK ? FIRE_TOLERANCE : FIRE_TOLERANCE;
-
-        if (getCurrentPoint().distance(targetPred) * sin(abs(getGunTurnRemainingRadians())) > tolerance)
+        if (getCurrentPoint().distance(targetPred) * sin(abs(getGunTurnRemainingRadians())) > FIRE_TOLERANCE)
             return 0;
 
-        return getFirePower(targetPred);
+        return fire;
     }
 
-    private double getFirePower(Point.Double p) {
-        if (target.energy == 0)
-            return MAX_BULLET_POWER;
-
-        double d = getCurrentPoint().distance(p);
-        double power = range(d, dmin, dmax, MAX_BULLET_POWER, MIN_BULLET_POWER);
-
-        if (d>dmin)
-            power *= FIRE_POWER_FACTOR * target.getHitRate();
-
-        return checkMinMax(power, MIN_BULLET_POWER, MAX_BULLET_POWER);
-    }
 
     private double getTurn2Targert() {
         if (target == null)
             return 0;
 
-        // out.printf("%20s: rotationRate=%.02f%% velocity=%.02f accel=%.02f\n",
-        // target.name, target.rotationRate, target.velocity, target.accel);
         targetPred = clonePoint(target);
         targetPreds = new ArrayList<>();
 
         if (target.energy > 0) {
+            AimingData c = circularGunner.aim(target);
+            AimingData nn = nearestNeighborGunner.aim(target);
 
-            ArrayList<EnemyState> moves = target.getPredictedMove(this);
-            if (moves != null) {
-                for(int i=0; i<5; i++) {
-                    double firePower = getFirePower(targetPred);
-                    double bulletSpeed = getBulletSpeed(firePower);
-                    long time = (long) (getCurrentPoint().distance(targetPred) / bulletSpeed);
-                    targetPred = clonePoint(target);
-                    targetPreds.clear();
-                    long moveDuration = 0;
-                    int step = 1;
-                    double dir = target.direction;
-                    while (moveDuration < time) {
-                        EnemyState m = moves.get(step++);
-                        moveDuration += m.duration;
-                        double dist = m.velocity * m.duration;
-                        dir += m.turn;
-                        targetPred = new Point.Double(targetPred.x + dist * cos(dir), targetPred.y + dist * sin(dir));
-                        //targetPred = new Point.Double(m.x, m.y);
-                        targetPreds.add(targetPred);
-                    }
-                }
+            if (c.getConfidence() >= nn.getConfidence()) {
+                targetPred = c.getFiringPosition();
+                targetPreds = c.getExpectedMoves();
+                fire = c.getFirePower();
+
             } else {
-                targetPred = continuousMovementPrediction(target, targetPreds);
+                targetPred = nn.getFiringPosition();
+                targetPreds = nn.getExpectedMoves();
+                fire = nn.getFirePower();
+
             }
-        }
+        } else
+            fire = MIN_BULLET_POWER;
+
         double ga = trigoAngle(getGunHeadingRadians());
         double ta = getAngle(getCurrentPoint(), targetPred);
 
@@ -580,36 +565,8 @@ public class GPBase extends AdvancedRobot {
         return ny;
     }
 
-    public Point.Double continuousMovementPrediction(Enemy target,  List<Point.Double>points) {
-        Point.Double point = clonePoint(target);
-
-        for (int i = 0; i < 5; i++) {
-            point = clonePoint(target);
-            double firePower = getFirePower(point);
-            double bulletSpeed = getBulletSpeed(firePower);
-            long time = (long) (getCurrentPoint().distance(point) / bulletSpeed);
-            double direction = target.direction;
-            double v = target.velocity;
-
-            points.clear();
-
-            for (long t = 0; t < time; t++) {
-
-                v = checkMinMax(v + target.accel, target.vMin, target.vMax);
-                direction += min(abs(target.rotationRate), getTurnRateRadians(v))* signum(target.rotationRate);
-
-                try {
-                    double x = ensureXInBatleField(point.x + v * cos(direction));
-                    double y = ensureYInBatleField(point.y + v * sin(direction));
-
-                    point.x = x;
-                    point.y = y;
-                } catch (Exception e) {
-                    // NOOP
-                }
-                targetPreds.add(clonePoint(point));
-            }
-        }
-        return point;
+    public double wallDistance(Point.Double p) {
+        return min(min(p.x ,BATTLE_FIELD_CENTER.x*2-p.x),
+                min(p.y, BATTLE_FIELD_CENTER.y*2-p.y));
     }
 }

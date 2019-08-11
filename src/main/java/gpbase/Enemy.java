@@ -14,6 +14,7 @@ import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
 public class Enemy extends Point.Double {
+    double VARIANCE_SAMPLING = 10;
     String name;
     double energy;
     double velocity;
@@ -22,14 +23,18 @@ public class Enemy extends Point.Double {
     double angle; // angle from current pos to this enemy
     double rDirection; // direction - angle
 
+    double accel = 0;
+    double turn;
+    double rotationRate = 0;
+    long lastUpdate; // Updated by movement prediction
+
     double vMax = 0;
     double vMin = 0;
     double vAvg = 0;
-    double rotationRate = 0;
-
-    double accel = 0;
-    double turn;
-    long lastUpdate; // Update by movement prediction
+    double velocityVariance=0;
+    double turnVariance=0;
+    double velocityVarianceMax=0;
+    double turnVarianceMax=0;
 
     long fireCount = 0;
     long bulletHitCount = 0;
@@ -37,13 +42,13 @@ public class Enemy extends Point.Double {
 
     long scanCount = 0;
     double scanDirection;
-    double scanVelocity = 0;
-    long scanLastUpdate = 0 ;
+    double scanVelocity;
+    long scanLastUpdate;
 
     Boolean alive = true;
 
-    KdTree<ArrayList<EnemyState>> kdtree = null;
-    ArrayList<EnemyState> moveLog = new ArrayList<>();
+    KdTree<ArrayList<Move>> kdtree = null;
+    ArrayList<Move> moveLog = new ArrayList<>();
 
     public Enemy(ScannedRobotEvent sre, GPBase robot) {
         name = sre.getName();
@@ -53,6 +58,16 @@ public class Enemy extends Point.Double {
     public void update(ScannedRobotEvent sre, GPBase robot) {
         long now= robot.getTime();
         scanCount++;
+
+        if (scanCount>1) {
+            if (energy > sre.getEnergy() && this.lastFire + robot.FIRE_AGAIN_MIN_TIME < now) {
+                double bspeed = getBulletSpeed(
+                        checkMinMax(energy - sre.getEnergy(), MIN_BULLET_POWER, MAX_BULLET_POWER));
+                robot.waves.add(new Wave(name, bspeed, scanLastUpdate, this, robot));
+                this.lastFire = scanLastUpdate;
+            }
+        }
+
         velocity = sre.getVelocity();
         direction = trigoAngle(sre.getHeadingRadians());
         angle = trigoAngle(robot.getHeadingRadians() + sre.getBearingRadians());
@@ -60,28 +75,31 @@ public class Enemy extends Point.Double {
         x = robot.getX() + sre.getDistance() * cos(angle);
         y = robot.getY() + sre.getDistance() * sin(angle);
 
-        if (alive & scanLastUpdate>0) {
-            rotationRate = normalRelativeAngle(direction - scanDirection) / (now - scanLastUpdate);
-            this.rotationRate = checkMinMax(this.rotationRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
-            accel = checkMinMax(velocity - scanVelocity / (now - scanLastUpdate), -DECELERATION, ACCELERATION);
+        if (alive & scanCount>1) {
+            double prevTurn = turn;
+            turn = normalRelativeAngle(direction - scanDirection);
 
-            vAvg = (abs(velocity) + vAvg) / 10;
+            // Compute variances
+            velocityVariance = (abs(velocity-scanVelocity)/(now-scanLastUpdate) + velocityVariance*(VARIANCE_SAMPLING-1))/VARIANCE_SAMPLING;
+            velocityVarianceMax = max(velocityVariance, velocityVarianceMax);
+            turnVariance = (abs(turn-prevTurn)/(now-scanLastUpdate) + turnVariance*(VARIANCE_SAMPLING-1)) / VARIANCE_SAMPLING;
+            turnVarianceMax = max(turnVariance, turnVarianceMax);
+
+            rotationRate = turn / (now - scanLastUpdate);
+            this.rotationRate = checkMinMax(this.rotationRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
+            boolean isDecelerate = abs(velocity)<abs(scanVelocity);
+            accel = checkMinMax(velocity - scanVelocity / (now - scanLastUpdate),isDecelerate?  -DECELERATION: -ACCELERATION, ACCELERATION);
+
             vMax = max(vMax, velocity);
             vMin = min(vMin, velocity);
 
-            if (energy > sre.getEnergy() && this.lastFire + robot.FIRE_AGAIN_MIN_TIME < now) {
-                double bspeed = getBulletSpeed(
-                        checkMinMax(energy - sre.getEnergy(), MIN_BULLET_POWER, MAX_BULLET_POWER));
-                robot.waves.add(new Wave(name, bspeed, lastUpdate, this, robot));
-                this.lastFire = lastUpdate;
-            }
+            moveLog.add(new Move(getKDPoint(robot), turn, velocity, now - scanLastUpdate));
 
-            moveLog.add(new EnemyState(this, robot, now-scanLastUpdate));
             if (moveLog.size()> robot.phsz) {
                 moveLog.remove(0);
-                double[] point = getKDPoint(moveLog.get(0));
-                if (kdtree == null) kdtree = new KdTree<>(point.length);
-                kdtree.addPoint(point, new ArrayList<EnemyState>(moveLog));
+                Move m  = moveLog.get(0);
+                if (kdtree == null) kdtree = new KdTree<>(m.getKdpoint().length);
+                kdtree.addPoint(m.getKdpoint(), new ArrayList<Move>(moveLog));
             }
         }
 
@@ -97,31 +115,79 @@ public class Enemy extends Point.Double {
         return (this.fireCount == 0) ? 0 : (double) this.bulletHitCount / this.fireCount;
     }
 
-    double[] getKDPoint(EnemyState m) {
+    public double[] getKDPoint(GPBase robot) {
         return new double[] {
-                m.direction * 100 / PI,
-                m.velocity * 100 / MAX_VELOCITY,
+                rDirection * 100 / PI,
+                velocity * 100 / MAX_VELOCITY,
+                velocityVariance * 100 / velocityVarianceMax,
+                turnVariance* 100/turnVarianceMax,
                 //m.lastFire * 100 / GPBase.FIRE_AGAIN_MIN_TIME,
-                //m.rDirection * 100 /PI,
-                m.rVelocity * 100 / MAX_VELOCITY,
-                m.dist * 100 / GPBase.dmax
+                //normalRelativeAngle(trigoAngle(robot.getHeadingRadians()) - angle) * 100 /PI,
+                //robot.getVelocity() * 100 / MAX_VELOCITY,
+                robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
+                //robot.wallDistance(this) * 100 / robot.BATTLE_FIELD_CENTER.getY()
         };
     }
 
-    double kddist;
-    ArrayList<EnemyState> getPredictedMove(GPBase robot) {
+    ArrayList<Move> getPredictedMove(GPBase robot) {
         if (kdtree == null) return null;
-        EnemyState m = new EnemyState(this, robot, 0);
-        NearestNeighborIterator<ArrayList<EnemyState>> it  = kdtree.getNearestNeighborIterator(getKDPoint(m), 1, new SquareEuclideanDistanceFunction());
+        NearestNeighborIterator<ArrayList<Move>> it  = kdtree.getNearestNeighborIterator(getKDPoint(robot), 1, new SquareEuclideanDistanceFunction());
         if (it.hasNext()) {
-            ArrayList<EnemyState> moves = it.next();
+            ArrayList<Move> moves = it.next();
             double distance = it.distance();
 
             if (distance < 50) {
-                System.out.println("distance=" + distance);
+                //System.out.println("distance=" + distance);
                 return moves;
             }
         }
         return null;
     }
+
+    // Getters
+    public String getName() {
+        return name;
+    }
+
+    public double getVelocity() {
+        return velocity;
+    }
+
+    public double getDirection() {
+        return direction;
+    }
+
+    public double getvMax() {
+        return vMax;
+    }
+
+    public double getvMin() {
+        return vMin;
+    }
+
+    public double getRotationRate() {
+        return rotationRate;
+    }
+
+    public double getAccel() {
+        return accel;
+    }
+
+    public double getVelocityVariance() { return velocityVariance; }
+
+    public double getTurnVariance() { return turnVariance; }
+
+    public double getVelocityVarianceMax() { return velocityVarianceMax; }
+
+    public double getTurnVarianceMax() { return turnVarianceMax; }
+
+    public KdTree<ArrayList<Move>> getKdtree() {
+        return kdtree;
+    }
+
+    public ArrayList<Move> getMoveLog() {
+        return moveLog;
+    }
+
+
 }

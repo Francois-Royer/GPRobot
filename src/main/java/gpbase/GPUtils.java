@@ -6,7 +6,7 @@ import static java.lang.Math.*;
 import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
-class GPUtils {
+public class GPUtils {
     // -PI -> PI
     public static double getAngle(Point.Double s, Point.Double d) {
         double a = acos((d.x - s.x) / s.distance(d));
@@ -30,7 +30,10 @@ class GPUtils {
     }
 
     public static double range(double v, double minv, double maxv, double minr, double maxr) {
-        return (v - minv) / (maxv - minv) * (maxr - minr) + minr;
+        if (minv==maxv) return minr;
+        return (maxr> minr)
+                ? (v - minv) / (maxv - minv) * (maxr - minr)
+                : (maxv - v) / (maxv - minv) * (minr - maxr);
     }
 
     public static void drawFillCircle(Graphics2D g, Color c, Point.Double p, int d) {
@@ -77,5 +80,7 @@ class GPUtils {
         return asin(MAX_VELOCITY/vb);
     }
 
-
+    static public double firePowerFromConfidence(double confidence)  {
+        return range(confidence , 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
+    }
 }

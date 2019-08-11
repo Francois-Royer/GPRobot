@@ -4,6 +4,11 @@ import gpbase.Enemy;
 
 public interface Gunner {
     String getName();
-    double aim(Enemy target);
+    AimingData aim(Enemy enemy);
+
+    // Stats
+    void fire(Enemy enemy);
+    void hit(Enemy enemy);
+    double hitRate(Enemy enemy);
     double hitRate();
 }
