@@ -83,4 +83,10 @@ public class GPUtils {
     static public double firePowerFromConfidence(double confidence)  {
         return range(confidence , 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
     }
+
+    static public Point.Double middle(Point.Double a, Point.Double b) {
+        return new Point.Double((a.getX()+b.getX())/2,(a.getY()+b.getY())/2);
+    }
+
+
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import static robocode.Rules.MIN_BULLET_POWER;
 
 public class AimingData {
+    private String gunner;
     private Enemy target;
     private Point.Double firingPosition;
     private double firePower;
@@ -17,6 +18,7 @@ public class AimingData {
     private double confidence;
 
     public AimingData(Enemy target) {
+        this.gunner = "HeadOnGunner";
         this.target = target;
         this.firingPosition = target;
         this.firePower = MIN_BULLET_POWER;

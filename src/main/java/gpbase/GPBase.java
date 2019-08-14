@@ -306,11 +306,9 @@ public class GPBase extends AdvancedRobot {
         waves = newWaves;
 
         if (waves.size() > 0) {
-            int leftCount = 0;
             Point.Double p;
             leftWave = rightWave = null;
             for (Wave wave: waves) {
-                if (wave.left) leftCount++;
                 p = getBorderPoint(wave, normalRelativeAngle(wave.direction + wave.arc));
                 if (leftWave == null || p.distance(rightWave) > leftWave.distance(rightWave))
                     leftWave = p;
@@ -318,14 +316,17 @@ public class GPBase extends AdvancedRobot {
                 if (rightWave == null || p.distance(leftWave) > rightWave.distance(leftWave))
                     rightWave = p;
             }
-            p = new Point.Double((leftWave.x + rightWave.x) / 2, (leftWave.y + rightWave.y) / 2);
+            Wave closest = waves.stream().sorted(new WaveComparator(getCurrentPoint(), now)).findFirst().get();
+            leftWave = getBorderPoint(closest, normalRelativeAngle(closest.direction + closest.arc));
+            rightWave = getBorderPoint(closest, normalRelativeAngle(closest.direction - closest.arc));
+
+            p = middle(leftWave, rightWave);;
             if (getCurrentPoint().distance(safePosition) > leftWave.distance(rightWave)/1.8 ||
                     safePosition.distance(getCurrentPoint()) > leftWave.distance(rightWave)/1.8)
                 waveSafePosition = safePosition;
             else {
-                //Wave closet = waves.stream().sorted(new WaveComparator(getCurrentPoint(), now)).findFirst().get();
-
-                waveSafePosition = aliveCount > 1 ? safePosition : leftCount> waves.size()/2 ? rightWave: leftWave;
+                waveSafePosition = aliveCount > 1 ? safePosition :
+                        getCurrentPoint().distance(leftWave) > getCurrentPoint().distance(rightWave ) ? rightWave: leftWave;
             }
         } else {
             waveSafePosition = safePosition;
@@ -545,10 +546,6 @@ public class GPBase extends AdvancedRobot {
         return new Point.Double(x, y);
     }
 
-    public Point.Double midle(Point.Double a, Point.Double b) {
-        return new Point.Double((a.getX()+b.getX())/2,(a.getY()+b.getY())/2);
-    }
-
     public Point.Double getCurrentPoint() {
         return new Point.Double(getX(), getY());
     }
@@ -566,7 +563,7 @@ public class GPBase extends AdvancedRobot {
     }
 
     public double wallDistance(Point.Double p) {
-        return min(min(p.x ,BATTLE_FIELD_CENTER.x*2-p.x),
-                min(p.y, BATTLE_FIELD_CENTER.y*2-p.y));
+        return min(p.x ,BATTLE_FIELD_CENTER.x*2-p.x)+
+               min(p.y, BATTLE_FIELD_CENTER.y*2-p.y);
     }
 }

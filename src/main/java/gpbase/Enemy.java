@@ -63,7 +63,7 @@ public class Enemy extends Point.Double {
             if (energy > sre.getEnergy() && this.lastFire + robot.FIRE_AGAIN_MIN_TIME < now) {
                 double bspeed = getBulletSpeed(
                         checkMinMax(energy - sre.getEnergy(), MIN_BULLET_POWER, MAX_BULLET_POWER));
-                robot.waves.add(new Wave(name, bspeed, scanLastUpdate, this, robot));
+                robot.waves.add(new Wave(name, bspeed, scanLastUpdate, this, robot.waveSafePosition));
                 this.lastFire = scanLastUpdate;
             }
         }
@@ -121,11 +121,11 @@ public class Enemy extends Point.Double {
                 velocity * 100 / MAX_VELOCITY,
                 velocityVariance * 100 / velocityVarianceMax,
                 turnVariance* 100/turnVarianceMax,
-                //m.lastFire * 100 / GPBase.FIRE_AGAIN_MIN_TIME,
+                //(robot.getTime()-robot.lastFireTime) * 100 / GPBase.FIRE_AGAIN_MIN_TIME,
                 //normalRelativeAngle(trigoAngle(robot.getHeadingRadians()) - angle) * 100 /PI,
                 //robot.getVelocity() * 100 / MAX_VELOCITY,
-                robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
-                //robot.wallDistance(this) * 100 / robot.BATTLE_FIELD_CENTER.getY()
+                //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
+                robot.wallDistance(this) * 100 / robot.BATTLE_FIELD_CENTER.getY()
         };
     }
 

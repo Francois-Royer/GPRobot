@@ -12,20 +12,17 @@ public class Wave extends Point.Double {
     double direction;
     double arc;
     long start;
-    boolean left;
 
-    public Wave(String name, double velocity, long start, Point.Double origin, GPBase robot) {
+    public Wave(String name, double velocity, long start, Point.Double origin, Point.Double target) {
         super(origin.getX(), origin.getY());
         this.name = name;
         this.velocity = velocity;
-        this.direction = getAngle(origin, robot.getCurrentPoint());
+        this.direction = getAngle(origin, target);
         this.start = start;
         this.x = origin.x;
         this.y = origin.y;
 
-        this.arc = maximumEscapeAngle(velocity)/2;
-
-        left = normalRelativeAngle(trigoAngle(robot.getHeadingRadians()) - direction) * robot.forward > 0;
+        this.arc = maximumEscapeAngle(velocity)/4;
     }
 
     double getDistance(long tick) {
