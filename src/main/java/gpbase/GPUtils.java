@@ -84,9 +84,26 @@ public class GPUtils {
         return range(confidence , 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
     }
 
+    static public double firePowerFromConfidenceAndEnergy(double confidence, double energy)  {
+        double firePower = firePowerFromConfidence(confidence);
+        if (energy<50)
+            return firePower*energy/100;
+        return checkMinMax(firePower, MIN_BULLET_POWER, MAX_BULLET_POWER);
+    }
+
     static public Point.Double middle(Point.Double a, Point.Double b) {
         return new Point.Double((a.getX()+b.getX())/2,(a.getY()+b.getY())/2);
     }
 
+    static double computeTurnGun2Target(GPBase base, Point.Double target) {
+        double ga = trigoAngle(base.getGunHeadingRadians());
+        double ta = getAngle(base.getCurrentPoint(), target);
 
+        return  (abs(ta - ga) <= PI) ? ta - ga : ga -ta;
+    }
+
+    static public double AvoidNan(double value, double def) {
+        if (Double.isNaN(value)) return def;
+        return value;
+    }
 }

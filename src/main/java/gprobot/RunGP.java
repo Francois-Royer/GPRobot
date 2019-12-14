@@ -9,12 +9,9 @@ import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
 import robocode.control.RobotSpecification;
 
-import java.awt.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -78,7 +75,6 @@ public class RunGP {
             LocateRegistry.createRegistry(1099);
             console.println("Prepare " + RUNNERS_COUNT + " Runners ");
             prepareBattleRunners(RUNNERS_COUNT);
-
             Runtime.getRuntime().addShutdownHook(new Thread(RobotCodeUtil::killallRunner));
 
             // -- EC loop
@@ -123,7 +119,7 @@ public class RunGP {
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
 
-                storeRunData(genCount, avgFitness, bestLastGen.fitness, fitnesses[POP_SIZE], avgNodeCount, bestLastGen.nodeCount, bestLastGen.getBotName());
+                storeRunData(genCount, avgFitness, bestLastGen.fitness, avgNodeCount, bestLastGen.nodeCount, bestLastGen.getBotName());
 
                 genCount++;
                 // breed next generation
@@ -214,7 +210,7 @@ public class RunGP {
         if (opponents.length == 1) return new double[]{1};
 
         RobocodeEngine engine = new RobocodeEngine(new File(ROBO_CODE_PATH));
-        BattleObserver battleObserver = new BattleObserver();
+        BattleObserver battleObserver = new BattleObserver("opponents");
         engine.addBattleListener(battleObserver);
         engine.setVisible(false);
         RobotSpecification[] selectedBots = engine.getLocalRepository(String.join(",", opponents));
@@ -229,14 +225,15 @@ public class RunGP {
 
     private void scoreFitnessOnSet() {
         try {
-            fitnesses = new double[POP_SIZE+1];
-            final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE+1).boxed().collect(Collectors.toList()));
-            final CountDownLatch cdl = new CountDownLatch(POP_SIZE+1);
+            fitnesses = new double[POP_SIZE];
+            final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE).boxed().collect(Collectors.toList()));
+            final CountDownLatch cdl = new CountDownLatch(POP_SIZE);
             for (int i = 0; i < RUNNERS_COUNT; i++) {
                 final int runnerId = i;
                 new Thread(() -> {
                     Integer robotID;
                     try {
+                        Thread.sleep(20);
                         RMIGPRobotBattleRunner runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
                         runner.setOpponentsName(opponents);
 
@@ -305,9 +302,9 @@ public class RunGP {
         return pool[best];
     }
 
-    public void storeRunData(int round, double avgFit, double bestFit, double baseFit, double avgNode, int bestNode, String bestBotName) {
+    public void storeRunData(int round, double avgFit, double bestFit, double avgNode, int bestNode, String bestBotName) {
         // store each variable in its own file (for graphs)
-        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + baseFit + "," + avgNode + "," + bestNode + "," + bestBotName+"\n");
+        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName+"\n");
     }
 
     public void saveCtx() {
@@ -357,7 +354,7 @@ public class RunGP {
     public void cleanRunData() throws IOException {
         Stream.of(
             new File(TARGET_FOLDER)
-                .listFiles((d, name) -> name.startsWith(BOT_PRFFIX)))
+                .listFiles((d, name) -> name.startsWith(BOT_PREFFIX)))
             .forEach(File::delete);
 
         Stream.of(
@@ -365,7 +362,7 @@ public class RunGP {
                 .listFiles((d,name) ->  name.matches("run_data.*.txt")))
             .forEach(File::delete);
 
-        appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness, Base fitness, Average nodes,Best nodes,Best name\n");
+        appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness, Average nodes,Best nodes,Best name\n");
     }
 
     public void appendStringToFile(String file, String s) {

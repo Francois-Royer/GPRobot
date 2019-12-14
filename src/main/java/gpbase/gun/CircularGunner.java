@@ -15,35 +15,21 @@ import static gpbase.GPUtils.*;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 
-public class CircularGunner extends AbtractGunner {
-    GPBase gpbase;
+public class CircularGunner extends HeadOnGunner {
 
     public CircularGunner(GPBase gpbase) {
-        this.gpbase = gpbase;
+        super(gpbase);
     }
-
 
     @Override
     public AimingData aim(Enemy enemy) {
         double confidence = getConfidence(enemy);
+        double firePower = firePowerFromConfidenceAndEnergy(confidence, gpbase.getEnergy());
 
         List<Point.Double> predMoves = new ArrayList<>();
-        double firePower = firePowerFromConfidence(confidence);
         Point.Double firingPosition = forwardMovementPrediction(enemy, predMoves, firePower);
 
-        return new AimingData(enemy, firingPosition, firePower, predMoves, confidence);
-    }
-
-    public double getConfidence(Enemy enemy) {
-        double confidence =
-                range(enemy.getVelocityVariance(), 0, enemy.getVelocityVarianceMax(), 1,0) *
-                        range(enemy.getTurnVariance(), 0, enemy.getTurnVarianceMax(), 1,0);
-
-        // distance decrease confidence
-        double distance= gpbase.getCurrentPoint().distance(enemy);
-        double diffOne = 1-confidence;
-        confidence -= diffOne*range(distance, gpbase.dmin, gpbase.dmax, 0,2);
-        return checkMinMax(confidence, 0.001, 1);
+        return new AimingData(this, enemy, firingPosition, firePower, predMoves, confidence);
     }
 
      private Point.Double forwardMovementPrediction(Enemy target,  List<Point.Double>predMoves, double firePower) {
@@ -77,6 +63,17 @@ public class CircularGunner extends AbtractGunner {
         }
 
         return firePoint;
+    }
+
+    @Override
+    public double getConfidence(Enemy enemy) {
+        if (enemy.getEnergy() == 0) return 1;
+        double distanceFactor = range(gpbase.getCurrentPoint().distance(enemy), gpbase.dmin, gpbase.dmax, -1, 1)*4;
+        double varianceConfidence = (range(enemy.getVelocityVariance(), 0, enemy.getVelocityVarianceMax(), 1,  0) +
+            range(enemy.getTurnVariance(), 0, enemy.getTurnVarianceMax(), 1, 0))/2;
+
+        double dist2One = 1 - varianceConfidence;
+        return checkMinMax(varianceConfidence - dist2One*distanceFactor, 0.05, 1);
     }
 
 }

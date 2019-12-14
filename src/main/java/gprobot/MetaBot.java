@@ -2,16 +2,17 @@ package gprobot;
 
 import java.io.*;
 
-import static gprobot.RobocodeConf.BOT_PRFFIX;
+import static gprobot.RobocodeConf.BOT_PREFFIX;
 import static gprobot.RobocodeConf.random;
 import static gprobot.RobocodeConf.TARGET_PACKAGE;
 
 public class MetaBot implements Serializable {
 
     static String robotTemplate;
+
     static {
         try (InputStream is = MetaBot.class.getResourceAsStream("/RobotTemplate.java")) {
-            byte []buff = new byte[is.available()];
+            byte[] buff = new byte[is.available()];
             is.read(buff);
             robotTemplate = new String(buff);
         } catch (IOException e) {
@@ -21,7 +22,7 @@ public class MetaBot implements Serializable {
 
     private static final long serialVersionUID = 5625044536646095912L;
     final static int SCAN_CHROMOS = 5;
-    final static int HIT_BY_BULLET_CHROMOS = 5;
+    final static int HIT_BY_BULLET_CHROMOS = 4;
     final static int HIT_ROBOT_CHROMOS = 5;
     final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;
     final static double
@@ -50,7 +51,7 @@ public class MetaBot implements Serializable {
 
     String getBotName() {
         if (botName == null)
-            botName = BOT_PRFFIX + memberGen + "_" + memberID;
+            botName = BOT_PREFFIX + memberGen + "_" + memberID;
         return botName;
     }
 
@@ -111,9 +112,9 @@ public class MetaBot implements Serializable {
         while (xChromo2 == xChromo1)
             xChromo2 = (xChromo1 < SCAN_CHROMOS)
                 ? random.nextInt(SCAN_CHROMOS)
-                : ((xChromo1 < SCAN_CHROMOS+HIT_BY_BULLET_CHROMOS)
+                : ((xChromo1 < SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS)
                 ? random.nextInt(HIT_BY_BULLET_CHROMOS) + SCAN_CHROMOS
-                : random.nextInt(HIT_ROBOT_CHROMOS) + SCAN_CHROMOS+HIT_BY_BULLET_CHROMOS);
+                : random.nextInt(HIT_ROBOT_CHROMOS) + SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS);
 
 
         if (random.nextDouble() < PROB_CROSS_ROOT) {    // swap entire chromosome
@@ -183,10 +184,13 @@ public class MetaBot implements Serializable {
     // FileIO Methods ///////////////////////////////////////////////////////////////////////////
 
     private void setCode() {
-        sourceCode = String.format(robotTemplate, getBotName(),
-                phenome[0], phenome[1], phenome[2], phenome[3], phenome[4]/*,
+        Object[] params = new String[phenome.length + 1];
+        params[0] = getBotName();
+        System.arraycopy(phenome, 0, params, 1, phenome.length);
+        sourceCode = String.format(robotTemplate, params);
+                /*phenome[0], phenome[1], phenome[2], phenome[3]/*, phenome[4]/*,
                 phenome[5], phenome[6], phenome[7], phenome[8], phenome[9]/*,
-                phenome[10], phenome[11],phenome[12],phenome[13],phenome[14]*/);
+                phenome[10], phenome[11],phenome[12],phenome[13],phenome[14]);*/
     }
 
     String writeSource() throws IOException {

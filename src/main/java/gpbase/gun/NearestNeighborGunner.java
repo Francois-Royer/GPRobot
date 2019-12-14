@@ -15,7 +15,7 @@ import static java.lang.Math.*;
 import static robocode.Rules.*;
 
 public class NearestNeighborGunner extends AbtractGunner {
-    private static double KD_DISTANCE_MAX=50; // used to compute confidence
+    private static double KD_DISTANCE_MAX=100; // used to compute confidence
     GPBase gpbase;
 
     public NearestNeighborGunner(GPBase gpbase) {
@@ -25,22 +25,23 @@ public class NearestNeighborGunner extends AbtractGunner {
 
     @Override
     public AimingData aim(Enemy target) {
-        if (target.getKdtree() == null) return new AimingData(target);
+        if (target.getKdtree() == null) return null;
 
-        NearestNeighborIterator<ArrayList<Move>> it = target.getKdtree().getNearestNeighborIterator(target.getKDPoint(gpbase), 1, new SquareEuclideanDistanceFunction());
+        NearestNeighborIterator<List<Move>> it = target.getKdtree().getNearestNeighborIterator(target.getKDPoint(gpbase), 1, new SquareEuclideanDistanceFunction());
         if (it.hasNext()) {
-            ArrayList<Move> movesLog = it.next();
+            List<Move> movesLog = it.next();
             double distance = it.distance();
+            //gpbase.out.printf("%s kddistance = %f\n", target.getName(), distance);
             double confidence = getConfidence(distance);
-            double firePower = firePowerFromConfidence(confidence);
+            double firePower = firePowerFromConfidenceAndEnergy(confidence, gpbase.getEnergy());
             List<Point.Double> expectedMoves = new ArrayList<>();
             Point.Double firingPosition = getFiringPosition(target, firePower, movesLog, expectedMoves);
-            return new AimingData(target, firingPosition, firePower, expectedMoves, confidence);
+            return new AimingData(this, target, firingPosition, firePower, expectedMoves, confidence);
         }
-        return new AimingData(target);
+        return null;
     }
 
-    private Point.Double getFiringPosition(Enemy target, double firePower, ArrayList<Move> movesLog, List<Point.Double> predMoves) {
+    private Point.Double getFiringPosition(Enemy target, double firePower, List<Move> movesLog, List<Point.Double> predMoves) {
         double bulletSpeed = getBulletSpeed(firePower);
         Point.Double firePoint = clonePoint(target);;
         for (int i=0 ; i<5 ; i++) {
@@ -81,6 +82,6 @@ public class NearestNeighborGunner extends AbtractGunner {
     }
 
     private double getConfidence(double distance) {
-        return checkMinMax(range(distance, 0, KD_DISTANCE_MAX, 1, 0), 0, 1);
+        return checkMinMax(range(distance, 0, KD_DISTANCE_MAX, 1, 0), 0.05, 1);
     }
 }

@@ -10,7 +10,10 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.net.InetAddress;
 import java.nio.file.Path;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +50,7 @@ public class RobotCodeUtil {
             fsSupportSimLink = true;// && !System.getProperty("os.name").toLowerCase().contains("win");
             log.log(Level.FINE, "Local file system support symbolic link");
         } catch (Exception e) {
-            log.log(Level.FINE, "Local file system don't support symbolic link");
+            log.log(Level.WARNING, "Local file system don't support symbolic link" + e.getMessage());
             // fs may not support symlink, too bad...
         }
     }
@@ -59,7 +62,7 @@ public class RobotCodeUtil {
         cmdList.add("-Djava.awt.headless=true");
         cmdList.add("-DNOSECURITY=true"); // RMI cause security exception
         cmdList.add("-Xmx512m");
-
+        //cmdList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
         cmdList.add("-cp");
 
         StringBuilder cpBuilder = new StringBuilder(workerDir.toPath().resolve("libs").resolve(ROBOCODE_JAR).toString());
@@ -80,7 +83,7 @@ public class RobotCodeUtil {
     public static void compileBots(final String[] sources) throws InterruptedException {
         // Compile code
         ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-        List<List<String>> chunks = chunkList(Arrays.asList(sources), 20);
+        List<List<String>> chunks = chunkList(Arrays.asList(sources), POP_SIZE/AVAILABLE_PROCESSORS/2);
 
         for (List<String> chunk : chunks) {
             final List<String> srcs = chunk;
@@ -193,20 +196,20 @@ public class RobotCodeUtil {
     }
 
     static void updateRunner(File runnerDir, String className) throws IOException {
-        File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
-        cleanDirectory(runnerBotsFolder);
+        if (fsSupportSimLink) return;
 
-        addClassRunner(runnerDir, className);
+        File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
+        cleanDirectory(runnerBotsFolder, BOT_PREFFIX +"(.*)");
+
         if (className != "GPBase")
-            addClassRunner(runnerDir, "GPBase");
-        addClassRunner(runnerDir, "GPBase$Enemy");
+            addClassRunner(runnerDir, className);
     }
 
     static void addClassRunner(File runnerDir, String className) throws IOException {
         File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
-        File srcClass = new File(botClassFilePath(className));
-        File destClass = new File(runnerBotsFolder, className + ".class");
-        copyOrLinkFile(srcClass.toPath(), destClass.toPath());
+        File src = new File(botClassFilePath(className));
+        File dest = new File(runnerBotsFolder, className + ".class");
+        copyOrLinkFile(src.toPath(), dest.toPath());
     }
 
     public static File getRunnersDir() {
@@ -232,12 +235,29 @@ public class RobotCodeUtil {
                 workerFolder.mkdir();
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "config");
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "libs");
-                new File(workerFolder, ROBOTS_FOLDER+ File.separator + "gpbase").mkdirs();
+
+                new File(workerFolder, ROBOTS_FOLDER+ File.separator).mkdirs();
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
+                copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "gpbase");
                 String[] cmd = makeRunnerCmd(workerFolder, i);
                 runnerProcess[i] = execute("runner-" + i, cmd);
             }
-        } catch (Exception ex) {
+
+            String host = InetAddress.getLocalHost().getHostAddress();
+
+            for (int i = 0; i < count; i++) {
+                int retry=0;
+                while(retry++ < 300) {
+                    try {
+                        Naming.lookup(getRunnerUrl(host, i));
+                        break;
+                    } catch (NotBoundException nbe) {
+                        Thread.sleep(100);
+                    }
+                }
+                if (retry >= 300) throw new Exception("runner " + i + " not ready");
+            }
+         } catch (Exception ex) {
             log.log(Level.SEVERE, null, ex);
             System.exit(1);
         }
@@ -274,6 +294,13 @@ public class RobotCodeUtil {
         }
     }
 
+    public static void cleanDirectory(File dir, String filter) {
+        if (dir.isDirectory()) {
+            log.info("Cleanning: " + dir.toString() + " with filter: " + filter);
+            Stream.of(dir.listFiles()).filter(f -> f.getName().matches(filter)).forEach(File::delete);
+        }
+    }
+
     public static void delete(File f) throws IOException {
         walk(f.toPath())
             .map(Path::toFile)
@@ -306,10 +333,10 @@ public class RobotCodeUtil {
 
     public static void killallRunner() {
         Stream.of(runnerProcess).forEach(Process::destroy);
-        try {
+        /*try {
             delete(getRunnersDir());
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 }

@@ -1,12 +1,19 @@
 package gpbase.gun;
 
 import gpbase.Enemy;
+import gpbase.GPBase;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static gpbase.GPUtils.getAngle;
+import static gpbase.GPUtils.trigoAngle;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+
 public abstract class AbtractGunner implements Gunner {
-    private String name = this.getName();
+    private String name = this.getClass().getSimpleName();
     Map<String, FireStat> fireStats = new HashMap<>();
     FireStat globalStat = new FireStat();
 
@@ -17,10 +24,18 @@ public abstract class AbtractGunner implements Gunner {
     public String getName() {
         return name;
     }
+
     @Override
     public void fire(Enemy enemy) {
         globalStat.fire();
         getFireStat(enemy).fire();
+
+    }
+
+    @Override
+    public void cancelFire(Enemy enemy) {
+        globalStat.cancelFire();
+        getFireStat(enemy).cancelFire();
 
     }
 
@@ -44,7 +59,7 @@ public abstract class AbtractGunner implements Gunner {
         FireStat fireStat = fireStats.get(enemy.getName());
 
         if (fireStat == null)
-            fireStats.put(enemy.getName(), fireStat = new FireStat());
+            fireStats.put(enemy.getName(), fireStat = new FireStat(1,1));
 
         return fireStat;
     }

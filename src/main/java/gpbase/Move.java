@@ -27,4 +27,9 @@ public class Move {
     public long getDuration() {
         return duration;
     }
+
+    @Override
+    public String toString() {
+        return Double.toString(turn) + ',' + velocity + ',' + duration + ',';
+    }
 }

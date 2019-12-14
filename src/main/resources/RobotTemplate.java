@@ -1,22 +1,27 @@
-package gpbase;
+package sample;
+
+import static gpbase.GPUtils.*;
+import static java.lang.Math.*;
+import static robocode.util.Utils.*;
+import static robocode.Rules.*;
+
+import robocode.Rules;
+import gpbase.GPBase;
 
 public class %s extends GPBase {
 
     @Override
-    void doGP(){
+    public void doGP() {
         // --- PHENOME 1 ---
-        turnRadarLeft=%s;
+        turnLeft=AvoidNan(%s, turnLeft);
 
         // --- PHENOME 2 ---
-        turnLeft=%s;
+        turnGunLeft=AvoidNan(%s, turnGunLeft);
 
         // --- PHENOME 3 ---
-        ahead=%s;
+        ahead=AvoidNan(%s, ahead);
 
         // --- PHENOME 4 ---
-        turnGunLeft=%s;
-
-        // --- PHENOME 5 ---
-        fire=%s;
+        fire=AvoidNan(%s, fire);
     }
 }

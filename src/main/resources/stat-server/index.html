@@ -11,9 +11,10 @@
 </head>
 <body>
 <style>.dygraph-legend { text-align: right; background: none; }</style>
-<div id="graphdiv" class="chart" style="width:100%; height:450px"></div>
-<div id="graphdiv2" class="chart" style="width:100%; height:450px;"></div>
-
+<div class="container" style="width: 100%;">
+    <div id="graphdiv" class="chart" style="width:800px; height:400px; float: left;"></div>
+    <div id="graphdiv2" class="chart" style="width:800px; height:400px; margin-left: 802px;"></div>
+</div>
 <script type="text/javascript">
     var g;
     var g2;
@@ -23,10 +24,10 @@
             "run_data.txt", {
                 legend: 'always',
                 xlabel: 'Generation',
-                ylabel: 'Fitness (%)',
+                ylabel: 'Fitness',
                 plotter: smoothPlotter,
                 strokeWidth: 2,
-                visibility: [true, true, true, false, false, false]}
+                visibility: [true, true, false, false, false]}
         );
 
         g2 = new Dygraph(
@@ -37,7 +38,7 @@
                 ylabel: 'Nodes',
                 plotter: smoothPlotter,
                 strokeWidth: 2,
-                visibility: [false, false, false, true, true, false]}
+                visibility: [false, false, true, true, false]}
         );
     }
     drawPlot();
@@ -70,8 +71,6 @@
     <input type=checkbox id="1" checked onClick="change(this)">
     <label for="1"> Best Fitness</label><br/>
     <input type=checkbox id="2" checked onClick="change(this)">
-    <label for="1"> Base Fitness</label><br/>
-    <input type=checkbox id="3" checked onClick="change2(this)">
     <label for="2"> Average Node</label><br/>
     <input type=checkbox id="4" checked onClick="change2(this)">
     <label for="3"> Best Node</label>

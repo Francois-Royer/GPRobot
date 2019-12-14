@@ -347,24 +347,29 @@ public class ExpressionNode implements Serializable {
     };
 
     static final String[] BASE_TERMINAL = {
-        "safePosition.x",
+        // From base
+        /*"safePosition.x",
         "safePosition.y",
-        "target.x",
-        "target.y",
-        "targetPred.x",
-        "targetPred.y",
-        "target.velocity",
-        "target.direction",
-        "target.energy",
-        "target.getHitRate()",
+        "aimingData.getFiringPosition().x",
+        "aimingData.getFiringPosition().y",
         "forward",
         "scandirection",
         "turnLeft",
         "turnGunLeft",
         "turnRadarLeft",
         "ahead",
-        "fire"
+        "fire",*/
+
+        // replace scanned event
+        "target.x",
+        "target.y",
+        "target.distance(getCurrentPoint())",
+        "target.getVelocity()",
+        "target.getDirection()",
+        "target.getEnergy()",
+        "target.getAngle()"
     };
+
     // terminals that can only be called during a ScannedRobotEvent
     static final String[] SCANNED_EVENT_TERMINALS = {
         "e.getBearingRadians()", // Returns difference between enemy and robot heading

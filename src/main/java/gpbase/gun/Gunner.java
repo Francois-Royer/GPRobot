@@ -8,6 +8,7 @@ public interface Gunner {
 
     // Stats
     void fire(Enemy enemy);
+    void cancelFire(Enemy enemy);
     void hit(Enemy enemy);
     double hitRate(Enemy enemy);
     double hitRate();

@@ -1,6 +1,8 @@
 package gprobot;
 
+import gpbase.GPBase;
 import robocode.BattleResults;
+import robocode.RoundEndedEvent;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
 import robocode.control.RobocodeEngine;
@@ -8,6 +10,8 @@ import robocode.control.RobotSpecification;
 import robocode.control.events.BattleAdaptor;
 import robocode.control.events.BattleCompletedEvent;
 import robocode.control.events.BattleErrorEvent;
+import robocode.control.events.TurnEndedEvent;
+import robocode.control.snapshot.IRobotSnapshot;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -69,8 +73,8 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
             + result.getBulletDamageBonus()
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
-
         return result.getScore();
+        //return result.getBulletDamage();
     }
 
     @Override
@@ -85,7 +89,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
 
     public double getRobotFitness(String robot, String[] opponentsRobots) throws RemoteException {
         String robotClass = TARGET_PACKAGE + "."+ robot;
-        BattleObserver battleObserver = new BattleObserver();
+        BattleObserver battleObserver = new BattleObserver(robot);
         engine.addBattleListener(battleObserver);
 
         RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
@@ -93,7 +97,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         BattleSpecification battleSpec = new BattleSpecification(rounds, battlefield, selectedBots);
         //engine.setVisible(true);
         engine.runBattle(battleSpec, true);
-        double fitnessScore = computeFitness(robotClass, battleObserver.getResults());
+        double fitnessScore = computeFitness(robotClass, battleObserver);
         engine.close();
 
         if (opponentsRobots.length > 1 && ONE2ONE)
@@ -110,16 +114,21 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         return fitnessScore;
     }
 
-    private double computeFitness(String robot, BattleResults[] results) {
+    private double computeFitness(String robot, BattleObserver battleObserver) {
+        BattleResults []results = battleObserver.getResults();
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
-        int botScore = br.isPresent() ? getScore(br.get()) : 0;
+        //log.info("score = " + getScore(br.get()) +", remainEnergy = " + battleObserver.getRemainEnergy() + ", round duration=" + battleObserver.getRoundDuration());
+
+        //return br.isPresent() ? getScore(br.get()) + battleObserver.getRemainEnergy() / 400 : 0; // + 15000000000f/ battleObserver.getRoundDuration() : 0;
+        return br.isPresent() ? getScore(br.get()) : 0;
+        /*int botScore = br.isPresent() ? getScore(br.get()) + GPBase.remainEnergy * 2 : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
 
         if (totalScore == 0) {
             // OMG, these robots are so poor that they do not score a single point
             return 0;
         }
-        return (double) botScore / totalScore * 100;
+        return (double) botScore / totalScore * 100;*/
     }
 
     @Override
@@ -147,7 +156,13 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
 // based on example from Robocode Control API JavaDocs
 class BattleObserver extends BattleAdaptor {
 
-    robocode.BattleResults[] results;
+    String robotName;
+    private BattleResults[] results;
+    private long roundDuration = 0;
+    private double remainEnergy = 0;
+    public  BattleObserver(String robotName) {
+        this.robotName = TARGET_PACKAGE + "." + robotName;
+    }
 
     @Override
     public void onBattleCompleted(BattleCompletedEvent e) {
@@ -155,12 +170,25 @@ class BattleObserver extends BattleAdaptor {
     }
 
     @Override
-    public void onBattleError(BattleErrorEvent e) {
+    public void onTurnEnded(TurnEndedEvent e) {
+        Optional<IRobotSnapshot> ors = Stream.of(e.getTurnSnapshot().getRobots()).filter(robot -> robot.getName().equals(robotName)).findFirst();
+        if (ors.isPresent())
+            remainEnergy += ors.get().getEnergy();
+        roundDuration += e.getTurnSnapshot().getTurn();
+    }
 
+    @Override
+    public void onBattleError(BattleErrorEvent e) {
         Logger.getLogger(this.getClass().getName()).severe("Battle error: " + e.getError());
     }
 
     public BattleResults[] getResults() {
         return results;
     }
+
+    public long getRoundDuration() {
+        return roundDuration;
+    }
+
+    public double getRemainEnergy() { return remainEnergy; }
 }
