@@ -19,6 +19,9 @@ def robotcode_home = org.gradle.internal.os.OperatingSystem.current().isWindows(
 
 repositories {
     mavenCentral()
+    maven {
+        url "http://maven.icm.edu.pl/artifactory/repo/"
+    }
 }
 
 dependencies {
@@ -42,5 +45,6 @@ task copyGPBase(type: Copy) {
     from 'src/main/java'
     from 'build/classes/java/main'
     include '**/gpbase/**/*.*'
+    include '**/net/sf/javaml/core/**/*.*'
     into "$robotcode_home/robots"
 }

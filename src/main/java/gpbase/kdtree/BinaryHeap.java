@@ -1,4 +1,4 @@
-package gpbase.dataStructures;
+package gpbase.kdtree;
 
 import java.util.Arrays;
 
@@ -8,14 +8,14 @@ import java.util.Arrays;
 public abstract class BinaryHeap<T> {
     protected static final int defaultCapacity = 64;
     private final int direction;
-    private Object[] data;
+    private T[] data;
     private double[] keys;
     private int capacity;
     private int size;
 
     protected BinaryHeap(int capacity, int direction) {
         this.direction = direction;
-        this.data = new Object[capacity];
+        this.data = (T[]) new Object[capacity];
         this.keys = new double[capacity];
         this.capacity = capacity;
         this.size = 0;
@@ -58,13 +58,12 @@ public abstract class BinaryHeap<T> {
         siftDown(0);
     }
 
-    @SuppressWarnings("unchecked")
     protected T getTip() {
         if (size == 0) {
             throw new IllegalStateException();
         }
 
-        return (T) data[0];
+        return data[0];
     }
 
     protected double getTipKey() {
@@ -77,7 +76,7 @@ public abstract class BinaryHeap<T> {
 
     private void siftUp(int c) {
         for (int p = (c - 1) / 2; c != 0 && direction*keys[c] > direction*keys[p]; c = p, p = (c - 1) / 2) {
-            Object pData = data[p];
+            T pData = data[p];
             double pDist = keys[p];
             data[p] = data[c];
             keys[p] = keys[c];
@@ -93,7 +92,7 @@ public abstract class BinaryHeap<T> {
             }
             if (direction*keys[p] < direction*keys[c]) {
                 // Swap the points
-                Object pData = data[p];
+                T pData = data[p];
                 double pDist = keys[p];
                 data[p] = data[c];
                 keys[p] = keys[c];

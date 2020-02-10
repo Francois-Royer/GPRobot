@@ -23,10 +23,15 @@ public class HeadOnGunner extends AbtractGunner {
     }
 
     public double getConfidence(Enemy enemy) {
-        if (enemy.getEnergy() == 0) return 1;
-        double distanceFactor = range(gpbase.getCurrentPoint().distance(enemy), gpbase.dmin, gpbase.dmax, -1, 1)*2;
-        double confidence = range(enemy.getVelocity(), 0, Rules.MAX_VELOCITY, 1, 0);
-        double dist2One = 1 - confidence;
-        return checkMinMax(confidence - dist2One*distanceFactor, 0.05, 1);
+        if (isEasyShot(enemy)) return 1;
+
+        double distanceFactor = range(gpbase.getCurrentPoint().distance(enemy), GPBase.TANK_SIZE*4, gpbase.dmax, 1, .1);
+        double velocityFactor = range(enemy.getVelocity(), 0, Rules.MAX_VELOCITY, 1, .1);
+
+        return distanceFactor * velocityFactor;
+    }
+
+    public boolean isEasyShot(Enemy enemy) {
+        return (enemy.getEnergy() == 0) || (enemy.getVelocity() == 0) || (enemy.distance(gpbase.getCurrentPoint()) < GPBase.TANK_SIZE*4);
     }
 }

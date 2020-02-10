@@ -1,4 +1,4 @@
-package gpbase.dataStructures;
+package gpbase.kdtree;
 
 /**
  *

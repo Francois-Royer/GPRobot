@@ -1,8 +1,4 @@
-package gpbase.dataStructures.trees.KD;
-
-import gpbase.dataStructures.BinaryHeap;
-import gpbase.dataStructures.IntervalHeap;
-import gpbase.dataStructures.MinHeap;
+package gpbase.kdtree;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -10,11 +6,11 @@ import java.util.Iterator;
 /**
  *
  */
-public class NearestNeighborIterator<T> implements Iterator<T>, Iterable<T> {
+public class NearestNeighborIterator<T> implements Iterator<KdEntry<T>>, Iterable<KdEntry<T>> {
     private DistanceFunction distanceFunction;
     private double[] searchPoint;
     private MinHeap<KdNode<T>> pendingPaths;
-    private IntervalHeap<T> evaluatedPoints;
+    private IntervalHeap<KdEntry<T>> evaluatedPoints;
     private int pointsRemaining;
     private double lastDistanceReturned;
 
@@ -24,7 +20,7 @@ public class NearestNeighborIterator<T> implements Iterator<T>, Iterable<T> {
         this.distanceFunction = distanceFunction;
         this.pendingPaths = new BinaryHeap.Min<KdNode<T>>();
         this.pendingPaths.offer(0, treeRoot);
-        this.evaluatedPoints = new IntervalHeap<T>();
+        this.evaluatedPoints = new IntervalHeap<KdEntry<T>>();
     }
 
     /* -------- INTERFACE IMPLEMENTATION -------- */
@@ -35,7 +31,7 @@ public class NearestNeighborIterator<T> implements Iterator<T>, Iterable<T> {
     }
 
     @Override
-    public T next() {
+    public KdEntry<T> next() {
         if (!hasNext()) {
             throw new IllegalStateException("NearestNeighborIterator has reached end!");
         }
@@ -47,9 +43,9 @@ public class NearestNeighborIterator<T> implements Iterator<T>, Iterable<T> {
         // Return the smallest distance point
         pointsRemaining--;
         lastDistanceReturned = evaluatedPoints.getMinKey();
-        T value = evaluatedPoints.getMin();
+        KdEntry<T> kdEntry = evaluatedPoints.getMin();
         evaluatedPoints.removeMin();
-        return value;
+        return kdEntry;
     }
 
     public double distance() {
@@ -62,7 +58,7 @@ public class NearestNeighborIterator<T> implements Iterator<T>, Iterable<T> {
     }
 
     @Override
-    public Iterator<T> iterator() {
+    public Iterator<KdEntry<T>> iterator() {
         return this;
     }
 }

@@ -4,11 +4,8 @@ import gpbase.Enemy;
 import gpbase.GPUtils;
 
 import java.awt.Point;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
-
-import static robocode.Rules.MIN_BULLET_POWER;
 
 public class AimingData {
     private Gunner gunner;
@@ -19,11 +16,17 @@ public class AimingData {
     private List<Point.Double> expectedMoves;
     private double confidence;
 
+    private double[] kdPoint;
+
     public AimingData(Gunner gunner, Enemy target, double firePower, double confidence) {
         this(gunner, target, target, firePower, new ArrayList<>(), confidence);
     }
 
     public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves, double confidence) {
+        this(gunner, target, firingPosition, firePower, expectedMoves, confidence, null);
+    }
+
+    public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves, double confidence, double[] kdPoint) {
         this.gunner = gunner;
         this.target = target;
         this.firingPosition = firingPosition;
@@ -31,6 +34,7 @@ public class AimingData {
         this.expectedMoves = expectedMoves;
         this.confidence = confidence;
         this.angle = GPUtils.getAngle(target.getGpBase().getCurrentPoint(), firingPosition);
+        this.kdPoint = kdPoint;
     }
 
     public Gunner getGunner() { return gunner; }
@@ -59,5 +63,9 @@ public class AimingData {
 
     public void setAngle(Double angle) {
         this.angle = angle;
+    }
+
+    public double[] getKdPoint() {
+        return kdPoint;
     }
 }

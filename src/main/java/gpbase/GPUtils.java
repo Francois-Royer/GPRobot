@@ -87,8 +87,8 @@ public class GPUtils {
     static public double firePowerFromConfidenceAndEnergy(double confidence, double energy)  {
         double firePower = firePowerFromConfidence(confidence);
         if (energy<50)
-            return firePower*energy/100;
-        return checkMinMax(firePower, MIN_BULLET_POWER, MAX_BULLET_POWER);
+            return range(energy, 0, 50, .1, 1)*firePower;
+        return firePower;
     }
 
     static public Point.Double middle(Point.Double a, Point.Double b) {

@@ -5,6 +5,7 @@ public class FireStat {
     long hitCount;
     long hbbCount;
 
+
     public FireStat(long fireCount, long hitCount) {
         reset();
         this.fireCount = fireCount;
@@ -20,7 +21,6 @@ public class FireStat {
     }
 
     public void fire(){ fireCount++; }
-    public void cancelFire(){ fireCount--; }
     public void hitByBullet(){ hbbCount++; }
     public void hit(){ hitCount++; }
     public double getHitRate(){ return fireCount == 0 ? 1 :(double) hitCount/fireCount;}

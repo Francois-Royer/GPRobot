@@ -67,13 +67,11 @@ public class CircularGunner extends HeadOnGunner {
 
     @Override
     public double getConfidence(Enemy enemy) {
-        if (enemy.getEnergy() == 0) return 1;
-        double distanceFactor = range(gpbase.getCurrentPoint().distance(enemy), gpbase.dmin, gpbase.dmax, -1, 1)*4;
-        double varianceConfidence = (range(enemy.getVelocityVariance(), 0, enemy.getVelocityVarianceMax(), 1,  0) +
-            range(enemy.getTurnVariance(), 0, enemy.getTurnVarianceMax(), 1, 0))/2;
+        if (isEasyShot(enemy)) return 1;
 
-        double dist2One = 1 - varianceConfidence;
-        return checkMinMax(varianceConfidence - dist2One*distanceFactor, 0.05, 1);
+        return
+            range(enemy.getVelocityVariance(), 0, enemy.getVelocityVarianceMax(), 1,  .1) *
+            range(enemy.getTurnVariance(), 0, enemy.getTurnVarianceMax(), 1, .1);
     }
 
 }

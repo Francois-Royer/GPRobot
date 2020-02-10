@@ -1,4 +1,4 @@
-package gpbase.dataStructures;
+package gpbase.kdtree;
 
 import java.util.Arrays;
 
@@ -7,7 +7,7 @@ import java.util.Arrays;
  */
 public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
     private static final int defaultCapacity = 64;
-    private Object[] data;
+    private T[] data;
     private double[] keys;
     private int capacity;
     private int size;
@@ -17,7 +17,7 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
     }
 
     public IntervalHeap(int capacity) {
-        this.data = new Object[capacity];
+        this.data = (T[]) new Object[capacity];
         this.keys = new double[capacity];
         this.capacity = capacity;
         this.size = 0;
@@ -137,7 +137,7 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
     }
 
     private int swap(int x, int y) {
-        Object yData = data[y];
+        T yData = data[y];
         double yDist = keys[y];
         data[y] = data[x];
         keys[y] = keys[x];

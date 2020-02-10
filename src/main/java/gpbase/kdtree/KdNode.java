@@ -1,4 +1,4 @@
-package gpbase.dataStructures.trees.KD;
+package gpbase.kdtree;
 
 import java.util.Arrays;
 
@@ -12,8 +12,7 @@ class KdNode<T> {
     protected int size;
 
     // Leaf only
-    protected double[][] points;
-    protected Object[] data;
+    protected KdEntry<T>[]points;
 
     // Stem only
     protected KdNode<T> left, right;
@@ -32,8 +31,7 @@ class KdNode<T> {
         this.singlePoint = true;
 
         // Init leaf elements
-        this.points = new double[bucketCapacity+1][];
-        this.data = new Object[bucketCapacity+1];
+        this.points = new KdEntry[bucketCapacity+1];
     }
 
     /* -------- SIMPLE GETTERS -------- */
@@ -48,7 +46,7 @@ class KdNode<T> {
 
     /* -------- OPERATIONS -------- */
 
-    public void addPoint(double[] point, T value) {
+    public KdEntry<T> addPoint(double[] point, T value) {
         KdNode<T> cursor = this;
         while (!cursor.isLeaf()) {
             cursor.extendBounds(point);
@@ -60,15 +58,14 @@ class KdNode<T> {
                 cursor = cursor.left;
             }
         }
-        cursor.addLeafPoint(point, value);
+        return cursor.addLeafPoint(point, value);
     }
 
     /* -------- INTERNAL OPERATIONS -------- */
-
-    public void addLeafPoint(double[] point, T value) {
+    private KdEntry<T> addLeafPoint(double[] point, T value) {
         // Add the data point
-        points[size] = point;
-        data[size] = value;
+        KdEntry<T> kdEntry = new KdEntry(point, value);
+        points[size] = kdEntry;
         extendBounds(point);
         size++;
 
@@ -82,6 +79,7 @@ class KdNode<T> {
                 increaseLeafCapacity();
             }
         }
+        return kdEntry;
     }
 
     private boolean checkBounds(double[] point) {
@@ -120,7 +118,6 @@ class KdNode<T> {
 
     private void increaseLeafCapacity() {
         points = Arrays.copyOf(points, points.length*2);
-        data = Arrays.copyOf(data, data.length*2);
     }
 
     private boolean calculateSplit() {
@@ -165,19 +162,22 @@ class KdNode<T> {
         right = new KdNode<T>(dimensions, bucketCapacity);
         left = new KdNode<T>(dimensions, bucketCapacity);
 
-        // EnemyState locations into children
+        // Move locations into children
         for (int i = 0; i < size; i++) {
-            double[] oldLocation = points[i];
-            Object oldData = data[i];
+            double[] oldLocation = points[i].getCoordinates();
+            T oldData = points[i].getData();
             if (oldLocation[splitDimension] > splitValue) {
-                right.addLeafPoint(oldLocation, (T) oldData);
+                right.addLeafPoint(oldLocation, oldData);
             }
             else {
-                left.addLeafPoint(oldLocation, (T) oldData);
+                left.addLeafPoint(oldLocation, oldData);
             }
         }
 
         points = null;
-        data = null;
+    }
+
+    public int getDimensions() {
+        return dimensions;
     }
 }

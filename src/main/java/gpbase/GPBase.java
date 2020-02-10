@@ -68,11 +68,11 @@ public class GPBase extends AdvancedRobot {
         BATTLE_FIELD_CENTER = new Point.Double(getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
         dmax = BATTLE_FIELD_CENTER.distance(TANK_SIZE / 2, TANK_SIZE / 2) * 2;
         aimingMoveLogSize = (int) (dmax / getBulletSpeed(MAX_BULLET_POWER) + 2);
-        moveLogMaxSize = aimingMoveLogSize * 10;
+        moveLogMaxSize = aimingMoveLogSize * 100;
         FIRE_AGAIN_MIN_TIME = (long) (Rules.getGunHeat(MIN_BULLET_POWER) / getGunCoolingRate());
-        out.println("dmax=" + dmax);
-        out.println("aimingMoveLogSize=" + aimingMoveLogSize);
-        out.println("FIRE_AGAIN_MIN_TIME=" + FIRE_AGAIN_MIN_TIME);
+        //out.println("dmax=" + dmax);
+        //out.println("aimingMoveLogSize=" + aimingMoveLogSize);
+        //out.println("FIRE_AGAIN_MIN_TIME=" + FIRE_AGAIN_MIN_TIME);
 
         enemyCount = aliveCount = getOthers();
 
@@ -103,34 +103,27 @@ public class GPBase extends AdvancedRobot {
 
         if (enemy == null)
             enemies.put(e.getName(), new Enemy(e, this));
-        else {
+        else
             enemy.update(e);
-            //if (aimDatas.size() == 0)
-            //enemy.fEnergy = e.getEnergy();
-        }
     }
 
     @Override
     public void onBulletHit(BulletHitEvent bhe) {
         Enemy e = enemies.get(bhe.getName());
-        if (e != null)
-            e.setEnergy(bhe.getEnergy());
+        if (e != null) {
+            e.setEnergy(bhe.getEnergy(), getBulletDamage(bhe.getBullet().getPower()));
 
-        AimingData ad = getAimingDataByAngle(bhe.getBullet().getHeadingRadians());
-        if (ad != null) {
-            if (e != null) {
-                if (e.getName() != ad.getTarget().getName()) {
-                    //out.printf("%s hit %s but was aiming to %s...\n",
-                        //ad.getGunner().getName(), e.getName(), ad.getTarget().getName());
-                    ad.getGunner().cancelFire(e);
-                    e = enemies.get(ad.getTarget().getName());
-                    e.fEnergy += getBulletDamage(ad.getFirePower());
-                } else {
-                    ad.getGunner().hit(e);
-                    e.fEnergy += getBulletDamage(ad.getFirePower());
+            AimingData ad = getAimingDataByAngle(bhe.getBullet().getHeadingRadians());
+            if (ad != null) {
+                if (e.getName() == ad.getTarget().getName()) {
+                    ad.getGunner().hit(ad.getTarget());
+                    e.hit(ad.getKdPoint());
                 }
+                ///else
+                //out.printf("%s hit %s but was aiming to %s...\n",
+                //ad.getGunner().getName(), e.getName(), ad.getTarget().getName());
+                aimDatas.remove(ad);
             }
-            aimDatas.remove(ad);
         }
     }
 
@@ -138,11 +131,11 @@ public class GPBase extends AdvancedRobot {
     public void onBulletMissed(BulletMissedEvent bme) {
         AimingData ad = getAimingDataByAngle(bme.getBullet().getHeadingRadians());
         if (ad != null) {
-            aimDatas.remove(ad);
             //out.printf("miss %s\n", ad.getTarget().name);
+            aimDatas.remove(ad);
+            ad.getTarget().miss(ad.getKdPoint());
             ad.getTarget().fEnergy += getBulletDamage(ad.getFirePower());
             //out.printf("restored energy %f\n", ad.getTarget().fEnergy);
-
         }
     }
 
@@ -163,8 +156,6 @@ public class GPBase extends AdvancedRobot {
         if (ad != null) {
             //out.printf("%s fire %s but bullet hit by bullet...\n",
             //ad.getGunner().getName(), ad.getTarget().getName());
-
-            ad.getGunner().cancelFire(ad.getTarget());
             aimDatas.remove(ad);
             ad.getTarget().fEnergy += getBulletDamage(ad.getFirePower());
         }
@@ -189,10 +180,13 @@ public class GPBase extends AdvancedRobot {
     public void onRoundEnded(RoundEndedEvent event) {
         gunners.values().stream().forEach(gunner -> {
             out.printf("%s hitrate = %.0f%%\n", gunner.getName(), gunner.hitRate() * 100);
+            gunner.resetStat();
             enemies.values().stream().forEach(enemy -> {
                 out.printf("%s -> %s hitrate = %.0f%%\n", gunner.getName(), enemy.getName(), gunner.hitRate(enemy) * 100);
+                gunner.resetStat(enemy);
             });
         });
+        enemies.values().stream().forEach(enemy -> enemy.rebuildKDTree());
     }
 
     @Override
@@ -333,6 +327,8 @@ public class GPBase extends AdvancedRobot {
         long now = getTime();
         List<VShell> newVShells = vShells.stream().filter(vs -> {
             Point.Double p = vs.getPosition(now);
+            AimingData aimingData = getAimingDataByAngle(vs.getDirection());
+            Enemy enemy = aimingData.getTarget();
             if (p.x >= 0 && p.x <= getBattleFieldWidth() && p.y >= 0 && p.y <= getBattleFieldHeight()) {
                 Enemy e = vs.getTarget();
                 boolean hit = false;
@@ -351,10 +347,14 @@ public class GPBase extends AdvancedRobot {
                         }
                 }
 
-                if (hit)
-                    vs.getGunner().hit(e);
+                if (hit) {
+                    vs.getGunner().hit(aimingData.getTarget());
+                    enemy.hit(aimingData.getKdPoint());
+                }
                 return !hit;
             }
+            enemy.miss(aimingData.getKdPoint());
+
             return false;
         }).collect(Collectors.toList());
 
@@ -382,7 +382,8 @@ public class GPBase extends AdvancedRobot {
                 if (rightWave == null || p.distance(leftWave) > rightWave.distance(leftWave))
                     rightWave = p;
             }
-            Wave closest = waves.stream().sorted(new WaveComparator(getCurrentPoint(), now)).findFirst().get();
+
+            //Wave closest = waves.stream().sorted(new WaveComparator(getCurrentPoint(), now)).findFirst().get();
 
             /*leftWave = getBorderPoint(closest, normalRelativeAngle(closest.direction + closest.arc));
             rightWave = getBorderPoint(closest, normalRelativeAngle(closest.direction - closest.arc));*/
@@ -460,8 +461,8 @@ public class GPBase extends AdvancedRobot {
             moveEnemy(e, now);
 
             //out.printf("%s x=%.0f, y=%.0f, nrj=%.0f\n", e.name, e.getX(), e.getY(), e.getEnergy());
-            x += e.x * e.getEnergy();
-            y += e.y * e.getEnergy();
+            x += e.x * (e.getEnergy()+0.001);
+            y += e.y * (e.getEnergy()+0.001);
 
             double od = getCurrentPoint().distance(e);
             if ((od < d || e.getEnergy() == 0) && e.alive && e.fEnergy >= -0.0001) {
@@ -514,8 +515,9 @@ public class GPBase extends AdvancedRobot {
             return;
 
         if (getCurrentPoint().distance(aimingData.getFiringPosition()) * sin(abs(getGunTurnRemainingRadians())) > FIRE_TOLERANCE ||
-            abs(getGunTurnRemainingRadians()) > PI / 2)
+            abs(getGunTurnRemainingRadians()) > PI / 2) {
             return;
+        }
 
         setFire(fire);
         //out.printf("target is %s(x=%.0f, y = %.0f) energy(%.02f, %.02f)\n", target.getName(), target.getX(), target.getY(), target.getEnergy(), target.fEnergy);
@@ -538,6 +540,7 @@ public class GPBase extends AdvancedRobot {
             if (gunner != aimingData.getGunner()) {
                 final AimingData ad = gunner.aim(aimingData.getTarget());
                 if (ad != null) {
+                    aimDatas.add(ad);
                     gunner.fire(aimingData.getTarget());
                     vShells.add(new VShell(
                         getCurrentPoint(),
@@ -563,12 +566,11 @@ public class GPBase extends AdvancedRobot {
                 aimingData = temp;
             else {
                 if (temp != null &&
-                    temp.getGunner().hitRate(target) + temp.getConfidence() >
-                        aimingData.getGunner().hitRate(target) + aimingData.getConfidence())
+                    temp.getGunner().hitRate(target) * temp.getConfidence() >
+                        aimingData.getGunner().hitRate(target) * aimingData.getConfidence())
                     aimingData = temp;
             }
         }
-
         if (aimingData != null) {
             fire = aimingData.getFirePower();
             return computeTurnGun2Target(this, aimingData.getFiringPosition());

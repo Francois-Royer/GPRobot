@@ -1,6 +1,7 @@
 package gpbase.gun;
 
 import gpbase.Enemy;
+import robocode.Bullet;
 
 public interface Gunner {
     String getName();
@@ -8,8 +9,9 @@ public interface Gunner {
 
     // Stats
     void fire(Enemy enemy);
-    void cancelFire(Enemy enemy);
     void hit(Enemy enemy);
     double hitRate(Enemy enemy);
+    void resetStat(Enemy enemy);
     double hitRate();
+    void resetStat();
 }

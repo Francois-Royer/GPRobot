@@ -3,8 +3,6 @@ package gpbase.gun;
 import gpbase.Enemy;
 import gpbase.GPBase;
 import gpbase.Move;
-import gpbase.dataStructures.trees.KD.NearestNeighborIterator;
-import gpbase.dataStructures.trees.KD.SquareEuclideanDistanceFunction;
 
 import java.awt.*;
 import java.util.ArrayList;

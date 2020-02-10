@@ -33,13 +33,6 @@ public abstract class AbtractGunner implements Gunner {
     }
 
     @Override
-    public void cancelFire(Enemy enemy) {
-        globalStat.cancelFire();
-        getFireStat(enemy).cancelFire();
-
-    }
-
-    @Override
     public void hit(Enemy enemy) {
         globalStat.hit();
         getFireStat(enemy).hit();
@@ -51,8 +44,18 @@ public abstract class AbtractGunner implements Gunner {
     }
 
     @Override
+    public void resetStat(Enemy enemy) {
+        getFireStat(enemy).reset();
+    }
+
+    @Override
     public double hitRate() {
         return globalStat.getHitRate();
+    }
+
+    @Override
+    public void resetStat() {
+        globalStat.reset();
     }
 
     private FireStat getFireStat(Enemy enemy) {
