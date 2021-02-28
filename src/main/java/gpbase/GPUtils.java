@@ -32,8 +32,8 @@ public class GPUtils {
     public static double range(double v, double minv, double maxv, double minr, double maxr) {
         if (minv==maxv) return minr;
         return (maxr> minr)
-                ? (v - minv) / (maxv - minv) * (maxr - minr)
-                : (maxv - v) / (maxv - minv) * (minr - maxr);
+                ? (v - minv) / (maxv - minv) * (maxr - minr) + minr
+                : (maxv - v) / (maxv - minv) * (minr - maxr) + maxr;
     }
 
     public static void drawFillCircle(Graphics2D g, Color c, Point.Double p, int d) {
@@ -62,8 +62,8 @@ public class GPUtils {
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
 
-        g.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc, 2 * waveArc);
-        //g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
+        //g.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc, 2 * waveArc);
+        g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
         //g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc)), (int)(w.y + 10000*sin(w.direction+w.arc)));
         //g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc)), (int)(w.y + 10000*sin(w.direction-w.arc)));
     }
@@ -78,17 +78,6 @@ public class GPUtils {
 
     static public double maximumEscapeAngle(double vb) {
         return asin(MAX_VELOCITY/vb);
-    }
-
-    static public double firePowerFromConfidence(double confidence)  {
-        return range(confidence , 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
-    }
-
-    static public double firePowerFromConfidenceAndEnergy(double confidence, double energy)  {
-        double firePower = firePowerFromConfidence(confidence);
-        if (energy<50)
-            return range(energy, 0, 50, .1, 1)*firePower;
-        return firePower;
     }
 
     static public Point.Double middle(Point.Double a, Point.Double b) {

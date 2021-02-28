@@ -14,25 +14,23 @@ public class AimingData {
     private Double angle;
     private double firePower;
     private List<Point.Double> expectedMoves;
-    private double confidence;
 
     private double[] kdPoint;
 
-    public AimingData(Gunner gunner, Enemy target, double firePower, double confidence) {
-        this(gunner, target, target, firePower, new ArrayList<>(), confidence);
+    public AimingData(Gunner gunner, Enemy target, double firePower) {
+        this(gunner, target, target, firePower, new ArrayList<>());
     }
 
-    public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves, double confidence) {
-        this(gunner, target, firingPosition, firePower, expectedMoves, confidence, null);
+    public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves) {
+        this(gunner, target, firingPosition, firePower, expectedMoves, null);
     }
 
-    public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves, double confidence, double[] kdPoint) {
+    public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves, double[] kdPoint) {
         this.gunner = gunner;
         this.target = target;
         this.firingPosition = firingPosition;
         this.firePower = firePower;
         this.expectedMoves = expectedMoves;
-        this.confidence = confidence;
         this.angle = GPUtils.getAngle(target.getGpBase().getCurrentPoint(), firingPosition);
         this.kdPoint = kdPoint;
     }
@@ -55,9 +53,6 @@ public class AimingData {
         return expectedMoves;
     }
 
-    public double getConfidence() {
-        return confidence;
-    }
 
     public Double getAngle() { return angle; }
 

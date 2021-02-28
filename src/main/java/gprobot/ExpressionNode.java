@@ -358,6 +358,8 @@ public class ExpressionNode implements Serializable {
         "turnGunLeft",
         "turnRadarLeft",
         "ahead",
+        "turnLeft",
+        "ahead",
         "fire",*/
 
         // replace scanned event

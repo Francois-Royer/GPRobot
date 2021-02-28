@@ -4,12 +4,8 @@ import gpbase.Enemy;
 import gpbase.GPBase;
 
 import java.awt.*;
-import java.awt.geom.Point2D;
-import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static gpbase.GPUtils.*;
 import static java.lang.Math.*;
@@ -23,13 +19,12 @@ public class CircularGunner extends HeadOnGunner {
 
     @Override
     public AimingData aim(Enemy enemy) {
-        double confidence = getConfidence(enemy);
-        double firePower = firePowerFromConfidenceAndEnergy(confidence, gpbase.getEnergy());
+        double firePower = getFirePower(enemy);
 
         List<Point.Double> predMoves = new ArrayList<>();
         Point.Double firingPosition = forwardMovementPrediction(enemy, predMoves, firePower);
 
-        return new AimingData(this, enemy, firingPosition, firePower, predMoves, confidence);
+        return new AimingData(this, enemy, firingPosition, firePower, predMoves);
     }
 
      private Point.Double forwardMovementPrediction(Enemy target,  List<Point.Double>predMoves, double firePower) {
@@ -64,14 +59,4 @@ public class CircularGunner extends HeadOnGunner {
 
         return firePoint;
     }
-
-    @Override
-    public double getConfidence(Enemy enemy) {
-        if (isEasyShot(enemy)) return 1;
-
-        return
-            range(enemy.getVelocityVariance(), 0, enemy.getVelocityVarianceMax(), 1,  .1) *
-            range(enemy.getTurnVariance(), 0, enemy.getTurnVarianceMax(), 1, .1);
-    }
-
 }

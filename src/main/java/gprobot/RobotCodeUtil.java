@@ -239,6 +239,9 @@ public class RobotCodeUtil {
                 new File(workerFolder, ROBOTS_FOLDER+ File.separator).mkdirs();
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
                 copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "gpbase");
+                copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH, "voidious.Diamond_1.8.28.jar").toPath(),
+                    new File(workerFolder, ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath());
+
                 String[] cmd = makeRunnerCmd(workerFolder, i);
                 runnerProcess[i] = execute("runner-" + i, cmd);
             }

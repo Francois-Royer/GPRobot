@@ -93,7 +93,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         engine.addBattleListener(battleObserver);
 
         RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
-        int rounds = RobocodeConf.ROUNDS * opponentsRobots.length;
+        int rounds = RobocodeConf.ROUNDS;// * opponentsRobots.length;
         BattleSpecification battleSpec = new BattleSpecification(rounds, battlefield, selectedBots);
         //engine.setVisible(true);
         engine.runBattle(battleSpec, true);
@@ -101,7 +101,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         engine.close();
 
         if (opponentsRobots.length > 1 && ONE2ONE)
-            fitnessScore = (fitnessScore + Stream.of(opponentsRobots).mapToDouble(opponent -> {
+            fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots).mapToDouble(opponent -> {
                 try {
                     return getRobotFitness(robot, new String[]{opponent});
                 } catch (RemoteException e) {
@@ -109,7 +109,7 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
                     System.exit(1);
                 }
                 return 0;
-            }).sum() / opponentsRobots.length) / 2;
+            }).sum()) / opponentsRobots.length / 2;
 
         return fitnessScore;
     }
@@ -119,16 +119,14 @@ public class BattleRunner extends UnicastRemoteObject implements RMIGPRobotBattl
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
         //log.info("score = " + getScore(br.get()) +", remainEnergy = " + battleObserver.getRemainEnergy() + ", round duration=" + battleObserver.getRoundDuration());
 
-        //return br.isPresent() ? getScore(br.get()) + battleObserver.getRemainEnergy() / 400 : 0; // + 15000000000f/ battleObserver.getRoundDuration() : 0;
-        return br.isPresent() ? getScore(br.get()) : 0;
-        /*int botScore = br.isPresent() ? getScore(br.get()) + GPBase.remainEnergy * 2 : 0;
+        int botScore = br.isPresent() ? getScore(br.get()) : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
 
         if (totalScore == 0) {
             // OMG, these robots are so poor that they do not score a single point
             return 0;
         }
-        return (double) botScore / totalScore * 100;*/
+        return (double) botScore / totalScore * 100;
     }
 
     @Override

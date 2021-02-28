@@ -21,7 +21,7 @@ public class MetaBot implements Serializable {
     }
 
     private static final long serialVersionUID = 5625044536646095912L;
-    final static int SCAN_CHROMOS = 5;
+    final static int SCAN_CHROMOS = 2;
     final static int HIT_BY_BULLET_CHROMOS = 4;
     final static int HIT_ROBOT_CHROMOS = 5;
     final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;
@@ -188,9 +188,6 @@ public class MetaBot implements Serializable {
         params[0] = getBotName();
         System.arraycopy(phenome, 0, params, 1, phenome.length);
         sourceCode = String.format(robotTemplate, params);
-                /*phenome[0], phenome[1], phenome[2], phenome[3]/*, phenome[4]/*,
-                phenome[5], phenome[6], phenome[7], phenome[8], phenome[9]/*,
-                phenome[10], phenome[11],phenome[12],phenome[13],phenome[14]);*/
     }
 
     String writeSource() throws IOException {

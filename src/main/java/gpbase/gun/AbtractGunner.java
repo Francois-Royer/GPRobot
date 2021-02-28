@@ -7,15 +7,17 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static gpbase.GPUtils.getAngle;
-import static gpbase.GPUtils.trigoAngle;
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
+import static gpbase.GPUtils.*;
+import static java.lang.Math.*;
+import static robocode.Rules.MAX_BULLET_POWER;
+import static robocode.Rules.MIN_BULLET_POWER;
 
 public abstract class AbtractGunner implements Gunner {
     private String name = this.getClass().getSimpleName();
     Map<String, FireStat> fireStats = new HashMap<>();
     FireStat globalStat = new FireStat();
+
+    boolean resetStat = false;
 
     @Override
     public abstract AimingData aim(Enemy enemy);
@@ -44,26 +46,62 @@ public abstract class AbtractGunner implements Gunner {
     }
 
     @Override
-    public void resetStat(Enemy enemy) {
-        getFireStat(enemy).reset();
+    public long fireCount(Enemy enemy) {
+        return getFireStat(enemy).getFireCount();
     }
 
     @Override
-    public double hitRate() {
-        return globalStat.getHitRate();
+    public long hitCount(Enemy enemy) {
+        return getFireStat(enemy).getHitCount();
     }
+
+    @Override
+    public void resetStat(Enemy enemy) {
+        if (resetStat) getFireStat(enemy).reset();
+    }
+
+    @Override
+    public double hitRate() { return globalStat.getHitRate(); }
+
+    @Override
+    public long hitCount() { return globalStat.getHitCount(); }
+
+    @Override
+    public long fireCount() { return globalStat.getFireCount(); }
 
     @Override
     public void resetStat() {
-        globalStat.reset();
+        if (resetStat) globalStat.reset();
     }
 
     private FireStat getFireStat(Enemy enemy) {
         FireStat fireStat = fireStats.get(enemy.getName());
 
         if (fireStat == null)
-            fireStats.put(enemy.getName(), fireStat = new FireStat(1,1));
+            fireStats.put(enemy.getName(), fireStat = new FireStat(0,0));
 
         return fireStat;
     }
+
+    public void setResetStat(boolean resetStat) {
+        this.resetStat = resetStat;
+    }
+
+    public double getFirePower(Enemy enemy) {
+        if (isEasyShot(enemy)) return MAX_BULLET_POWER;
+
+        double power = range(hitRate(enemy), 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
+
+        if (power < MIN_BULLET_POWER) {
+            enemy.getGpBase().out.println("power < MIN_BULLET_POWER");
+            enemy.getGpBase().out.printf("hitRate=%f\n", hitRate(enemy));
+        }
+
+        return power;
+    }
+
+    public boolean isEasyShot(Enemy enemy) {
+        return (enemy.getEnergy() == 0) || (enemy.distance(enemy.getGpBase().getCurrentPoint()) < GPBase.TANK_SIZE*4);
+    }
+
 }

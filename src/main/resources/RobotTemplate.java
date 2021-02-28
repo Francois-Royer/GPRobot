@@ -13,13 +13,13 @@ public class %s extends GPBase {
     @Override
     public void doGP() {
         // --- PHENOME 1 ---
-        turnLeft=AvoidNan(%s, turnLeft);
+        //turnLeft=AvoidNan(#s, turnLeft);
 
         // --- PHENOME 2 ---
         turnGunLeft=AvoidNan(%s, turnGunLeft);
 
         // --- PHENOME 3 ---
-        ahead=AvoidNan(%s, ahead);
+        //ahead=AvoidNan(#s, ahead);
 
         // --- PHENOME 4 ---
         fire=AvoidNan(%s, fire);

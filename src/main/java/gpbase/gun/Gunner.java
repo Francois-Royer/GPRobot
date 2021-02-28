@@ -11,7 +11,11 @@ public interface Gunner {
     void fire(Enemy enemy);
     void hit(Enemy enemy);
     double hitRate(Enemy enemy);
+    long  fireCount(Enemy enemy);
+    long  hitCount(Enemy enemy);
     void resetStat(Enemy enemy);
     double hitRate();
+    long hitCount();
+    long fireCount();
     void resetStat();
 }

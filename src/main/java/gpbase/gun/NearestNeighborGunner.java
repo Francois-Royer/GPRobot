@@ -22,28 +22,28 @@ public class NearestNeighborGunner extends AbtractGunner {
 
     public NearestNeighborGunner(GPBase gpbase) {
         this.gpbase = gpbase;
+        setResetStat(true);
     }
 
     @Override
-    public AimingData aim(Enemy target) {
-        if (target.getKdTree() == null) return null;
+    public AimingData aim(Enemy enemy) {
+        if (enemy.getKdTree() == null) return null;
 
-        double[] kdPoint = target.getKDPoint(gpbase);
+        double[] kdPoint = enemy.getKDPoint(gpbase);
         kdPoint[0] = 100;
-        NearestNeighborIterator<List<Move>> it = target.getKdTree().getNearestNeighborIterator(kdPoint, 20, new SquareEuclideanDistanceFunction());
+        NearestNeighborIterator<List<Move>> it = enemy.getKdTree().getNearestNeighborIterator(kdPoint, 20, new SquareEuclideanDistanceFunction());
 
         while (it.hasNext()) {
             KdEntry<List<Move>> kdEntry = it.next();
             if (kdEntry.isDeleted()) continue;
             double dist = it.distance();
             List<Move> movesLog = kdEntry.getData();
-            double confidence = getConfidence(target);
-            double firePower = firePowerFromConfidenceAndEnergy(confidence, gpbase.getEnergy());
+            double firePower = getFirePower(enemy);
             List<Point.Double> expectedMoves = new ArrayList<>();
-            Point.Double firingPosition = getFiringPosition(target, firePower, movesLog, expectedMoves);
+            Point.Double firingPosition = getFiringPosition(enemy, firePower, movesLog, expectedMoves);
             if (firingPosition == null)
                 continue;
-            AimingData aimingData = new AimingData(this, target, firingPosition, firePower, expectedMoves, confidence, kdEntry.getCoordinates());
+            AimingData aimingData = new AimingData(this, enemy, firingPosition, firePower, expectedMoves, kdEntry.getCoordinates());
             //System.out.printf("Square Euclidean distance=%f\n", dist);
             return aimingData;
         }
@@ -89,15 +89,5 @@ public class NearestNeighborGunner extends AbtractGunner {
         }
 
         return firePoint;
-    }
-
-    public double getConfidence(Enemy enemy) {
-        if (enemy.getEnergy() == 0) return 1;
-        double distanceFactor = range(gpbase.getCurrentPoint().distance(enemy), GPBase.dmin, GPBase.dmax, -1, 1) * 4;
-        double varianceConfidence = (range(enemy.getVelocityVariance(), 0, enemy.getVelocityVarianceMax(), 1, 0) +
-            range(enemy.getTurnVariance(), 0, enemy.getTurnVarianceMax(), 1, 0)) / 2;
-
-        double dist2One = 1 - varianceConfidence;
-        return checkMinMax(varianceConfidence - dist2One * distanceFactor, 0.05, 1);
     }
 }

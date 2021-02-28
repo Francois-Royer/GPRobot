@@ -17,7 +17,7 @@ import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
 
-public class Enemy extends Point.Double {
+public class Enemy extends Point.Double implements Tank {
     double VARIANCE_SAMPLING = 10;
     String name;
     private double energy;
@@ -123,15 +123,31 @@ public class Enemy extends Point.Double {
 
     public double[] getKDPoint(GPBase robot) {
         return new double[]{
-            50,
-            robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
-            normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
-            normalAbsoluteAngle(trigoAngle(robot.getHeadingRadians())-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
-            velocity * 300 / MAX_VELOCITY,
-            robot.getVelocity() * 300 / MAX_VELOCITY,
-            energy,
-            robot.getEnergy(),
-            robot.conerDistance(this) * 200 / robot.dmax,
+            //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
+            (normalAbsoluteAngle(direction))*100 /2/ PI,
+            //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
+            (velocity) * 100 / MAX_VELOCITY,
+            (accel) * 100 / DECELERATION,
+            (rotationRate) * 100 / MAX_TURN_RATE_RADIANS,
+            //(energy+100)/2,
+            //robot.getEnergy(),
+            (robot.conerDistance(this)) * 100 / robot.dmax,
+            //robot.aliveCount() * 100/robot.enemyCount,
+            //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
+        };
+    }
+
+    public double[] getKDPoint2(GPBase robot) {
+        return new double[]{
+            //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
+            (normalAbsoluteAngle(direction))*100 /2/ PI,
+            //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
+            (velocity) * 100 / MAX_VELOCITY,
+            (accel) * 100 / DECELERATION,
+            (rotationRate) * 100 / MAX_TURN_RATE_RADIANS,
+            //(energy+100)/2,
+            //robot.getEnergy(),
+            (robot.conerDistance(this)) * 100 / robot.dmax,
             //robot.aliveCount() * 100/robot.enemyCount,
             //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
         };
@@ -142,18 +158,22 @@ public class Enemy extends Point.Double {
         return name;
     }
 
+    @Override
     public double getVelocity() {
         return velocity;
     }
 
+    @Override
     public double getDirection() {
         return direction;
     }
 
+    @Override
     public double getEnergy() {
         return energy;
     }
 
+    @Override
     public double getAngle() {
         return angle;
     }
@@ -170,35 +190,43 @@ public class Enemy extends Point.Double {
         this.energy = energy;
     }
 
+    @Override
     public double getvMax() {
         return vMax;
     }
 
+    @Override
     public double getvMin() {
         return vMin;
     }
 
+    @Override
     public double getRotationRate() {
         return rotationRate;
     }
 
+    @Override
     public double getAccel() {
         return accel;
     }
 
+    @Override
     public double getVelocityVariance() {
         return velocityVariance;
     }
 
+    @Override
     public double getTurnVariance() {
         if (velocity == 0) return 0;
         return turnVariance;
     }
 
+    @Override
     public double getVelocityVarianceMax() {
         return velocityVarianceMax;
     }
 
+    @Override
     public double getTurnVarianceMax() {
         return turnVarianceMax;
     }
@@ -243,13 +271,12 @@ public class Enemy extends Point.Double {
         }
     }
 
-    private static int KDTREE_SIZE_LOW = 5000;
-    private static int KDTREE_SIZE_HIGH = 7500;
+    private static int KDTREE_SIZE_LOW = 50000;
+    private static int KDTREE_SIZE_HIGH = 75000;
     public void rebuildKDTree() {
         //System.out.printf("kdtree for %s contains %d points\n", name, kdTree != null ? kdTree.size(): 0);
         if (kdTree == null) return;
         LinkedList<KdEntry<List<Move>>> stack = kdTree.getStack();
-        System.gc();
         kdTree = new KdTree(kdTree.getDimensions());
 
         for (int i=0; i < KDTREE_SIZE_LOW;) {
@@ -261,7 +288,6 @@ public class Enemy extends Point.Double {
             kdTree.addPoint(kdEntry.getCoordinates(), kdEntry.getData());
             i++;
         }
-        System.gc();
     }
 
     double[] cloneCoordinates(double[] coordinates) {

@@ -39,7 +39,7 @@ public class RobocodeConf {
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 7;
     public static final int ROUNDS = 10;
-    public static final int TOURNY_SIZE =6; // Selection Pressure
+    public static final int TOURNY_SIZE = 6; // Selection Pressure
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
     public static boolean ONE2ONE = true;
     public static final double PROB_CROSSOVER = 0.85;

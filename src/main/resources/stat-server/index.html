@@ -58,6 +58,7 @@
 
     var smoothRangeEl = document.getElementById('smoothing-amount');
     smoothRangeEl.addEventListener('input', function() {
+        console.log(smoothRangeEl.value)
         var param = parseFloat(smoothRangeEl.value);
         smoothPlotter.smoothing = param;
         drawPlot();
