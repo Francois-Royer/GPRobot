@@ -274,8 +274,10 @@ public class Enemy extends Point.Double implements Tank {
     private static int KDTREE_SIZE_LOW = 50000;
     private static int KDTREE_SIZE_HIGH = 75000;
     public void rebuildKDTree() {
+
         //System.out.printf("kdtree for %s contains %d points\n", name, kdTree != null ? kdTree.size(): 0);
-        if (kdTree == null) return;
+        if (kdTree == null ||true) return;
+
         LinkedList<KdEntry<List<Move>>> stack = kdTree.getStack();
         kdTree = new KdTree(kdTree.getDimensions());
 

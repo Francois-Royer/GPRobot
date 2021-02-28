@@ -41,10 +41,11 @@ public class NearestNeighborGunner extends AbtractGunner {
             double firePower = getFirePower(enemy);
             List<Point.Double> expectedMoves = new ArrayList<>();
             Point.Double firingPosition = getFiringPosition(enemy, firePower, movesLog, expectedMoves);
-            if (firingPosition == null)
+            if (firingPosition == null) {
                 continue;
+            }
             AimingData aimingData = new AimingData(this, enemy, firingPosition, firePower, expectedMoves, kdEntry.getCoordinates());
-            //System.out.printf("Square Euclidean distance=%f\n", dist);
+            System.out.printf("Square Euclidean distance=%f\n", dist);
             return aimingData;
         }
         return null;

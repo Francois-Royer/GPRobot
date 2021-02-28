@@ -461,7 +461,7 @@ public class GPBase extends AdvancedRobot {
         double y = 0;
         double div;
 
-        if (aliveCount() > 1) {
+        if (aliveCount() > 0) {
             div = getEmenmiesEnergy();
 
             for (Enemy e : enemies.values()) {
@@ -666,8 +666,8 @@ public class GPBase extends AdvancedRobot {
 
     private void setupGunners() {
         if (gunners.values().size() == 0) {
-            putGunner(new HeadOnGunner(this));
-            putGunner(new CircularGunner(this));
+            //putGunner(new HeadOnGunner(this));
+            //putGunner(new CircularGunner(this));
             putGunner(new NearestNeighborGunner(this));
         }
     }
