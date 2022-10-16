@@ -10,10 +10,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
-import java.net.InetAddress;
 import java.nio.file.Path;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,31 +52,6 @@ public class RobotCodeUtil {
         }
     }
 
-
-    static String[] makeRunnerCmd(File workerDir, int number) {
-        List<String> cmdList = new ArrayList();
-        cmdList.add("java");
-        cmdList.add("-Djava.awt.headless=true");
-        cmdList.add("-DNOSECURITY=true"); // RMI cause security exception
-        cmdList.add("-Xmx512m");
-        //cmdList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
-        cmdList.add("-cp");
-
-        StringBuilder cpBuilder = new StringBuilder(workerDir.toPath().resolve("libs").resolve(ROBOCODE_JAR).toString());
-        String[] currentClassPath = System.getProperty("java.class.path").split(File.pathSeparator);
-        Stream.of(currentClassPath)
-                .filter(p -> !p.contains(ROBOCODE_JAR))
-                .forEach(p -> cpBuilder.append(File.pathSeparator).append(p));
-        cmdList.add(cpBuilder.toString());
-
-        cmdList.add("gprobot.BattleRunner");
-        cmdList.add(Integer.toString(number));
-        cmdList.add(workerDir.toString());
-
-        String[] cmd = new String[cmdList.size()];
-        return cmdList.toArray(cmd);
-    }
-
     public static void compileBots(final String[] sources) throws InterruptedException {
         // Compile code
         ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
@@ -117,9 +89,9 @@ public class RobotCodeUtil {
         return result;
     }
 
-    public static Process execute(String name, String[] command) throws IOException {
-        log.log(Level.FINE, "execute " + name + ": " + String.join(" ", command));
-        Process process = Runtime.getRuntime().exec(command);
+    public static Process execute(String name, String[] command, File cwd) throws IOException {
+        log.log(Level.INFO, "execute " + name + ": " + String.join(" ", command));
+        Process process = Runtime.getRuntime().exec(command, new String[0], cwd);
         printMsg(name + " |", process.getInputStream());
         printMsg(name + " |", process.getErrorStream());
         return process;
@@ -222,63 +194,6 @@ public class RobotCodeUtil {
 
     static Process[] runnerProcess;
 
-    public static void prepareBattleRunners(int count) {
-        try {
-            File runnerDirs = getRunnersDir();
-            if (runnerDirs.exists()) {
-                delete(runnerDirs);
-            }
-            runnerDirs.mkdir();
-            runnerProcess = new Process[count];
-            for (int i = 0; i < count; i++) {
-                File workerFolder = getRunnerDir(i);
-                workerFolder.mkdir();
-                copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "config");
-                copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, "libs");
-
-                new File(workerFolder, ROBOTS_FOLDER+ File.separator).mkdirs();
-                copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
-                copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "gpbase");
-                copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH, "voidious.Diamond_1.8.28.jar").toPath(),
-                    new File(workerFolder, ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath());
-
-                String[] cmd = makeRunnerCmd(workerFolder, i);
-                runnerProcess[i] = execute("runner-" + i, cmd);
-            }
-
-            String host = InetAddress.getLocalHost().getHostAddress();
-
-            for (int i = 0; i < count; i++) {
-                int retry=0;
-                while(retry++ < 300) {
-                    try {
-                        Naming.lookup(getRunnerUrl(host, i));
-                        break;
-                    } catch (NotBoundException nbe) {
-                        Thread.sleep(100);
-                    }
-                }
-                if (retry >= 300) throw new Exception("runner " + i + " not ready");
-            }
-         } catch (Exception ex) {
-            log.log(Level.SEVERE, null, ex);
-            System.exit(1);
-        }
-    }
-
-    static void restartProcess(int i) {
-        try {
-            runnerProcess[i].destroyForcibly();
-            runnerProcess[i].waitFor();
-            File workerFolder = getRunnerDir(i);
-            String[] cmd = makeRunnerCmd(workerFolder, i);
-            runnerProcess[i] = execute("runner-" + i, cmd);
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "restartProcess " +  i, e);
-            System.exit(1);
-        }
-    }
-
     public static String sDuration(long duration) {
         return Duration.ofMillis(duration).toString().substring(2);
     }
@@ -299,7 +214,7 @@ public class RobotCodeUtil {
 
     public static void cleanDirectory(File dir, String filter) {
         if (dir.isDirectory()) {
-            log.info("Cleanning: " + dir.toString() + " with filter: " + filter);
+            log.fine("Cleanning: " + dir.toString() + " with filter: " + filter);
             Stream.of(dir.listFiles()).filter(f -> f.getName().matches(filter)).forEach(File::delete);
         }
     }
@@ -332,14 +247,5 @@ public class RobotCodeUtil {
         } catch (Exception e) {
             log.log(Level.SEVERE, "copyFolder", e);
         }
-    }
-
-    public static void killallRunner() {
-        Stream.of(runnerProcess).forEach(Process::destroy);
-        /*try {
-            delete(getRunnersDir());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
     }
 }

@@ -1,15 +1,11 @@
 package gpbase;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
 
-import gpbase.kdtree.KdEntry;
-import gpbase.kdtree.SquareEuclideanDistanceFunction;
-import robocode.*;
 import gpbase.kdtree.KdTree;
+import robocode.*;
 
 import static java.lang.Math.*;
 import static gpbase.GPUtils.*;
@@ -18,6 +14,7 @@ import static robocode.Rules.*;
 
 
 public class Enemy extends Point.Double implements Tank {
+    private static int KDTREE_MAX_SIZE = 1000;
     double VARIANCE_SAMPLING = 10;
     String name;
     private double energy;
@@ -102,15 +99,17 @@ public class Enemy extends Point.Double implements Tank {
 
             moveLog.add(new Move(getKDPoint(gpBase), turn, velocity, now - scanLastUpdate));
 
-            if (moveLog.size() > gpBase.aimingMoveLogSize) {
-                if (moveLog.size() > gpBase.moveLogMaxSize)
-                    moveLog.remove(0);
-                Move m = moveLog.get(0);
-                if (kdTree == null) kdTree = new KdTree<List<Move>>(m.getKdpoint().length);
+            if (moveLog.size() >= gpBase.aimingMoveLogSize) {
+                Move m = moveLog.get(gpBase.aimingMoveLogSize-1);
+                if (kdTree == null) kdTree = new KdTree.SqrEuclid<List<Move>>(m.getKdpoint().length, KDTREE_MAX_SIZE);
                 try {
-                    kdTree.addPoint(m.getKdpoint(), new ArrayList<>(moveLog.subList(0, gpBase.aimingMoveLogSize)));
+                    List<Move> lm = new ArrayList<>(moveLog.subList(0, gpBase.aimingMoveLogSize));
+                    Collections.reverse(lm);
+                    kdTree.addPoint(m.getKdpoint(), lm);
                 } catch (Exception e) {
                 }
+                if (moveLog.size() > gpBase.moveLogMaxSize)
+                    moveLog.remove(0);
             }
         }
         alive = true;
@@ -123,32 +122,20 @@ public class Enemy extends Point.Double implements Tank {
 
     public double[] getKDPoint(GPBase robot) {
         return new double[]{
+            getX() * 50 / GPBase.BATTLE_FIELD_CENTER.getX(),
+            getY() * 50 / GPBase.BATTLE_FIELD_CENTER.getY(),
+            //GPBase.BATTLE_FIELD_CENTER.distance(this) * 50 / GPBase.dmax,
+            (normalAbsoluteAngle(direction))*100 / 2 / PI,
+            velocity * 100 / MAX_VELOCITY,
+            //robot.aliveCount() * 1000/robot.enemyCount,
             //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
-            (normalAbsoluteAngle(direction))*100 /2/ PI,
             //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
-            (velocity) * 100 / MAX_VELOCITY,
+            //(velocity) * 100 / MAX_VELOCITY,
             (accel) * 100 / DECELERATION,
             (rotationRate) * 100 / MAX_TURN_RATE_RADIANS,
             //(energy+100)/2,
             //robot.getEnergy(),
-            (robot.conerDistance(this)) * 100 / robot.dmax,
-            //robot.aliveCount() * 100/robot.enemyCount,
-            //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
-        };
-    }
-
-    public double[] getKDPoint2(GPBase robot) {
-        return new double[]{
-            //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
-            (normalAbsoluteAngle(direction))*100 /2/ PI,
-            //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
-            (velocity) * 100 / MAX_VELOCITY,
-            (accel) * 100 / DECELERATION,
-            (rotationRate) * 100 / MAX_TURN_RATE_RADIANS,
-            //(energy+100)/2,
-            //robot.getEnergy(),
-            (robot.conerDistance(this)) * 100 / robot.dmax,
-            //robot.aliveCount() * 100/robot.enemyCount,
+            //(1/(robot.conerDistance(this)+ java.lang.Double.MIN_VALUE)) * 100 / robot.dmax,
             //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
         };
     }
@@ -231,7 +218,7 @@ public class Enemy extends Point.Double implements Tank {
         return turnVarianceMax;
     }
 
-    public KdTree getKdTree() {
+    public KdTree<List<Move>> getKdTree() {
         return kdTree;
     }
 
@@ -241,59 +228,6 @@ public class Enemy extends Point.Double implements Tank {
 
     public GPBase getGpBase() {
         return gpBase;
-    }
-
-    public void hit(double[] kdPoint) {
-        if (kdPoint == null) return;
-        //System.out.printf("hit with kdPoint %s\n", Arrays.toString(kdPoint));
-        KdEntry<List<Move>> entry = kdTree.getNearestNeighborIterator(kdPoint, 1, new SquareEuclideanDistanceFunction()).next();
-        if (entry != null) {
-            entry.setDeleted(true);
-            double[] newPoint = cloneCoordinates(kdPoint);
-            if (newPoint[0] < 100)
-                newPoint[0] += 10;
-            kdTree.addPoint(newPoint, entry.getData());
-        }
-    }
-
-    public void miss(double[] kdPoint) {
-        if (kdPoint == null) return;
-
-        //System.out.printf("miss with kdPoint %s\n", Arrays.toString(kdPoint));
-        KdEntry<List<Move>> entry = kdTree.getNearestNeighborIterator(kdPoint, 1, new SquareEuclideanDistanceFunction()).next();
-        if (entry != null) {
-            entry.setDeleted(true);
-            double[] newPoint = cloneCoordinates(kdPoint);
-            if (newPoint[0] > 0) {
-                newPoint[0] -=10;
-                kdTree.addPoint(newPoint, entry.getData());
-            }
-        }
-    }
-
-    private static int KDTREE_SIZE_LOW = 50000;
-    private static int KDTREE_SIZE_HIGH = 75000;
-    public void rebuildKDTree() {
-
-        //System.out.printf("kdtree for %s contains %d points\n", name, kdTree != null ? kdTree.size(): 0);
-        if (kdTree == null ||true) return;
-
-        LinkedList<KdEntry<List<Move>>> stack = kdTree.getStack();
-        kdTree = new KdTree(kdTree.getDimensions());
-
-        for (int i=0; i < KDTREE_SIZE_LOW;) {
-            KdEntry<List<Move>> kdEntry = stack.pollFirst();
-            while (kdEntry != null && kdEntry.isDeleted())
-                kdEntry = stack.pollFirst();
-
-            if (kdEntry == null) break;
-            kdTree.addPoint(kdEntry.getCoordinates(), kdEntry.getData());
-            i++;
-        }
-    }
-
-    double[] cloneCoordinates(double[] coordinates) {
-        return Arrays.copyOf(coordinates, coordinates.length);
     }
 }
 

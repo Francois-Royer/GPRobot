@@ -10,13 +10,12 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static gprobot.RobocodeConf.ROUNDS;
 import static java.lang.Math.*;
 import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
 public class GPBase extends AdvancedRobot {
-    Point.Double BATTLE_FIELD_CENTER;
+    public static Point.Double BATTLE_FIELD_CENTER;
     public static double TANK_SIZE = 36;
 
     public double BORDER_OFFSET = TANK_SIZE * 3 / 2;
@@ -70,7 +69,7 @@ public class GPBase extends AdvancedRobot {
     public void run() {
         BATTLE_FIELD_CENTER = new Point.Double(getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
         dmax = BATTLE_FIELD_CENTER.distance(TANK_SIZE / 2, TANK_SIZE / 2) * 2;
-        aimingMoveLogSize = (int) (dmax / getBulletSpeed(MAX_BULLET_POWER) + 2);
+        aimingMoveLogSize = (int) (dmax / getBulletSpeed(MAX_BULLET_POWER) + 2)*2;
         moveLogMaxSize = aimingMoveLogSize * 100;
         FIRE_AGAIN_MIN_TIME = (long) (Rules.getGunHeat(MIN_BULLET_POWER) / getGunCoolingRate());
         //out.println("dmax=" + dmax);
@@ -120,7 +119,6 @@ public class GPBase extends AdvancedRobot {
             if (ad != null) {
                 if (e.getName() == ad.getTarget().getName()) {
                     ad.getGunner().hit(ad.getTarget());
-                    e.hit(ad.getKdPoint());
                 }
                 ///else
                 //out.printf("%s hit %s but was aiming to %s...\n",
@@ -137,7 +135,7 @@ public class GPBase extends AdvancedRobot {
         if (ad != null) {
             //out.printf("miss %s\n", ad.getTarget().name);
             aimDatas.remove(ad);
-            ad.getTarget().miss(ad.getKdPoint());
+            //ad.getTarget().miss(ad.getKdPoint());
             ad.getTarget().fEnergy += getBulletDamage(ad.getFirePower());
             //out.printf("restored energy %f\n", ad.getTarget().fEnergy);
         }
@@ -350,11 +348,9 @@ public class GPBase extends AdvancedRobot {
 
                 if (hit) {
                     vs.getGunner().hit(aimingData.getTarget());
-                    enemy.hit(aimingData.getKdPoint());
                 }
                 return !hit;
             }
-            enemy.miss(aimingData.getKdPoint());
 
             return false;
         }).collect(Collectors.toList());
@@ -586,7 +582,6 @@ public class GPBase extends AdvancedRobot {
                 gunner.resetStat(enemy);
             });
         });
-        enemies.values().stream().forEach(enemy -> enemy.rebuildKDTree());
     }
 
     private Point.Double getBorderPoint(Point.Double p, double angle) {
@@ -648,15 +643,23 @@ public class GPBase extends AdvancedRobot {
     }
 
     public double ensureXInBatleField(double x) throws Exception {
-        double nx = max(TANK_SIZE / 2, min(getBattleFieldWidth() - TANK_SIZE / 2, x));
-        if (abs(nx - x) > 2) throw new Exception("hit wall x");
-        return nx;
+        return ensureXInBatleField(x, 2);
     }
 
     public double ensureYInBatleField(double y) throws Exception {
-        double ny = max(TANK_SIZE / 2, min(getBattleFieldHeight() - TANK_SIZE / 2, y));
-        if (abs(ny - y) > 2) throw new Exception("hit wall y");
-        return ny;
+        return ensureYInBatleField(y, 2);
+    }
+
+    public double ensureXInBatleField(double x, double d) throws Exception {
+        if (x<TANK_SIZE/d) throw new Exception("hit wall x");
+        if (x> BATTLE_FIELD_CENTER.getX()*2 - TANK_SIZE/d) throw new Exception("hit wall x");
+        return x;
+    }
+
+    public double ensureYInBatleField(double y, double d) throws Exception {
+        if (y<TANK_SIZE/d) throw new Exception("hit wall y");
+        if (y> BATTLE_FIELD_CENTER.getY()*2 - TANK_SIZE/d) throw new Exception("hit wall y");
+        return y;
     }
 
     public double conerDistance(Point.Double p) {
@@ -664,10 +667,15 @@ public class GPBase extends AdvancedRobot {
             pow(min(p.y, BATTLE_FIELD_CENTER.y * 2 - p.y), 2));
     }
 
+    public double wallDistance(Point.Double p) {
+        return min(min(p.x, BATTLE_FIELD_CENTER.x * 2 - p.x),
+            min(p.y, BATTLE_FIELD_CENTER.y * 2 - p.y));
+    }
+
     private void setupGunners() {
         if (gunners.values().size() == 0) {
-            //putGunner(new HeadOnGunner(this));
-            //putGunner(new CircularGunner(this));
+            putGunner(new HeadOnGunner(this));
+            putGunner(new CircularGunner(this));
             putGunner(new NearestNeighborGunner(this));
         }
     }

@@ -43,6 +43,8 @@ public class MetaBot implements Serializable {
     ExpressionNode genome[] = new ExpressionNode[NUM_CHROMOS];
 
     // Class Methods /////////////////////////////////////////////////////////
+    public MetaBot() {
+    }
     public MetaBot(int gen, int botID) {
         memberGen = gen;
         memberID = botID;

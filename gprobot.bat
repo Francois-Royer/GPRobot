@@ -1,3 +1,5 @@
-@echo off
 
-java -Xmx512m -cp build/libs/gprobot-all.jar gprobot.RunGP
+SET P=%~dp0
+SET RH=C:\robocode\
+
+java -Xmx512m -cp %RH%libs\*  gprobot.RunGP

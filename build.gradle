@@ -1,44 +1,41 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        jcenter()
-    }
-    dependencies {
-        classpath "com.github.jengelman.gradle.plugins:shadow:5.0.0"
-    }
+plugins {
+    id "java"
+    id "java-library-distribution"
+    id "com.github.johnrengelman.shadow" version "7.1.2"
 }
-
-apply plugin: 'java'
-apply plugin: 'java-library-distribution'
-apply plugin: 'com.github.johnrengelman.shadow'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 def robotcode_home = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'c:/robocode' : "$System.env.HOME/robocode"
 
 repositories {
     mavenCentral()
     maven {
-        url "http://maven.icm.edu.pl/artifactory/repo/"
+        url "https://maven.icm.edu.pl/artifactory/repo/"
     }
 }
 
 dependencies {
-    compile files("$robotcode_home/libs/robocode.jar")
-    compile 'de.ruedigermoeller:fst:2.56'
+    implementation 'com.esotericsoftware:kryo:5.3.0'
+    implementation 'net.sf.robocode:robocode.api:1.9.4.7'
+    shadow 'com.esotericsoftware:kryo:5.3.0'
 }
+
+project.configurations.implementation.setCanBeResolved(true)
 
 jar {
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
     manifest {
         attributes 'Main-Class': 'gprobot.RunGP',
-                'Class-Path': configurations.runtime.files.collect { "lib/$it.name" }.join(' ')
+                'Class-Path': configurations.implementation.collect { "lib/$it.name" }.join(' ')
     }
+    dependsOn ('dependencies')
 }
 
 shadowJar {
-    configurations = [project.configurations.compile]
+    manifest {
+        inheritFrom project.tasks.jar.manifest
+    }
+    configurations = [project.configurations.shadow]
+    dependsOn ('jar')
 }
 
 task copyGPBase(type: Copy) {
@@ -47,4 +44,11 @@ task copyGPBase(type: Copy) {
     include '**/gpbase/**/*.*'
     include '**/net/sf/javaml/core/**/*.*'
     into "$robotcode_home/robots"
+}
+
+task copyLib(type: Copy) {
+    from 'build/libs'
+    include 'gprobot-all.jar'
+    into "$robotcode_home/libs"
+    dependsOn ('shadowJar', 'copyGPBase')
 }

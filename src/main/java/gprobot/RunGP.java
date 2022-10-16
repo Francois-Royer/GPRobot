@@ -1,22 +1,14 @@
 package gprobot;
 
-import org.nustaq.serialization.FSTConfiguration;
-import org.nustaq.serialization.FSTObjectInput;
-import org.nustaq.serialization.FSTObjectOutput;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
 import robocode.control.RobotSpecification;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.rmi.ConnectException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
@@ -40,12 +32,10 @@ import static gprobot.RobotCodeUtil.*;
  * @author Ted Hunter
  */
 public class RunGP {
-    private static Logger log = Logger.getLogger(RunGP.class.getName());
-    static FSTConfiguration fst = FSTConfiguration.createDefaultConfiguration();
+    private static final Logger log = Logger.getLogger(RunGP.class.getName());
     static PrintStream console = System.out;
 
-    private String host;
-    private double[] fitnesses = new double[POP_SIZE];
+    final private double[] fitnesses = new double[POP_SIZE];
 
     private MetaBot[] pool = new MetaBot[POP_SIZE];
     private MetaBot[] newPool = new MetaBot[POP_SIZE];
@@ -54,11 +44,15 @@ public class RunGP {
 
     private int genCount = 0;
 
+    Kryo kryo;
+
+    private BattleControler[] battleControlers;
+
     public static void main(String[] args) throws IOException {
 
         if (args.length >= 2)  {
-            RUNNERS_COUNT = Integer.valueOf(args[0]);
-            ONE2ONE = Boolean.valueOf(args[1]);
+            RUNNERS_COUNT = Integer.parseInt(args[0]);
+            ONE2ONE = Boolean.parseBoolean(args[1]);
         }
 
         new StatServer().start();
@@ -68,14 +62,18 @@ public class RunGP {
     public void runGP() {
         try {
             bestSoFar.fitness = 0;
-            initOrRestoreCtx();
+            kryo = new Kryo();
+            kryo.register(MetaBot.class);
+            kryo.register(MetaBot[].class);
+            kryo.register(ExpressionNode.class);
+            kryo.register(ExpressionNode[].class);
+            kryo.register(String[].class);
 
-            host = InetAddress.getLocalHost().getHostAddress();
-            console.println("Start rmi registry on " + host);
-            LocateRegistry.createRegistry(1099);
+            initOrRestoreCtx();
             console.println("Prepare " + RUNNERS_COUNT + " Runners ");
-            prepareBattleRunners(RUNNERS_COUNT);
-            Runtime.getRuntime().addShutdownHook(new Thread(RobotCodeUtil::killallRunner));
+            prepareBattleRunners();
+            Runtime.getRuntime().addShutdownHook(new Thread(this::killAllRunner));
+
 
             // -- EC loop
             long begin = 0;
@@ -83,7 +81,7 @@ public class RunGP {
                 long beginGen = System.currentTimeMillis();
 
                 console.println("#####################################################################");
-                console.print(String.format("Compile %d Robots for generation %d: ", POP_SIZE, genCount));
+                console.printf("Compile %d Robots for generation %d: ", POP_SIZE, genCount);
                 compilePool();
                 long endComp = System.currentTimeMillis();
                 console.println(sDuration(endComp - beginGen));
@@ -109,12 +107,12 @@ public class RunGP {
                 bestLastGen = pool[best];
                 if (pool[best].fitness > bestSoFar.fitness) bestSoFar = pool[best];
 
-                console.println(String.format("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %d",
-                        avgFitness, avgNodeCount));
-                console.println(String.format("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d",
-                        bestLastGen.getBotName(),bestLastGen.fitness, pool[0].fitness,bestLastGen.nodeCount));
-                console.println(String.format("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d",
-                        bestSoFar.getBotName(),bestSoFar.fitness, pool[1].fitness,bestSoFar.nodeCount));
+                console.printf("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %d%n",
+                        avgFitness, avgNodeCount);
+                console.printf("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
+                        bestLastGen.getBotName(),bestLastGen.fitness, pool[0].fitness,bestLastGen.nodeCount);
+                console.printf("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
+                        bestSoFar.getBotName(),bestSoFar.fitness, pool[1].fitness,bestSoFar.nodeCount);
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -144,11 +142,11 @@ public class RunGP {
                 console.println("last gen=" + sDuration(genTime) +
                     ", avg=" + sDuration(avgTime) +
                     ", eta= " + sDuration(eta));
-                console.println("Date Finished: " + finished.toString());
+                console.println("Date Finished: " + finished);
 
             }
 
-            killallRunner();
+            killAllRunner();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Fatal error", e);
         }
@@ -225,32 +223,29 @@ public class RunGP {
 
     private void scoreFitnessOnSet() {
         try {
-            fitnesses = new double[POP_SIZE];
-            final Deque<Integer> queue = new LinkedBlockingDeque(IntStream.range(0, POP_SIZE).boxed().collect(Collectors.toList()));
+            Arrays.fill(fitnesses, 0);
+            final Deque<Integer> queue = IntStream.range(0, POP_SIZE).boxed().collect(Collectors.toCollection(LinkedBlockingDeque::new));
             final CountDownLatch cdl = new CountDownLatch(POP_SIZE);
             for (int i = 0; i < RUNNERS_COUNT; i++) {
                 final int runnerId = i;
                 new Thread(() -> {
                     Integer robotID;
                     try {
-                        Thread.sleep(20);
-                        RMIGPRobotBattleRunner runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
-                        runner.setOpponentsName(opponents);
-
                         while ((robotID = queue.pollFirst()) != null) {
                             String robotName = (robotID < POP_SIZE) ? getRobotName(genCount, robotID) : "GPBase";
-                            updateRunner(getRunnerDir(runnerId), robotName);
                             try {
-                                fitnesses[robotID] = runner.getRobotFitness(robotName);
+                                fitnesses[robotID] = battleControlers[runnerId].getRobotFitness(robotName);
                                 synchronized (fitnesses) {
                                     cdl.countDown();
                                     fitnesses.notifyAll();
                                 }
                             } catch (Exception e) {
+                                e.printStackTrace();
                                 Logger.getLogger(RunGP.class.getName()).log(Level.SEVERE, "Exception in runner " + runnerId + " restarting it", e);
                                 // Runner may have crash, put back the robot in queue and restart runner
                                 queue.addFirst(robotID);
-                                runner = restartRunner(runnerId);
+
+                                // TODO: implement restart
                             }
                         }
                     } catch (Exception e) {
@@ -271,20 +266,17 @@ public class RunGP {
         }
     }
 
-    private RMIGPRobotBattleRunner restartRunner(int runnerId) throws RemoteException, MalformedURLException, InterruptedException {
-        restartProcess(runnerId);
-        RMIGPRobotBattleRunner runner;
-        do
-            try {
-                runner = (RMIGPRobotBattleRunner) Naming.lookup(getRunnerUrl(host, runnerId));
-                runner.setOpponentsName(opponents);
-            } catch (NotBoundException | ConnectException rmie) {
-                Thread.sleep(1000);
-                runner = null;
-            }
-            while (runner == null);
-        Logger.getLogger(RunGP.class.getName()).log(Level.INFO, "Runner " + runnerId + " is up again it");
-        return runner;
+    public void prepareBattleRunners() throws IOException, InterruptedException {
+        File runnerDirs = getRunnersDir();
+        if (runnerDirs.exists()) {
+            delete(runnerDirs);
+        }
+        runnerDirs.mkdir();
+        battleControlers = new BattleControler[RUNNERS_COUNT];
+        for (int i=0; i < RUNNERS_COUNT; i++)
+            battleControlers[i] = new BattleControler(i);
+        for (int i=0; i < RUNNERS_COUNT; i++)
+            battleControlers[i].setOpponentsName(opponents);
     }
 
     public MetaBot candidateSelect() {
@@ -310,10 +302,10 @@ public class RunGP {
     public void saveCtx() {
         File tmpFile = new File(CTX_FILE+ ".tmp");
 
-        try (FSTObjectOutput out = new FSTObjectOutput(new FileOutputStream(tmpFile))) {
+        try (Output out = new Output(new FileOutputStream(tmpFile))) {
             out.writeInt(genCount);
-            out.writeObject(bestSoFar);
-            out.writeObject(pool);
+            kryo.writeObject(out,bestSoFar);
+            kryo.writeObject(out,pool);
         } catch (IOException e) {
             Logger.getLogger("GPRobot").log(Level.SEVERE, "Unable to save context for restart", e);
         }
@@ -325,10 +317,10 @@ public class RunGP {
     }
 
     public void loadCtx() throws IOException, ClassNotFoundException {
-        try (FSTObjectInput in = new FSTObjectInput(new FileInputStream(CTX_FILE))) {
+        try (Input in = new Input(new FileInputStream(CTX_FILE))) {
             genCount = in.readInt();
-            bestSoFar = (MetaBot) in.readObject();;
-            pool = (MetaBot[]) in.readObject();
+            bestSoFar = kryo.readObject(in, MetaBot.class);
+            pool = kryo.readObject(in, MetaBot[].class);
             bestLastGen = pool[0];
         }
     }
@@ -373,6 +365,15 @@ public class RunGP {
         }
     }
 
+    public void killAllRunner() {
+        Stream.of(battleControlers).forEach(BattleControler::destroy);
+        try {
+            delete(getRunnersDir());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String progressBar(int i) {
         StringBuilder sb = new StringBuilder();
         int x = i / 2;
@@ -386,6 +387,6 @@ public class RunGP {
 
     private void displayBattleProgress(int remain) {
         int percent = 100 * (POP_SIZE - remain) / POP_SIZE;
-        console.print(String.format("\rBattles: %s %d  ", progressBar(percent), remain));
+        console.printf("\rBattles: %s %d  ", progressBar(percent), remain);
     }
 }

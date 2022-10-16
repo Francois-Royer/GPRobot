@@ -9,6 +9,7 @@ import robocode.control.BattlefieldSpecification;
  * Created by gprobot on 17/01/17.
  */
 public class RobocodeConf {
+
     private RobocodeConf() {
         // Const class
     }
@@ -35,7 +36,7 @@ public class RobocodeConf {
 
     // constant that can be tunned
     public static final int POP_SIZE = 300;
-    public static final int MAX_GENS = 40000;
+    public static final int MAX_GENS = 200;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 7;
     public static final int ROUNDS = 10;
@@ -44,9 +45,11 @@ public class RobocodeConf {
     public static boolean ONE2ONE = true;
     public static final double PROB_CROSSOVER = 0.85;
     public static final double PROB_MUTATION = 0.05;
-
     public static final String CTX_FILE = "GP_ctx.bin";
-
+    public static final String MSG = "MSG";
+    public static final String SET_OPPONENTS = "SET OPPONENTS";
+    public static final String GET_FITNESS = "GET FITNESS";
+    public static final String READY = "READY";
     static String[] sampleRobots = {
             //"sample.Corners",
             "sample.Crazy",

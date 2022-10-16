@@ -3,12 +3,11 @@ package gpbase.gun;
 import gpbase.Enemy;
 import gpbase.GPBase;
 import gpbase.Move;
-import gpbase.kdtree.KdEntry;
-import gpbase.kdtree.NearestNeighborIterator;
-import gpbase.kdtree.SquareEuclideanDistanceFunction;
+import gpbase.kdtree.KdTree;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static gpbase.GPUtils.*;
@@ -17,7 +16,6 @@ import static java.lang.Math.sin;
 import static robocode.Rules.getBulletSpeed;
 
 public class NearestNeighborGunner extends AbtractGunner {
-    private static double KD_DISTANCE_MAX = 100; // used to compute confidence
     GPBase gpbase;
 
     public NearestNeighborGunner(GPBase gpbase) {
@@ -31,21 +29,22 @@ public class NearestNeighborGunner extends AbtractGunner {
 
         double[] kdPoint = enemy.getKDPoint(gpbase);
         kdPoint[0] = 100;
-        NearestNeighborIterator<List<Move>> it = enemy.getKdTree().getNearestNeighborIterator(kdPoint, 20, new SquareEuclideanDistanceFunction());
+        List<KdTree.Entry<List<Move>>> el = enemy.getKdTree().nearestNeighbor(kdPoint, 5, true);
 
-        while (it.hasNext()) {
-            KdEntry<List<Move>> kdEntry = it.next();
-            if (kdEntry.isDeleted()) continue;
-            double dist = it.distance();
-            List<Move> movesLog = kdEntry.getData();
+        /*System.out.printf("==========================================================\n");
+        for (KdTree.Entry<List<Move>> kdEntry:el)
+            System.out.printf("Kdistance=%f\n", kdEntry.distance);*/
+
+        for (KdTree.Entry<List<Move>> kdEntry:el) {
+            //System.out.printf(">>>>> Kdistance=%f\n", kdEntry.distance);
+            List<Move> movesLog = kdEntry.value;
             double firePower = getFirePower(enemy);
             List<Point.Double> expectedMoves = new ArrayList<>();
             Point.Double firingPosition = getFiringPosition(enemy, firePower, movesLog, expectedMoves);
             if (firingPosition == null) {
                 continue;
             }
-            AimingData aimingData = new AimingData(this, enemy, firingPosition, firePower, expectedMoves, kdEntry.getCoordinates());
-            System.out.printf("Square Euclidean distance=%f\n", dist);
+            AimingData aimingData = new AimingData(this, enemy, firingPosition, firePower, expectedMoves);
             return aimingData;
         }
         return null;
@@ -75,20 +74,28 @@ public class NearestNeighborGunner extends AbtractGunner {
                     dir -= m.getTurn() * overtime / m.getDuration();
                 }
 
-                try {
-                    double x = gpbase.ensureXInBatleField(firePoint.x + dist * cos(dir));
-                    double y = gpbase.ensureYInBatleField(firePoint.y + dist * sin(dir));
 
+                try {
+                    double x = gpbase.ensureXInBatleField(firePoint.x + dist * cos(dir), 2.1);
+                    double y = gpbase.ensureYInBatleField(firePoint.y + dist * sin(dir), 2.1);
                     firePoint.x = x;
                     firePoint.y = y;
-                    predMoves.add(clonePoint(firePoint));
-                    moveDuration += m.getDuration();
                 } catch (Exception e) {
-                    return null;
+                    continue;
                 }
+
+                predMoves.add(clonePoint(firePoint));
+                moveDuration += m.getDuration();
             }
         }
 
         return firePoint;
+    }
+
+    @Override
+    public void resetStat(Enemy enemy) {
+        super.resetStat(enemy);
+        //if (enemy.getKdTree() != null)
+            //System.out.printf("Kd size=%d\n", enemy.getKdTree().size());
     }
 }

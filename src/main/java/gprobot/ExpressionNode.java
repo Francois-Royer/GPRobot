@@ -48,6 +48,7 @@ public class ExpressionNode implements Serializable {
     String[] expression;
 
     // Class Methods //////////////////////////////////////////////////////////
+    public ExpressionNode() {}
     public ExpressionNode(int depth) {
         this.depth = depth;
     }
