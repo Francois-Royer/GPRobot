@@ -19,6 +19,7 @@ public class StatServer {
         server.createContext("/", new MyHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
+        System.out.println("statistic at http://" + server.getAddress().getHostName() + ":" + server.getAddress().getPort());
     }
 
     class MyHandler implements HttpHandler {
