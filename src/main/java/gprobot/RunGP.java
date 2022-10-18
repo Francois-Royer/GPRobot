@@ -84,7 +84,7 @@ public class RunGP {
             while (genCount < MAX_GENS) {
                 long beginGen = System.currentTimeMillis();
 
-                console.println("#####################################################################");
+                console.println("#".repeat(80));
                 console.printf("Compile %d Robots for generation %d: ", POP_SIZE, genCount);
                 compilePool();
                 long endComp = System.currentTimeMillis();

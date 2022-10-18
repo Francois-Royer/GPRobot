@@ -2,7 +2,7 @@
 <head>
     <head>
         <title>Genetic Programming Robocade Statistics</title>
-        <meta http-equiv="refresh" content="60" />
+<!--        <meta http-equiv="refresh" content="60" />-->
     </head>
     <script type="text/javascript" src="http://dygraphs.com/dygraph.min.js"></script>
     <script type="text/javascript" src="http://dygraphs.com/src/extras/smooth-plotter.js"></script>
@@ -15,6 +15,19 @@
     <div id="graphdiv" class="chart" style="width:800px; height:400px; float: left;"></div>
     <div id="graphdiv2" class="chart" style="width:800px; height:400px; margin-left: 802px;"></div>
 </div>
+<p><b>Show Series:</b></p>
+<Span><p>
+    <input type=checkbox id="0" checked onClick="change(this)">
+    <label for="0"> Average Fitness</label><br/>
+    <input type=checkbox id="1" checked onClick="change(this)">
+    <label for="1"> Best Fitness</label><br/>
+    <input type=checkbox id="2" checked onClick="change2(this)">
+    <label for="2"> Average Node</label><br/>
+    <input type=checkbox id="3" checked onClick="change2(this)">
+    <label for="3"> Best Node</label>
+</p></Span><span>
+<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01" value="0.33"></p>
+</span>
 <script type="text/javascript">
     var g;
     var g2;
@@ -51,32 +64,48 @@
         g2.setVisibility(parseInt(el.id), el.checked);
     }
 
-    function reload() {
-        g.updateOptions({file: "run_data.txt"});
-        g2.updateOptions({file: "run_data.txt"});
+    function setData(lines) {
+        g.updateOptions({file: lines});
+        g2.updateOptions({file: lines});
     }
 
     var smoothRangeEl = document.getElementById('smoothing-amount');
     smoothRangeEl.addEventListener('input', function() {
-        console.log(smoothRangeEl.value)
         var param = parseFloat(smoothRangeEl.value);
         smoothPlotter.smoothing = param;
-        drawPlot();
+        drawPlot()
     });
 
+    function loadData() {
+        $.ajax({
+            type: "GET",
+            url: "run_data.txt",
+            dataType: "text",
+            success: function(data) {processData(data);}
+        });
+    }
+
+    function processData(allText) {
+        var allTextLines = allText.split(/\r\n|\n/);
+        var headers = allTextLines[0].split(',');
+        var lines = [];
+
+        for (var i=1; i<allTextLines.length; i++) {
+            var data = allTextLines[i].split(',');
+            if (data.length == headers.length) {
+
+                var tarr = [];
+                for (var j=0; j<headers.length; j++) {
+                    tarr.push(headers[j]+":"+data[j]);
+                }
+                lines.push(tarr);
+            }
+        }
+        setData(lines)
+    }
+
+    var intervalId = setInterval(drawPlot, 5*1000);
+
 </script>
-<p><b>Show Series:</b></p>
-<Span><p>
-    <input type=checkbox id="0" checked onClick="change(this)">
-    <label for="0"> Average Fitness</label><br/>
-    <input type=checkbox id="1" checked onClick="change(this)">
-    <label for="1"> Best Fitness</label><br/>
-    <input type=checkbox id="2" checked onClick="change(this)">
-    <label for="2"> Average Node</label><br/>
-    <input type=checkbox id="4" checked onClick="change2(this)">
-    <label for="3"> Best Node</label>
-</p></Span><span>
-<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01" value="0.33"></p>
-</span>
 </body>
 </html>
