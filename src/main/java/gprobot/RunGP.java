@@ -19,6 +19,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import static gprobot.RobocodeConf.*;
 import static gprobot.RobotCodeUtil.*;
@@ -109,10 +113,10 @@ public class RunGP {
 
                 console.printf("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %d%n",
                         avgFitness, avgNodeCount);
-                console.printf("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
-                        bestLastGen.getBotName(),bestLastGen.fitness, pool[0].fitness,bestLastGen.nodeCount);
                 console.printf("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
-                        bestSoFar.getBotName(),bestSoFar.fitness, pool[1].fitness,bestSoFar.nodeCount);
+                        bestSoFar.getBotName(),bestSoFar.fitness, pool[0].fitness,bestSoFar.nodeCount);
+                console.printf("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
+                        bestLastGen.getBotName(),bestLastGen.fitness, pool[1].fitness,bestLastGen.nodeCount);
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -120,13 +124,14 @@ public class RunGP {
                 storeRunData(genCount, avgFitness, bestLastGen.fitness, avgNodeCount, bestLastGen.nodeCount, bestLastGen.getBotName());
 
                 genCount++;
+
                 // breed next generation
                 breedPool();
-
 
                 // set newPool as pool, clear newPool
                 pool = newPool;
                 newPool = new MetaBot[POP_SIZE];
+
                 saveCtx();
 
                 // Time stat
@@ -146,10 +151,12 @@ public class RunGP {
 
             }
 
-            killAllRunner();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.log(Level.SEVERE, "Fatal error", e);
+            e.printStackTrace();
+
         }
+        killAllRunner();
     }
 
 
@@ -170,10 +177,10 @@ public class RunGP {
     }
 
     private void breedPool() {
-        // replicate best in last round
-        newPool[0] = bestLastGen.replicate(genCount, 0);
         // replicate best so far
-        newPool[1] = bestSoFar.replicate(genCount, 1);
+        newPool[0] = bestSoFar.replicate(genCount, 0);
+        // replicate best in last round
+        newPool[1] = bestLastGen.replicate(genCount, 1);
         // cross bestSoFar with best lastGen
         newPool[2] = bestSoFar.crossover(bestLastGen, genCount, 2);
 
@@ -255,10 +262,9 @@ public class RunGP {
             }
 
             synchronized (fitnesses) {
-                displayBattleProgress((int) cdl.getCount());
                 while (cdl.getCount() > 0) {
-                    fitnesses.wait(5000);
-                    displayBattleProgress((int) cdl.getCount());
+                    fitnesses.wait(500);
+                    displayBattleProgress((int) cdl.getCount(), queue.size());
                 }
             }
         } catch (Exception e) {
@@ -302,7 +308,7 @@ public class RunGP {
     public void saveCtx() {
         File tmpFile = new File(CTX_FILE+ ".tmp");
 
-        try (Output out = new Output(new FileOutputStream(tmpFile))) {
+        try (Output out = new Output(new DeflaterOutputStream(new FileOutputStream(tmpFile)))) {
             out.writeInt(genCount);
             kryo.writeObject(out,bestSoFar);
             kryo.writeObject(out,pool);
@@ -313,11 +319,10 @@ public class RunGP {
         File ctxFile = new File(CTX_FILE);
         ctxFile.delete();
         tmpFile.renameTo(ctxFile);
-
     }
 
     public void loadCtx() throws IOException, ClassNotFoundException {
-        try (Input in = new Input(new FileInputStream(CTX_FILE))) {
+        try (Input in = new Input(new InflaterInputStream(new FileInputStream(CTX_FILE)))) {
             genCount = in.readInt();
             bestSoFar = kryo.readObject(in, MetaBot.class);
             pool = kryo.readObject(in, MetaBot[].class);
@@ -385,8 +390,8 @@ public class RunGP {
         return sb.toString();
     }
 
-    private void displayBattleProgress(int remain) {
+    private void displayBattleProgress(int remain, int queue_size) {
         int percent = 100 * (POP_SIZE - remain) / POP_SIZE;
-        console.printf("\rBattles: %s %d  ", progressBar(percent), remain);
+        console.printf("\rBattles: %s %d %d  ", progressBar(percent), remain, remain - queue_size);
     }
 }

@@ -21,14 +21,14 @@ public class MetaBot implements Serializable {
     }
 
     private static final long serialVersionUID = 5625044536646095912L;
-    final static int SCAN_CHROMOS = 2;
+    final static int SCAN_CHROMOS = 1;
     final static int HIT_BY_BULLET_CHROMOS = 4;
     final static int HIT_ROBOT_CHROMOS = 5;
     final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;
     final static double
-        PROB_CROSS_ROOT = 0.3,
+        PROB_CROSS_ROOT = 0, //0.3,
         PROB_CROSS_TERMINAL = 0.1,
-        PROB_JUMP_GENOMES = 0, // 0.05,
+        PROB_JUMP_GENOMES = 0.05,
         PROB_MUTATE_ROOT = 0.01,
         PROB_MUTATE_TERMINAL = 0.15;
 
@@ -111,13 +111,13 @@ public class MetaBot implements Serializable {
         //*****************************************************************
         int xChromo1 = random.nextInt(NUM_CHROMOS);
         int xChromo2 = xChromo1;
-        while (xChromo2 == xChromo1)
-            xChromo2 = (xChromo1 < SCAN_CHROMOS)
-                ? random.nextInt(SCAN_CHROMOS)
-                : ((xChromo1 < SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS)
-                ? random.nextInt(HIT_BY_BULLET_CHROMOS) + SCAN_CHROMOS
-                : random.nextInt(HIT_ROBOT_CHROMOS) + SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS);
-
+        if (NUM_CHROMOS > 1)
+            while (xChromo2 == xChromo1)
+                xChromo2 = (xChromo1 < SCAN_CHROMOS)
+                    ? random.nextInt(SCAN_CHROMOS)
+                    : ((xChromo1 < SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS)
+                    ? random.nextInt(HIT_BY_BULLET_CHROMOS) + SCAN_CHROMOS
+                    : random.nextInt(HIT_ROBOT_CHROMOS) + SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS);
 
         if (random.nextDouble() < PROB_CROSS_ROOT) {    // swap entire chromosome
             if (random.nextDouble() < PROB_JUMP_GENOMES) {    // do not use the same chromosome

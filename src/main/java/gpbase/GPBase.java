@@ -3,6 +3,7 @@ package gpbase;
 import static gpbase.GPUtils.*;
 
 import gpbase.gun.*;
+import gprobot.RobotCodeUtil;
 import robocode.*;
 
 import java.awt.*;
@@ -20,7 +21,7 @@ public class GPBase extends AdvancedRobot {
 
     public double BORDER_OFFSET = TANK_SIZE * 3 / 2;
     public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 3;
-    public static double FIRE_TOLERANCE = TANK_SIZE / 4;
+    public static double FIRE_TOLERANCE = TANK_SIZE / 3;
     public static long FIRE_AGAIN_MIN_TIME;
 
     public static double dmin = TANK_SIZE * 2;
@@ -35,7 +36,6 @@ public class GPBase extends AdvancedRobot {
 
     public Point.Double unsafePosition;
     public Point.Double safePosition;
-    public Point.Double waveSafePosition;
 
     public double scandirection = 1;
     public double forward = 1;
@@ -60,6 +60,8 @@ public class GPBase extends AdvancedRobot {
     public long lastFireTime = -1;
     public long now;
 
+    double dangerMap[][];
+
     public GPBase() {
         super();
         setupGunners();
@@ -68,6 +70,7 @@ public class GPBase extends AdvancedRobot {
     @Override
     public void run() {
         BATTLE_FIELD_CENTER = new Point.Double(getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
+        dangerMap = new double[(int) getBattleFieldWidth()][(int) getBattleFieldHeight()];
         dmax = BATTLE_FIELD_CENTER.distance(TANK_SIZE / 2, TANK_SIZE / 2) * 2;
         aimingMoveLogSize = (int) (dmax / getBulletSpeed(MAX_BULLET_POWER) + 2)*2;
         moveLogMaxSize = aimingMoveLogSize * 100;
@@ -200,7 +203,9 @@ public class GPBase extends AdvancedRobot {
         enemy.alive = false;
         enemy.scanLastUpdate = 0;
         enemy.lastFire = 0;
+        enemy.lifeTime += now;
         aliveCount--;
+
     }
 
     @Override
@@ -227,8 +232,8 @@ public class GPBase extends AdvancedRobot {
         }
 
         now = getTime();
-        for (Wave w : waves)
-            drawWave(g, Color.ORANGE, w, now);
+        //for (Wave w : waves)
+            //drawWave(g, Color.ORANGE, w, now);
         if (waves.size() > 0) {
             Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
             drawWave(g, Color.RED, w, now);
@@ -280,9 +285,7 @@ public class GPBase extends AdvancedRobot {
         turnGunLeft = getTurn2Targert();
         fire = (aimingData == null) ? 0 : aimingData.getFirePower();
         if (aimingData != null) {
-            //out.printf("before GP: %.02f %.02f %.02f %.02f: %s %.02f\n", turnLeft, ahead, turnGunLeft, fire, aimingData.getGunner().getName(), aimingData.getGunner().hitRate(aimingData.getTarget()) * 100);
             doGP();
-            //out.printf("after GP: %.02f %.02f %.02f %.02f\n", turnLeft, ahead, turnGunLeft, fire);
         }
         robotSetActions();
     }
@@ -425,9 +428,10 @@ public class GPBase extends AdvancedRobot {
         for (Enemy e : enemies.values()) {
             moveEnemy(e, now);
 
-            //out.printf("%s x=%.0f, y=%.0f, nrj=%.0f\n", e.name, e.getX(), e.getY(), e.getEnergy());
-            x += e.x * (e.getEnergy()+0.001);
-            y += e.y * (e.getEnergy()+0.001);
+            if (e.getEnergy() > 0) {
+               x += e.x * e.getEnergy();
+               y += e.y * e.getEnergy();
+            }
 
             double od = getCurrentPoint().distance(e);
             if ((od < d || e.getEnergy() == 0) && e.alive && e.fEnergy >= -0.0001) {
@@ -439,13 +443,7 @@ public class GPBase extends AdvancedRobot {
             e.angle = normalAbsoluteAngle(getAngle(getCurrentPoint(), e));
         }
 
-        if (totalEnergy == 0)
-            return;
 
-        unsafePosition = new Point.Double(x / totalEnergy, y / totalEnergy);
-        safePosition = getOppositeFarPoint(unsafePosition);
-        //out.printf("unsafe x=%.0f, y=%.0f\n", unsafePosition.getX(), unsafePosition.getY());
-        //out.printf("safeposition x=%.0f, y=%.0f\n",safePosition.getX(), safePosition.getY());
     }
 
     private double getEmenmiesEnergy() {
@@ -455,27 +453,34 @@ public class GPBase extends AdvancedRobot {
     private void computeSafePosition() {
         double x = 0;
         double y = 0;
-        double div;
+        double div = getEmenmiesEnergy();
 
-        if (aliveCount() > 0) {
-            div = getEmenmiesEnergy();
-
-            for (Enemy e : enemies.values()) {
-                //out.printf("%s x=%.0f, y=%.0f, nrj=%.0f\n", e.name, e.getX(), e.getY(), e.getEnergy());
-                x += e.x * (e.getEnergy() + 0.001);
-                y += e.y * (e.getEnergy() + 0.001);
-            }
-        } else {
-            div = waves.stream().mapToDouble(w -> w.getPower()).sum();
-            for (Wave w : waves) {
-                Point.Double p = w.getPosition(now);
-                Double c = w.getPower();
-                x += p.x * c;
-                y += p.y * c;
+        for (Enemy e : enemies.values()) {
+            //out.printf("%s x=%.0f, y=%.0f, nrj=%.0f\n", e.name, e.getX(), e.getY(), e.getEnergy());
+            double nrj = e.getEnergy();
+            if (nrj > 0) {
+                x += e.x * nrj;
+                y += e.y * nrj;
             }
         }
-
         unsafePosition = new Point.Double(x/div, y/div);
+
+        if (waves.size()>0) {
+            x=0; y=0;
+            div = 0;
+            for (Wave w: waves) {
+                double power = w.getPower();
+                div += power;
+                Point.Double p = w.getPosition(now);
+                x += p.x * power;
+                y += p.y * power;
+            }
+
+            unsafePosition = new Point.Double(
+                    (unsafePosition.getX()*aliveCount + x / div * waves.size()) / (aliveCount + waves.size()),
+                    (unsafePosition.getY()*aliveCount + y / div * waves.size()) / (aliveCount + waves.size()));
+        }
+
         safePosition =  getOppositeFarPoint(unsafePosition);
     }
 

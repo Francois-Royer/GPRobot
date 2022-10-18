@@ -6,7 +6,7 @@ import robocode.Bullet;
 public interface Gunner {
     String getName();
     AimingData aim(Enemy enemy);
-
+    public double getFirePower(Enemy enemy);
     // Stats
     void fire(Enemy enemy);
     void hit(Enemy enemy);

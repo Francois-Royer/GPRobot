@@ -369,6 +369,7 @@ public class ExpressionNode implements Serializable {
         "target.distance(getCurrentPoint())",
         "target.getVelocity()",
         "target.getDirection()",
+        "target.getRotationRate()",
         "target.getEnergy()",
         "target.getAngle()"
     };

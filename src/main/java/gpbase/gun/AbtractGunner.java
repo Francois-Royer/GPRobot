@@ -90,7 +90,9 @@ public abstract class AbtractGunner implements Gunner {
     public double getFirePower(Enemy enemy) {
         if (isEasyShot(enemy)) return MAX_BULLET_POWER;
 
-        double power = range(hitRate(enemy), 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
+        double d = (enemy.getGpBase().dmax - enemy.getGpBase().getCurrentPoint().distance(enemy)) / enemy.getGpBase().dmax;
+        //double power = range((hitRate(enemy) + 2*d)/3, 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
+        double power = range(d, 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
 
         if (power < MIN_BULLET_POWER) {
             enemy.getGpBase().out.println("power < MIN_BULLET_POWER");

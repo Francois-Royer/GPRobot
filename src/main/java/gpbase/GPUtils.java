@@ -62,10 +62,10 @@ public class GPUtils {
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
 
-        //g.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc, 2 * waveArc);
-        //g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
-        //g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc)), (int)(w.y + 10000*sin(w.direction+w.arc)));
-        //g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc)), (int)(w.y + 10000*sin(w.direction-w.arc)));
+        g.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc, 2 * waveArc);
+        g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
+        g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc)), (int)(w.y + 10000*sin(w.direction+w.arc)));
+        g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc)), (int)(w.y + 10000*sin(w.direction-w.arc)));
     }
 
     public static int degree(double radians) {

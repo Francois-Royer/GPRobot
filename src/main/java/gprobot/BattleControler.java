@@ -53,11 +53,17 @@ public class BattleControler {
         cmdList.add("-cp");
         cmdList.add("libs/*");
         cmdList.add("-Djava.awt.headless=true");
-        cmdList.add("-Djava.security.manager=allow");
+        if (Runtime.version().feature()>11)
+            cmdList.add("-Djava.security.manager=allow");
+
         cmdList.add("--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED");
         cmdList.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
         cmdList.add("--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED");
         cmdList.add("--add-opens=java.desktop/sun.awt=ALL-UNNAMED");
+
+        if (Runtime.version().feature()>18)
+            cmdList.add("-Xshare:off");
+
         // To Debug remotly
         //cmdList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
 
@@ -88,7 +94,7 @@ public class BattleControler {
                 while ((line = in.readLine()) != null) {
                     if (line.startsWith(MSG))
                         handleRunnerMessage(line.substring(MSG.length()+1));
-                    else if (!line.startsWith("Load")) // Filter RobotCode engine loading message
+                    else if (!line.startsWith("Load") && !line.startsWith("WARNING:")) // Filter RobotCode engine loading message
                         os.println(String.format("%03d | %s", controlerId, line));
                 }
             } catch (IOException ioe) {
@@ -143,7 +149,7 @@ public class BattleControler {
         setRunning();
         stdin.println(GET_FITNESS + " " + robot);
         long duration = waitReadyStatus();
-        System.out.println(robot + " fitness is " + fitness + ", batle duration " + duration );
+        log.fine(robot + " fitness is " + fitness + ", batle duration " + duration );
         return fitness;
     }
 

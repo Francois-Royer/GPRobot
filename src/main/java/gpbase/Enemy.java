@@ -44,6 +44,8 @@ public class Enemy extends Point.Double implements Tank {
     long scanLastUpdate;
     long lastFire;
 
+    long lifeTime=0;
+
     Boolean alive = true;
 
     private KdTree<List<Move>> kdTree = null;
@@ -121,22 +123,23 @@ public class Enemy extends Point.Double implements Tank {
     }
 
     public double[] getKDPoint(GPBase robot) {
-        return new double[]{
-            getX() * 50 / GPBase.BATTLE_FIELD_CENTER.getX(),
-            getY() * 50 / GPBase.BATTLE_FIELD_CENTER.getY(),
-            //GPBase.BATTLE_FIELD_CENTER.distance(this) * 50 / GPBase.dmax,
-            (normalAbsoluteAngle(direction))*100 / 2 / PI,
-            velocity * 100 / MAX_VELOCITY,
-            //robot.aliveCount() * 1000/robot.enemyCount,
-            //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
-            //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
-            //(velocity) * 100 / MAX_VELOCITY,
-            (accel) * 100 / DECELERATION,
-            (rotationRate) * 100 / MAX_TURN_RATE_RADIANS,
-            //(energy+100)/2,
-            //robot.getEnergy(),
-            //(1/(robot.conerDistance(this)+ java.lang.Double.MIN_VALUE)) * 100 / robot.dmax,
-            //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
+        return new double[] {
+                getX() * 50 / GPBase.BATTLE_FIELD_CENTER.getX(),
+                getY() * 50 / GPBase.BATTLE_FIELD_CENTER.getY(),
+                (normalAbsoluteAngle(direction))*100 / 2 / PI,
+                velocity * 100 / MAX_VELOCITY,
+                (velocity >= 0) ? 100 : 0,
+                //accel * 100 / DECELERATION,
+                //(accel>=0) ? 100 : 0,
+                rotationRate * 100 / MAX_TURN_RATE_RADIANS,
+                (rotationRate>=0) ? 100 : 0,
+                // robot.enemyCount* 100 /robot.aliveCount,
+                //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
+                //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
+                (energy>0) ? 100 :0,
+                //robot.getEnergy(),
+                //(1/(robot.conerDistance(this)+ java.lang.Double.MIN_VALUE)) * 100 / robot.dmax,
+                //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
         };
     }
 
