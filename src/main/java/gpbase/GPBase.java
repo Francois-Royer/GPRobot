@@ -3,10 +3,10 @@ package gpbase;
 import static gpbase.GPUtils.*;
 
 import gpbase.gun.*;
-import gprobot.RobotCodeUtil;
 import robocode.*;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,17 +16,17 @@ import static robocode.util.Utils.*;
 import static robocode.Rules.*;
 
 public class GPBase extends AdvancedRobot {
+    public int FIELD_WIDTH;
+    public int FIELD_HEIGHT;
     public static Point.Double BATTLE_FIELD_CENTER;
-    public static double TANK_SIZE = 36;
+    public static int TANK_SIZE = 36;
 
     public double BORDER_OFFSET = TANK_SIZE * 3 / 2;
     public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 3;
     public static double FIRE_TOLERANCE = TANK_SIZE / 3;
     public static long FIRE_AGAIN_MIN_TIME;
 
-    public static double dmin = TANK_SIZE * 2;
     public static double dmax;
-    public static Random random = getRandom();
 
     public int aimingMoveLogSize;
     public int moveLogMaxSize;
@@ -34,8 +34,8 @@ public class GPBase extends AdvancedRobot {
     public int aliveCount;
     public int enemyCount;
 
-    public Point.Double unsafePosition;
     public Point.Double safePosition;
+    public Point.Double unSafePosition;
 
     public double scandirection = 1;
     public double forward = 1;
@@ -61,6 +61,12 @@ public class GPBase extends AdvancedRobot {
     public long now;
 
     double dangerMap[][];
+    public int DANGER_WIDTH;
+    public int DANGER_HEIGHT;
+
+    public double DANGER_DMAX;
+
+    int DANGER_SCALE = TANK_SIZE;
 
     public GPBase() {
         super();
@@ -69,15 +75,19 @@ public class GPBase extends AdvancedRobot {
 
     @Override
     public void run() {
-        BATTLE_FIELD_CENTER = new Point.Double(getBattleFieldWidth() / 2, getBattleFieldHeight() / 2);
-        dangerMap = new double[(int) getBattleFieldWidth()][(int) getBattleFieldHeight()];
-        dmax = BATTLE_FIELD_CENTER.distance(TANK_SIZE / 2, TANK_SIZE / 2) * 2;
+        FIELD_WIDTH = (int) getBattleFieldWidth();
+        FIELD_HEIGHT = (int) getBattleFieldHeight();
+        BATTLE_FIELD_CENTER = new Point.Double(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
+        DANGER_WIDTH = (FIELD_WIDTH+DANGER_SCALE)/DANGER_SCALE;
+        DANGER_HEIGHT = (FIELD_HEIGHT+DANGER_SCALE)/DANGER_SCALE;
+        dangerMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
+
+        dmax = new Point2D.Double(0, 0).distance(FIELD_WIDTH, FIELD_HEIGHT);
+        DANGER_DMAX = dmax/DANGER_SCALE;
+
         aimingMoveLogSize = (int) (dmax / getBulletSpeed(MAX_BULLET_POWER) + 2)*2;
         moveLogMaxSize = aimingMoveLogSize * 100;
         FIRE_AGAIN_MIN_TIME = (long) (Rules.getGunHeat(MIN_BULLET_POWER) / getGunCoolingRate());
-        //out.println("dmax=" + dmax);
-        //out.println("aimingMoveLogSize=" + aimingMoveLogSize);
-        //out.println("FIRE_AGAIN_MIN_TIME=" + FIRE_AGAIN_MIN_TIME);
 
         enemyCount = aliveCount = getOthers();
 
@@ -173,6 +183,7 @@ public class GPBase extends AdvancedRobot {
         Enemy e = enemies.get(hbbe.getName());
         if (e != null)
             e.setEnergy(e.getEnergy() + getBulletHitBonus(hbbe.getPower()));
+            e.hitMe++;
 
         if (waves.size() > 0) {
             Optional<Wave> ow = waves.stream().filter(w -> w.name == hbbe.getName())
@@ -185,12 +196,15 @@ public class GPBase extends AdvancedRobot {
 
     @Override
     public void onRoundEnded(RoundEndedEvent event) {
-        resetRoundStat();
+        if (getEnergy()>0)
+            printStat();
+        //resetRoundStat();
     }
 
     @Override
     public void onDeath(DeathEvent event) {
-        resetRoundStat();
+        printStat();
+        //resetRoundStat();
     }
 
     @Override
@@ -209,41 +223,62 @@ public class GPBase extends AdvancedRobot {
     }
 
     @Override
-    public void onPaint(Graphics2D g) {
+    public void onPaint(Graphics2D g2D) {
         if (safePosition != null) {
-            drawFillCircle(g, Color.GREEN, safePosition, 10);
-            drawFillCircle(g, Color.RED, unsafePosition, 10);
+            drawFillCircle(g2D, Color.GREEN, safePosition, 10);
+            drawFillCircle(g2D, Color.RED, unSafePosition, 10);
         }
 
         for (Enemy e : enemies.values())
             if (e.alive)
-                drawCircle(g, Color.PINK, e, (int) TANK_SIZE);
+                drawCircle(g2D, Color.PINK, e, TANK_SIZE);
 
         if (aimingData != null) {
             for (Point.Double p : aimingData.getExpectedMoves())
-                drawFillCircle(g, Color.yellow, p, 5);
+                drawFillCircle(g2D, Color.yellow, p, 5);
 
-            drawAimCircle(g, Color.CYAN, aimingData.getFiringPosition(), 20);
+            drawAimCircle(g2D, Color.CYAN, aimingData.getFiringPosition(), 20);
         }
 
         if (mostLeft != null && mostRight != null) {
-            drawCircle(g, Color.RED, mostLeft, (int) TANK_SIZE * 4 / 3);
-            drawCircle(g, Color.GREEN, mostRight, (int) TANK_SIZE * 4 / 3);
+            drawCircle(g2D, Color.RED, mostLeft, TANK_SIZE * 4 / 3);
+            drawCircle(g2D, Color.GREEN, mostRight, TANK_SIZE * 4 / 3);
         }
 
         now = getTime();
-        //for (Wave w : waves)
-            //drawWave(g, Color.ORANGE, w, now);
-        if (waves.size() > 0) {
+        /*for (Wave w : waves)
+            drawWave(g2D, Color.ORANGE, w, now);
+        /*if (waves.size() > 0) {
             Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
-            drawWave(g, Color.RED, w, now);
-        }
+            drawWave(g2D, Color.RED, w, now);
+        }*/
 
         for (VShell vs : vShells) {
-            drawFillCircle(g, Color.MAGENTA, vs.getPosition(now), 5);
+            drawFillCircle(g2D, Color.MAGENTA, vs.getPosition(now), 5);
+        }
+
+        int r = Color.PINK.getRed();
+        int g = Color.PINK.getGreen();
+        int b =  Color.PINK.getBlue();
+        double min=minA2(dangerMap);
+        double max=maxA2(dangerMap);
+        for (int y = 0; y < DANGER_HEIGHT; y++)
+            for (int x = 0; x < DANGER_WIDTH; x++) {
+                int alpha = (int) range(dangerMap[x][y], min, max, 0 , 100);
+                Color c = new Color(r, g,b, alpha);
+                    g2D.setColor(c);
+                    g2D.fillRect(x*DANGER_SCALE, y*DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
+            }
+
+        int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
+        Point gp = new Point((int) getX()/DANGER_SCALE, (int) getY()/DANGER_SCALE);
+        List<Point> points = GPUtils.listClosePoint(gp, dist , DANGER_WIDTH, DANGER_HEIGHT);
+        g2D.setColor(new Color(Color.GRAY.getRed(), Color.GRAY.getGreen(), Color.GRAY.getBlue(), 100));
+        for (Point p:points) {
+            g2D.fillRect(p.x*DANGER_SCALE, p.y*DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
+
         }
     }
-
     @Override
     public void onSkippedTurn(SkippedTurnEvent event) {
         out.printf("Skip turn: %d %d\n", event.getSkippedTurn(), event.getPriority());
@@ -270,6 +305,7 @@ public class GPBase extends AdvancedRobot {
         updatePositions();
         updateWaves();
         updateVShells();
+        updateDangerMap();
         computeSafePosition();
 
         int oc = getOthers();
@@ -371,6 +407,78 @@ public class GPBase extends AdvancedRobot {
         waves = newWaves;
     }
 
+    private void updateDangerMap() {
+        Arrays.stream(dangerMap).forEach(a -> Arrays.fill(a, 0));
+        enemies.values().stream().filter(e-> e.alive).forEach(enemy -> enemyDanger(enemy));
+        waves.stream().forEach(wave -> waveDanger(wave));
+        conersDanger();
+    }
+
+    private void conersDanger() {
+        double max = Math.max(maxA2(dangerMap), Double.MIN_VALUE);
+        conerDanger(0,0, max);
+        conerDanger(DANGER_WIDTH-1,0, max);
+        conerDanger(DANGER_WIDTH-1,DANGER_HEIGHT-1, max);
+        conerDanger(0,DANGER_HEIGHT-1, max);
+    }
+    private void conerDanger(int x, int y, double danger) {
+        double [][]conerMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
+        for (double r = DANGER_DMAX - .5; r > 0; r-=.5) {
+            int num = (int) (r*2.5*PI);
+            for (int i=0; i<num; i++ ) {
+                double a = i*PI/num*2;
+                int h = x+(int) (r*cos(a));
+                int v = y+(int) (r*sin(a));
+                if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT)
+                    conerMap[h][v] =Math.pow((DANGER_DMAX-r)/(DANGER_DMAX), 4) * danger;
+            }
+        }
+        for (int i=0; i<DANGER_WIDTH; i++)
+            for(int j=0; j<DANGER_HEIGHT; j++)
+                dangerMap[i][j]+=conerMap[i][j];
+    }
+
+    private void enemyDanger(Enemy enemy) {
+        double [][]enemyMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
+        int x = (int) enemy.getX()/DANGER_SCALE;
+        int y = (int) enemy.getY()/DANGER_SCALE;
+        for (double r = DANGER_DMAX - .5; r > 0; r-=.5) {
+            int num = (int) (r*2.5*PI);
+            for (int i=0; i<num; i++ ) {
+                double a = i*PI/num*2;
+                int h = x+(int) (r*cos(a));
+                int v = y+(int) (r*sin(a));
+                if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT)
+                    enemyMap[h][v] = Math.pow((DANGER_DMAX-r)/(DANGER_DMAX),2)*enemy.getEnergy()*(enemy.hitMe+1);
+            }
+        }
+        enemyMap[x][y] = enemy.getEnergy()*(enemy.hitMe+1);
+        for (x=0; x<DANGER_WIDTH; x++)
+            for(y=0; y<DANGER_HEIGHT; y++)
+                dangerMap[x][y]+=enemyMap[x][y];
+    }
+
+    private void waveDanger(Wave wave) {
+        int [][]waveMap = new int[DANGER_WIDTH][DANGER_HEIGHT];
+        double d = wave.getDistance(now)/DANGER_SCALE;
+        int x = (int) wave.getX()/DANGER_SCALE;
+        int y = (int) wave.getY()/DANGER_SCALE;
+
+        for (double r = (DANGER_DMAX-d - .5); r > 0; r-=.5) {
+            int num = Math.max((int) ((r+d)*wave.arc*1.25),1);
+            for (int i=0; i<num; i++ ) {
+                double a = wave.direction-wave.arc/2+ wave.arc*i/num;
+                int h = x+(int) ((r+d)*cos(a));
+                int v = y+(int) ((r+d)*sin(a));
+                if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT)
+                    waveMap[h][v] = (int) (Math.pow((dmax / DANGER_SCALE - r)/(dmax / DANGER_SCALE), 1) * wave.getPower()*33 * (enemies.get(wave.name).hitMe+1));
+            }
+        }
+        for (x=0; x<DANGER_WIDTH; x++)
+            for(y=0; y<DANGER_HEIGHT; y++)
+                dangerMap[x][y]+=waveMap[x][y];
+    }
+
     private void updateLeftRightEnemies() {
         List<Enemy> sEnemies = enemies.values().stream().filter(e -> e.alive).collect(Collectors.toList());
         sEnemies.sort(new Comparator<Enemy>() {
@@ -451,6 +559,9 @@ public class GPBase extends AdvancedRobot {
     }
 
     private void computeSafePosition() {
+        computeSafePositionDangerMap();
+    }
+    private void computeSafePositionBaryCentric() {
         double x = 0;
         double y = 0;
         double div = getEmenmiesEnergy();
@@ -463,7 +574,7 @@ public class GPBase extends AdvancedRobot {
                 y += e.y * nrj;
             }
         }
-        unsafePosition = new Point.Double(x/div, y/div);
+        unSafePosition = new Point.Double(x/div, y/div);
 
         if (waves.size()>0) {
             x=0; y=0;
@@ -476,12 +587,37 @@ public class GPBase extends AdvancedRobot {
                 y += p.y * power;
             }
 
-            unsafePosition = new Point.Double(
-                    (unsafePosition.getX()*aliveCount + x / div * waves.size()) / (aliveCount + waves.size()),
-                    (unsafePosition.getY()*aliveCount + y / div * waves.size()) / (aliveCount + waves.size()));
+            unSafePosition = new Point.Double(
+                    (unSafePosition.getX()*aliveCount + x / div * waves.size()) / (aliveCount + waves.size()),
+                    (unSafePosition.getY()*aliveCount + y / div * waves.size()) / (aliveCount + waves.size()));
         }
+        safePosition= getOppositeFarPoint(unSafePosition);
+    }
 
-        safePosition =  getOppositeFarPoint(unsafePosition);
+    private void computeSafePositionDangerMap() {
+        int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
+        Point gp = new Point((int) getX()/DANGER_SCALE, (int) getY()/DANGER_SCALE);
+
+        List<Point> points = GPUtils.listClosePoint(gp, dist, DANGER_WIDTH, DANGER_HEIGHT);
+
+        double danger=Double.MAX_VALUE;
+        for (Point p : points) {
+            double d = GPUtils.computeMoveDanger(gp, p, dangerMap);
+            if (d < danger) {
+                danger = d;
+                double x = max(BORDER_OFFSET, min(FIELD_WIDTH-BORDER_OFFSET, p.getX()*DANGER_SCALE+DANGER_SCALE/2));
+                double y = max(BORDER_OFFSET, min(FIELD_HEIGHT-BORDER_OFFSET, p.getY()*DANGER_SCALE+DANGER_SCALE/2));
+                safePosition =  new Point.Double(x, y);
+            }
+        }
+        /*Point sp = getMinPointClose(dangerMap, (int) getX()/DANGER_SCALE, (int) getY()/DANGER_SCALE, Math.max(2,(int)(DANGER_DMAX/4*aliveCount)));
+        double x = max(BORDER_OFFSET, min(FIELD_WIDTH-BORDER_OFFSET, sp.getX()*DANGER_SCALE+DANGER_SCALE/2));
+        double y = max(BORDER_OFFSET, min(FIELD_HEIGHT-BORDER_OFFSET, sp.getY()*DANGER_SCALE+DANGER_SCALE/2));
+        safePosition =  new Point.Double(x, y);*/
+        Point sp = getMaxPoint(dangerMap);
+        double x = max(BORDER_OFFSET, min(FIELD_WIDTH-BORDER_OFFSET, sp.getX()*DANGER_SCALE+DANGER_SCALE/2));
+        double y = max(BORDER_OFFSET, min(FIELD_HEIGHT-BORDER_OFFSET, sp.getY()*DANGER_SCALE+DANGER_SCALE/2));
+        unSafePosition =  new Point.Double(x, y);
     }
 
     private double getTurn2Safe() {
@@ -508,7 +644,7 @@ public class GPBase extends AdvancedRobot {
     }
 
     private void fireTargetIfPossible(double fire) {
-        if (aimingData == null || getGunHeat() > 0 || target.alive == false || fire == 0)
+        if (aimingData == null || getGunHeat() > 0 || target.alive == false || fire == 0 ||target.fEnergy<0)
             return;
 
         if (getCurrentPoint().distance(aimingData.getFiringPosition()) * sin(abs(getGunTurnRemainingRadians())) > FIRE_TOLERANCE ||
@@ -557,11 +693,14 @@ public class GPBase extends AdvancedRobot {
         if (target == null)
             return 0;
 
-        for (Gunner gunner : gunners.values()) {
-            AimingData temp = gunner.aim(target);
-            if (aimingData == null ||
-                (temp != null && temp.getGunner().hitRate(target) > aimingData.getGunner().hitRate(target)))
-                    aimingData = temp;
+        if (target.getEnergy()==0)
+            aimingData = gunners.get("HeadOnGunner").aim(target);
+        else
+            for (Gunner gunner : gunners.values()) {
+                AimingData temp = gunner.aim(target);
+                if (aimingData == null ||
+                    (temp != null && temp.getGunner().hitRate(target) > aimingData.getGunner().hitRate(target)))
+                        aimingData = temp;
         }
         if (aimingData != null) {
             fire = aimingData.getFirePower();
@@ -579,12 +718,19 @@ public class GPBase extends AdvancedRobot {
     //////////////////////////////////////////////////////////////////////////////////////////
     // Utils
     private void resetRoundStat() {
-        gunners.values().stream().forEach(gunner -> {
-            out.printf("%s hitrate = %.0f%% / %d\n", gunner.getName(), gunner.hitRate() * 100, gunner.fireCount());
+        gunners.values().forEach(gunner -> {
             gunner.resetStat();
-            enemies.values().stream().forEach(enemy -> {
-                out.printf("%s -> %s hitrate = %.0f%% / %d\n", gunner.getName(), enemy.getName(), gunner.hitRate(enemy) * 100, gunner.fireCount(enemy));
+            enemies.values().forEach(enemy -> {
                 gunner.resetStat(enemy);
+            });
+        });
+    }
+
+    private void printStat() {
+        gunners.values().forEach(gunner -> {
+            out.printf("%s hitrate = %.0f%% / %d\n", gunner.getName(), gunner.hitRate() * 100, gunner.fireCount());
+            enemies.values().forEach(enemy -> {
+                out.printf("    %s hitrate = %.0f%% / %d\n", enemy.getName(), gunner.hitRate(enemy) * 100, gunner.fireCount(enemy));
             });
         });
     }
@@ -680,6 +826,8 @@ public class GPBase extends AdvancedRobot {
     private void setupGunners() {
         if (gunners.values().size() == 0) {
             putGunner(new HeadOnGunner(this));
+            //putGunner(new RandomHeadOnGunner(this));
+            //putGunner(new OccilatorGunner(this));
             putGunner(new CircularGunner(this));
             putGunner(new NearestNeighborGunner(this));
         }

@@ -17,19 +17,19 @@ public class ExpressionNode implements Serializable {
     static final double PROB_TERM_CONST = 0.15;
     static final double PROB_TERM_ERC = 0.1;
     static final double[] PROB_TERM = {
-        PROB_TERM_CONST,
-        PROB_TERM_UNIV,
-        PROB_TERM_BASE
+            PROB_TERM_CONST,
+            PROB_TERM_UNIV,
+            PROB_TERM_BASE
     };
     static final double PROB_FUNC_A1 = 0.2;
     static final double PROB_FUNC_A2 = 0.6;
     static final double PROB_FUNC_A3 = 0.05;
     static final double PROB_FUNC_A4 = 0.15;
     static final double[] PROB_FUNC = {
-        PROB_FUNC_A1,
-        PROB_FUNC_A2,
-        PROB_FUNC_A3,
-        PROB_FUNC_A4
+            PROB_FUNC_A1,
+            PROB_FUNC_A2,
+            PROB_FUNC_A3,
+            PROB_FUNC_A4
     };
     static final double PROB_MIDTREE_TERM = 0.35;
     static final double PROB_CROSS_ROOT = 0.3;
@@ -48,7 +48,9 @@ public class ExpressionNode implements Serializable {
     String[] expression;
 
     // Class Methods //////////////////////////////////////////////////////////
-    public ExpressionNode() {}
+    public ExpressionNode() {
+    }
+
     public ExpressionNode(int depth) {
         this.depth = depth;
     }
@@ -310,97 +312,97 @@ public class ExpressionNode implements Serializable {
 
     // Zero-Arity Expressions (terminals)
     static final String[] UNIVERSAL_TERMINALS = {
-        "getEnergy()",
-        "getVelocity()",
-        "getX()",
-        "getY()",
-        "getGunHeat()",
-        "getGunCoolingRate()",
-        "(double) getOthers()",
-        "trigoAngle(getHeadingRadians())",
-        "trigoAngle(getGunHeadingRadians())",
-        "trigoAngle(getRadarHeadingRadians())",
+            "getEnergy()",
+            "getVelocity()",
+            "getX()",
+            "getY()",
+            "getGunHeat()",
+            "getGunCoolingRate()",
+            "(double) getOthers()",
+            "trigoAngle(getHeadingRadians())",
+            "trigoAngle(getGunHeadingRadians())",
+            "trigoAngle(getRadarHeadingRadians())",
     };
 
     static final String[] CONSTANT_TERMINALS = {
-        // Rules Constants
-        "ACCELERATION",
-        "DECELERATION",
-        "MAX_VELOCITY",
-        "MIN_BULLET_POWER",
-        "MAX_BULLET_POWER",
-        "MAX_TURN_RATE_RADIANS",
-        "GUN_TURN_RATE_RADIANS",
-        "RADAR_TURN_RATE_RADIANS",
-        "ROBOT_HIT_DAMAGE",
-        "ROBOT_HIT_BONUS",
-        "0.00000001",
-        "getWidth()",
-        "getHeight()",
-        "1",
-        "2",
-        "Math.PI",
-        "Math.random()", // random value from [0, 1]
-        "(Math.random()*2 - 1)", // random value from [-1, 1]
-        "Math.floor((Math.random()*10))" // random int from [ 0, 10]
-        //"runVar1",	// static variables
-        //"runVar2"
+            // Rules Constants
+            "ACCELERATION",
+            "DECELERATION",
+            "MAX_VELOCITY",
+            "MIN_BULLET_POWER",
+            "MAX_BULLET_POWER",
+            "MAX_TURN_RATE_RADIANS",
+            "GUN_TURN_RATE_RADIANS",
+            "RADAR_TURN_RATE_RADIANS",
+            "ROBOT_HIT_DAMAGE",
+            "ROBOT_HIT_BONUS",
+            "Double.MIN_VALUE",
+            "getWidth()",
+            "getHeight()",
+            "1",
+            "2",
+            "Math.PI",
+            "Math.random()", // random value from [0, 1]
+            "(Math.random()*2 - 1)", // random value from [-1, 1]
+            "Math.floor(Math.random()*10)" // random int from [ 0, 10]
+            //"runVar1",	// static variables
+            //"runVar2"
     };
 
     static final String[] BASE_TERMINAL = {
-        // From base
-        /*"safePosition.x",
-        "safePosition.y",
-        "aimingData.getFiringPosition().x",
-        "aimingData.getFiringPosition().y",
-        "forward",
-        "scandirection",
-        "turnLeft",
-        "turnGunLeft",
-        "turnRadarLeft",
-        "ahead",
-        "turnLeft",
-        "ahead",
-        "fire",*/
+            // From base
+            /*"safePosition.x",
+            "safePosition.y",
+            "aimingData.getFiringPosition().x",
+            "aimingData.getFiringPosition().y",
+            "forward",
+            "scandirection",
+            "turnLeft",
+            "turnGunLeft",
+            "turnRadarLeft",
+            "ahead",
+            "fire",*/
 
-        // replace scanned event
-        "target.x",
-        "target.y",
-        "target.distance(getCurrentPoint())",
-        "target.getVelocity()",
-        "target.getDirection()",
-        "target.getRotationRate()",
-        "target.getEnergy()",
-        "target.getAngle()"
+            // replace scanned event
+            "target.x",
+            "target.y",
+            "target.distance(getCurrentPoint())",
+            "target.getVelocity()",
+            "target.getDirection()",
+            "target.getRotationRate()",
+            "target.getAccel()",
+            "target.getEnergy()",
+            "target.getAngle()",
+            "getGunHeadingRadians()"
     };
 
     // terminals that can only be called during a ScannedRobotEvent
     static final String[] SCANNED_EVENT_TERMINALS = {
-        "e.getBearingRadians()", // Returns difference between enemy and robot heading
-        "e.getDistance()", // Returns distance to enemy
-        "e.getEnergy()", // Returns energy (life) of enemy
-        "e.getHeadingRadians()", // Returns direction enemy is facing
-        "e.getVelocity()" // Returns the velocity of enemy
+            "e.getBearingRadians()", // Returns difference between enemy and robot heading
+            "e.getDistance()", // Returns distance to enemy
+            "e.getEnergy()", // Returns energy (life) of enemy
+            "e.getHeadingRadians()", // Returns direction enemy is facing
+            "e.getVelocity()" // Returns the velocity of enemy
     };
 
     // terminals that can only be called during a HitByBulletEvent
     static final String[] HIT_BY_BULLET_EVENT_TERMINALS = {
-        "e.getBearingRadians()", // Returns difference between bullet and robot heading
-        "e.getPower()", // Returns power of bullet
-        "e.getHeadingRadians()", // Returns direction bullet is facing
-        "e.getVelocity()" // Returns the velocity of bullet
+            "e.getBearingRadians()", // Returns difference between bullet and robot heading
+            "e.getPower()", // Returns power of bullet
+            "e.getHeadingRadians()", // Returns direction bullet is facing
+            "e.getVelocity()" // Returns the velocity of bullet
     };
 
     // terminals that can only be called during a HitRobotEvent
     static final String[] HIT_ROBOT_EVENT_TERMINALS = {
-        "e.getBearingRadians()", // Returns difference between bullet and robot heading
-        "e.getEnergy()" // Returns energy (life) of enemy
+            "e.getBearingRadians()", // Returns difference between bullet and robot heading
+            "e.getEnergy()" // Returns energy (life) of enemy
     };
 
     static final String[][] TERMINALS = {
-        CONSTANT_TERMINALS,
-        UNIVERSAL_TERMINALS,
-        BASE_TERMINAL
+            CONSTANT_TERMINALS,
+            UNIVERSAL_TERMINALS,
+            BASE_TERMINAL
     };
 
     /*public static void setScanEventTerminals() {
@@ -416,47 +418,47 @@ public class ExpressionNode implements Serializable {
     }
 
     static final String[][] FUNCTIONS_A1 = {
-        {"Math.abs(", ")"}, // Absolute Value
-        // Too much Nan caused by Arc so add %1
-        {"Math.acos(", "%1)"}, // ArcCosine
-        {"Math.asin(", "%1)"}, // ArcSine
-        {"Math.cos(", ")"}, // Cosine
-        {"Math.sin(", ")"}, // Sine
-        {"Math.sqrt(Math.abs(", "))"}, // square root
-        {"Math.exp(", ")"}, // e^x
-        {"Math.log(Math.abs(", "))"},
-        {"Rules.getBulletDamage(", ")"},
-        {"Rules.getBulletSpeed(", ")"},
-        {"Rules.getGunHeat(", ")"},
-        {"trigoAngle(", ")"},
-        {"oppositeAngle(", ")"},
-        {"normalRelativeAngle(", ")"}
+            {"Math.abs(", ")"}, // Absolute Value
+            // Too much Nan caused by Arc so add %1
+            {"Math.acos(", "%1)"}, // ArcCosine
+            {"Math.asin(", "%1)"}, // ArcSine
+            {"Math.cos(", ")"}, // Cosine
+            {"Math.sin(", ")"}, // Sine
+            {"Math.sqrt(Math.abs(", "))"}, // square root
+            {"Math.exp(", ")"}, // e^x
+            {"Math.log(Math.abs(", "))"},
+//            {"Rules.getBulletDamage(", ")"},
+//            {"Rules.getBulletSpeed(", ")"},
+//            {"Rules.getGunHeat(", ")"},
+//            {"trigoAngle(", ")"},
+//            {"oppositeAngle(", ")"},
+//            {"normalRelativeAngle(", ")"}
     };
 
     static final String[][] FUNCTIONS_A2 = {
-        {"", " - ", ""}, // add
-        {"", " + ", ""}, // subtract
-        {"", " * ", ""}, // multiply
-        {"", " / ", ""}, // divide (CHECK FOR ZERO!)
-        {"Math.min(", ", ", ")"}, // minimum
-        {"Math.max(", ", ", ")"}, // maximum
+            {"", " - ", ""}, // add
+            {"", " + ", ""}, // subtract
+            {"", " * ", ""}, // multiply
+            {"", " / ", ""}, // divide (CHECK FOR ZERO!)
+            {"Math.min(", ", ", ")"}, // minimum
+            {"Math.max(", ", ", ")"}, // maximum
     };
 
     static final String[][] FUNCTIONS_A3 = {
-        {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
+            {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
     };
 
     static final String[][] FUNCTIONS_A4 = {
-        {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
-        {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
+            {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
+            {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
     };
 
     // All expressions available to the GP
     static final String[][][] EXPRESSIONS = {
-        TERMINALS,
-        FUNCTIONS_A1,
-        FUNCTIONS_A2,
-        FUNCTIONS_A3,
-        FUNCTIONS_A4
+            TERMINALS,
+            FUNCTIONS_A1,
+            FUNCTIONS_A2,
+            FUNCTIONS_A3,
+            FUNCTIONS_A4
     };
 }

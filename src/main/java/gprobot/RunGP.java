@@ -157,6 +157,7 @@ public class RunGP {
 
         }
         killAllRunner();
+        System.exit(0);
     }
 
 
@@ -264,7 +265,7 @@ public class RunGP {
             synchronized (fitnesses) {
                 while (cdl.getCount() > 0) {
                     fitnesses.wait(500);
-                    displayBattleProgress((int) cdl.getCount(), queue.size());
+                    displayBattleProgress((int) cdl.getCount());
                 }
             }
         } catch (Exception e) {
@@ -390,8 +391,8 @@ public class RunGP {
         return sb.toString();
     }
 
-    private void displayBattleProgress(int remain, int queue_size) {
+    private void displayBattleProgress(int remain) {
         int percent = 100 * (POP_SIZE - remain) / POP_SIZE;
-        console.printf("\rBattles: %s %d %d  ", progressBar(percent), remain, remain - queue_size);
+        console.printf("\rBattles: %s %d  ", progressBar(percent), remain);
     }
 }

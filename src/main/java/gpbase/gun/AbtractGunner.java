@@ -13,6 +13,9 @@ import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.MIN_BULLET_POWER;
 
 public abstract class AbtractGunner implements Gunner {
+
+    private double  dmax = 400;
+
     private String name = this.getClass().getSimpleName();
     Map<String, FireStat> fireStats = new HashMap<>();
     FireStat globalStat = new FireStat();
@@ -89,10 +92,17 @@ public abstract class AbtractGunner implements Gunner {
 
     public double getFirePower(Enemy enemy) {
         if (isEasyShot(enemy)) return MAX_BULLET_POWER;
-
-        double d = (enemy.getGpBase().dmax - enemy.getGpBase().getCurrentPoint().distance(enemy)) / enemy.getGpBase().dmax;
+        double d = Math.max(GPBase.TANK_SIZE*2, Math.min(dmax, enemy.getGpBase().getCurrentPoint().distance(enemy)));
         //double power = range((hitRate(enemy) + 2*d)/3, 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
-        double power = range(d, 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
+        double power = range(d, GPBase.TANK_SIZE*2, dmax, MAX_BULLET_POWER, MIN_BULLET_POWER);
+
+        // Apply a hitrate factor
+        power *= Math.pow(hitRate(enemy)+.5, 8);
+
+        // Apply energy factor
+        power *= (enemy.getGpBase().getEnergy() + 50 )/100;
+        power = Math.min(MAX_BULLET_POWER, Math.max(MIN_BULLET_POWER, power));
+
 
         if (power < MIN_BULLET_POWER) {
             enemy.getGpBase().out.println("power < MIN_BULLET_POWER");

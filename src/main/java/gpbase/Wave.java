@@ -4,7 +4,6 @@ import robocode.Rules;
 
 import java.awt.Point;
 
-import static robocode.util.Utils.normalRelativeAngle;
 import static gpbase.GPUtils.*;
 import static java.lang.Math.*;
 
@@ -20,8 +19,10 @@ public class Wave extends MovingPoint {
         double time = distance/velocity;
         cp.x += cos(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
         cp.y += sin(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
+
+        this.arc = arc(origin, cp, gpbase.getCurrentPoint())+0.30;
+        cp = midle(cp, gpbase.getCurrentPoint());
         this.direction = getAngle(origin,cp);
-        this.arc = Math.asin(Rules.MAX_VELOCITY*time/distance);
     }
 
     public double getPower() {

@@ -35,11 +35,11 @@ public class RobocodeConf {
 
 
     // constant that can be tunned
-    public static final int POP_SIZE = 100;
-    public static final int MAX_GENS = 200;
+    public static final int POP_SIZE = 300;
+    public static final int MAX_GENS = 400;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 7;
-    public static final int ROUNDS = 10;
+    public static final int ROUNDS = 25;
     public static final int TOURNY_SIZE = 6; // Selection Pressure
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
     public static boolean ONE2ONE = true;
@@ -72,5 +72,5 @@ public class RobocodeConf {
     static String[] skilledRobots = {
         "voidious.Diamond"
     };
-    static String[] opponents = sampleRobots;
+    static String[] opponents = skilledRobots;
 }

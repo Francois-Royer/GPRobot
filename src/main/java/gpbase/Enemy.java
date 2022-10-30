@@ -53,6 +53,8 @@ public class Enemy extends Point.Double implements Tank {
 
     GPBase gpBase;
 
+    long hitMe=0;
+
     public Enemy(ScannedRobotEvent sre, GPBase gpBase) {
         name = sre.getName();
         this.gpBase = gpBase;
@@ -124,10 +126,10 @@ public class Enemy extends Point.Double implements Tank {
 
     public double[] getKDPoint(GPBase robot) {
         return new double[] {
-                getX() * 50 / GPBase.BATTLE_FIELD_CENTER.getX(),
-                getY() * 50 / GPBase.BATTLE_FIELD_CENTER.getY(),
-                (normalAbsoluteAngle(direction))*100 / 2 / PI,
-                velocity * 100 / MAX_VELOCITY,
+                getX() * 200 / robot.FIELD_WIDTH,
+                getY() * 200 / robot.FIELD_HEIGHT,
+                (normalAbsoluteAngle(direction))*200 / 2 / PI,
+                velocity * 200 / MAX_VELOCITY,
                 (velocity >= 0) ? 100 : 0,
                 //accel * 100 / DECELERATION,
                 //(accel>=0) ? 100 : 0,
@@ -136,7 +138,7 @@ public class Enemy extends Point.Double implements Tank {
                 // robot.enemyCount* 100 /robot.aliveCount,
                 //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
                 //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
-                (energy>0) ? 100 :0,
+                energy,
                 //robot.getEnergy(),
                 //(1/(robot.conerDistance(this)+ java.lang.Double.MIN_VALUE)) * 100 / robot.dmax,
                 //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100

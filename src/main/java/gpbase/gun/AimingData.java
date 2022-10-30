@@ -60,6 +60,10 @@ public class AimingData {
         this.angle = angle;
     }
 
+    public void setFiringPosition(Point.Double firingPosition) {
+        this.firingPosition = firingPosition;
+    }
+
     public double[] getKdPoint() {
         return kdPoint;
     }
