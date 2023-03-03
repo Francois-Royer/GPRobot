@@ -467,7 +467,7 @@ public class GPBase extends AdvancedRobot {
                 int h = x + (int) ((r + d) * cos(a));
                 int v = y + (int) ((r + d) * sin(a));
                 if (h >= 0 && v >= 0 && h < DANGER_WIDTH && v < DANGER_HEIGHT) {
-                    double fa = normalDistrib(i, .5*num, .2);
+                    double fa = normalDistrib(a, wave.direction, wave.arc/50);
                     waveMap[h][v] = fa * wave.getPower() / MAX_BULLET_POWER;
                 }
             }
