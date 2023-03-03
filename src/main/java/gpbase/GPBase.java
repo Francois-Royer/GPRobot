@@ -240,15 +240,15 @@ public class GPBase extends AdvancedRobot {
             drawAimCircle(g2D, Color.CYAN, aimingData.getFiringPosition(), 20);
         }
 
-        if (mostLeft != null && mostRight != null) {
+        /*if (mostLeft != null && mostRight != null) {
             drawCircle(g2D, Color.RED, mostLeft, TANK_SIZE * 4 / 3);
             drawCircle(g2D, Color.GREEN, mostRight, TANK_SIZE * 4 / 3);
         }
 
         now = getTime();
-        /*for (Wave w : waves)
-            drawWave(g2D, Color.ORANGE, w, now);$/
-        /*if (waves.size() > 0) {
+        for (Wave w : waves)
+            drawWave(g2D, Color.ORANGE, w, now);
+        if (waves.size() > 0) {
             Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
             drawWave(g2D, Color.RED, w, now);
         }*/
@@ -258,15 +258,6 @@ public class GPBase extends AdvancedRobot {
         }
 
         drowDangerMap(g2D);
-
-        /* int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
-        Point gp = new Point((int) getX()/DANGER_SCALE, (int) getY()/DANGER_SCALE);
-        List<Point> points = GPUtils.listClosePoint(gp, dist , DANGER_WIDTH, DANGER_HEIGHT);
-        g2D.setColor(new Color(Color.GRAY.getRed(), Color.GRAY.getGreen(), Color.GRAY.getBlue(), 100));
-        for (Point p:points) {
-            g2D.fillRect(p.x*DANGER_SCALE, p.y*DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
-
-        }*/
     }
 
     private void drowDangerMap(Graphics2D g2D) {
@@ -470,14 +461,13 @@ public class GPBase extends AdvancedRobot {
         int y = (int) wave.getY()/DANGER_SCALE;
 
         for (double r = (DANGER_DMAX-d - .5); r > 0; r-=.5) {
-            int num = Math.max((int) ((r+d)*wave.arc*1.25),1);
-            for (int i=0; i<num; i++ ) {
-                double a = wave.direction-wave.arc/2+ wave.arc*i/num;
-
-                int h = x+(int) ((r+d)*cos(a));
-                int v = y+(int) ((r+d)*sin(a));
-                if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT) {
-                    double fa = 1 + sin(PI * i / num);
+            int num = max((int) ((r+d)*wave.arc*1.25),1);
+            for (int i = 0; i < num; i++) {
+                double a = wave.direction - ((num==1) ? 0 : wave.arc / 2 - wave.arc * (i+(((double)num+1)%2)/2) / num);
+                int h = x + (int) ((r + d) * cos(a));
+                int v = y + (int) ((r + d) * sin(a));
+                if (h >= 0 && v >= 0 && h < DANGER_WIDTH && v < DANGER_HEIGHT) {
+                    double fa = normalDistrib(i, .5*num, .2);
                     waveMap[h][v] = fa * wave.getPower() / MAX_BULLET_POWER;
                 }
             }
