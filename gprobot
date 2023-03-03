@@ -1,6 +1,6 @@
 #!/bin/sh
 
 S=$(dirname $(readlink -f "$0"))
-RH=/mnt/c/robocode
+RH=~/robocode
 
 java -DROBOCODE_PATH=${RH} -Xmx512m -cp ${S}/build/libs/gprobot-all.jar:${RH}/libs/robocode.jar gprobot.RunGP $*

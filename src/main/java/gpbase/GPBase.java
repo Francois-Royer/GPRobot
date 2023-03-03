@@ -1,19 +1,19 @@
 package gpbase;
 
-import static gpbase.GPUtils.*;
-
 import gpbase.gun.*;
 import robocode.*;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static gpbase.GPUtils.*;
 import static java.lang.Math.*;
-import static robocode.util.Utils.*;
 import static robocode.Rules.*;
+import static robocode.util.Utils.normalAbsoluteAngle;
+import static robocode.util.Utils.normalRelativeAngle;
 
 public class GPBase extends AdvancedRobot {
     public int FIELD_WIDTH;
@@ -21,7 +21,7 @@ public class GPBase extends AdvancedRobot {
     public static Point.Double BATTLE_FIELD_CENTER;
     public static int TANK_SIZE = 36;
 
-    public double BORDER_OFFSET = TANK_SIZE * 3 / 2;
+    public double BORDER_OFFSET = TANK_SIZE*7/8;
     public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 3;
     public static double FIRE_TOLERANCE = TANK_SIZE / 3;
     public static long FIRE_AGAIN_MIN_TIME;
@@ -66,7 +66,7 @@ public class GPBase extends AdvancedRobot {
 
     public double DANGER_DMAX;
 
-    int DANGER_SCALE = TANK_SIZE;
+    int DANGER_SCALE = TANK_SIZE/2;
 
     public GPBase() {
         super();
@@ -247,7 +247,7 @@ public class GPBase extends AdvancedRobot {
 
         now = getTime();
         /*for (Wave w : waves)
-            drawWave(g2D, Color.ORANGE, w, now);
+            drawWave(g2D, Color.ORANGE, w, now);$/
         /*if (waves.size() > 0) {
             Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
             drawWave(g2D, Color.RED, w, now);
@@ -257,28 +257,35 @@ public class GPBase extends AdvancedRobot {
             drawFillCircle(g2D, Color.MAGENTA, vs.getPosition(now), 5);
         }
 
-        int r = Color.PINK.getRed();
-        int g = Color.PINK.getGreen();
-        int b =  Color.PINK.getBlue();
-        double min=minA2(dangerMap);
-        double max=maxA2(dangerMap);
-        for (int y = 0; y < DANGER_HEIGHT; y++)
-            for (int x = 0; x < DANGER_WIDTH; x++) {
-                int alpha = (int) range(dangerMap[x][y], min, max, 0 , 100);
-                Color c = new Color(r, g,b, alpha);
-                    g2D.setColor(c);
-                    g2D.fillRect(x*DANGER_SCALE, y*DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
-            }
+        drowDangerMap(g2D);
 
-        int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
+        /* int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
         Point gp = new Point((int) getX()/DANGER_SCALE, (int) getY()/DANGER_SCALE);
         List<Point> points = GPUtils.listClosePoint(gp, dist , DANGER_WIDTH, DANGER_HEIGHT);
         g2D.setColor(new Color(Color.GRAY.getRed(), Color.GRAY.getGreen(), Color.GRAY.getBlue(), 100));
         for (Point p:points) {
             g2D.fillRect(p.x*DANGER_SCALE, p.y*DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
 
+        }*/
+    }
+
+    private void drowDangerMap(Graphics2D g2D) {
+        int r = Color.PINK.getRed();
+        int g = Color.PINK.getGreen();
+        int b =  Color.PINK.getBlue();
+        double min=minA2(dangerMap);
+        double max=maxA2(dangerMap);
+        for (int x,y = 0; y < DANGER_HEIGHT; y++) {
+            int alpha=0;
+            for (x = 0; x < DANGER_WIDTH; x++) {
+                alpha = (int) range(dangerMap[x][y], min, max, 0, 100);
+                Color c = new Color(r, g, b, alpha);
+                g2D.setColor(c);
+                g2D.fillRect(x * DANGER_SCALE, y * DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
+            }
         }
     }
+
     @Override
     public void onSkippedTurn(SkippedTurnEvent event) {
         out.printf("Skip turn: %d %d\n", event.getSkippedTurn(), event.getPriority());
@@ -415,29 +422,27 @@ public class GPBase extends AdvancedRobot {
     }
 
     private void conersDanger() {
-        double max = Math.max(maxA2(dangerMap), Double.MIN_VALUE);
-        conerDanger(0,0, max);
-        conerDanger(DANGER_WIDTH-1,0, max);
-        conerDanger(DANGER_WIDTH-1,DANGER_HEIGHT-1, max);
-        conerDanger(0,DANGER_HEIGHT-1, max);
-    }
-    private void conerDanger(int x, int y, double danger) {
-        double [][]conerMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
-        for (double r = DANGER_DMAX - .5; r > 0; r-=.5) {
+        double [][]cornerMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
+        double max=maxA2(dangerMap);
+
+        double dmax = 1;
+        double rmax = DANGER_DMAX/2;
+        for (double r = DANGER_HEIGHT/2 ; r < rmax; r+=.5) {
+            double danger = range(r, DANGER_HEIGHT/2, rmax, 0, dmax);
             int num = (int) (r*2.5*PI);
             for (int i=0; i<num; i++ ) {
-                double a = i*PI/num*2;
-                int h = x+(int) (r*cos(a));
-                int v = y+(int) (r*sin(a));
+                double a = i * PI / num * 2;
+                int h = DANGER_WIDTH/2+(int) (r*cos(a)*DANGER_WIDTH/DANGER_HEIGHT);
+                int v = DANGER_HEIGHT/2+(int) (r*sin(a));
                 if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT)
-                    conerMap[h][v] =Math.pow((DANGER_DMAX-r)/(DANGER_DMAX), 4) * danger;
+                    cornerMap[h][v] = danger;
             }
         }
-        for (int i=0; i<DANGER_WIDTH; i++)
-            for(int j=0; j<DANGER_HEIGHT; j++)
-                dangerMap[i][j]+=conerMap[i][j];
-    }
+        for (int x=0; x<DANGER_WIDTH; x++)
+            for(int y=0; y<DANGER_HEIGHT; y++)
+                dangerMap[x][y]+=cornerMap[x][y]*max;
 
+    }
     private void enemyDanger(Enemy enemy) {
         double [][]enemyMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
         int x = (int) enemy.getX()/DANGER_SCALE;
@@ -449,17 +454,17 @@ public class GPBase extends AdvancedRobot {
                 int h = x+(int) (r*cos(a));
                 int v = y+(int) (r*sin(a));
                 if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT)
-                    enemyMap[h][v] = Math.pow((DANGER_DMAX-r)/(DANGER_DMAX),2)*enemy.getEnergy()*(enemy.hitMe+1);
+                    enemyMap[h][v] = Math.pow((DANGER_DMAX-r)/(DANGER_DMAX),2);
             }
         }
-        enemyMap[x][y] = enemy.getEnergy()*(enemy.hitMe+1);
+        enemyMap[x][y] = 1;
         for (x=0; x<DANGER_WIDTH; x++)
             for(y=0; y<DANGER_HEIGHT; y++)
                 dangerMap[x][y]+=enemyMap[x][y];
     }
 
     private void waveDanger(Wave wave) {
-        int [][]waveMap = new int[DANGER_WIDTH][DANGER_HEIGHT];
+        double [][]waveMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
         double d = wave.getDistance(now)/DANGER_SCALE;
         int x = (int) wave.getX()/DANGER_SCALE;
         int y = (int) wave.getY()/DANGER_SCALE;
@@ -468,12 +473,16 @@ public class GPBase extends AdvancedRobot {
             int num = Math.max((int) ((r+d)*wave.arc*1.25),1);
             for (int i=0; i<num; i++ ) {
                 double a = wave.direction-wave.arc/2+ wave.arc*i/num;
+
                 int h = x+(int) ((r+d)*cos(a));
                 int v = y+(int) ((r+d)*sin(a));
-                if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT)
-                    waveMap[h][v] = (int) (Math.pow((dmax / DANGER_SCALE - r)/(dmax / DANGER_SCALE), 1) * wave.getPower()*33 * (enemies.get(wave.name).hitMe+1));
+                if (h>=0 && v>=0 && h<DANGER_WIDTH && v<DANGER_HEIGHT) {
+                    double fa = 1 + sin(PI * i / num);
+                    waveMap[h][v] = fa * wave.getPower() / MAX_BULLET_POWER;
+                }
             }
         }
+
         for (x=0; x<DANGER_WIDTH; x++)
             for(y=0; y<DANGER_HEIGHT; y++)
                 dangerMap[x][y]+=waveMap[x][y];
@@ -595,14 +604,16 @@ public class GPBase extends AdvancedRobot {
     }
 
     private void computeSafePositionDangerMap() {
-        int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
+        int dist = (int) MAX_VELOCITY*20/DANGER_SCALE;
+        //int dist = Math.max(2*TANK_SIZE/DANGER_SCALE,(int)(DANGER_DMAX*aliveCount/enemyCount/4));
         Point gp = new Point((int) getX()/DANGER_SCALE, (int) getY()/DANGER_SCALE);
 
         List<Point> points = GPUtils.listClosePoint(gp, dist, DANGER_WIDTH, DANGER_HEIGHT);
 
         double danger=Double.MAX_VALUE;
         for (Point p : points) {
-            double d = GPUtils.computeMoveDanger(gp, p, dangerMap);
+            //double d = GPUtils.computeMoveDanger(gp, p, dangerMap);
+            double d = dangerMap[p.x][p.y];
             if (d < danger) {
                 danger = d;
                 double x = max(BORDER_OFFSET, min(FIELD_WIDTH-BORDER_OFFSET, p.getX()*DANGER_SCALE+DANGER_SCALE/2));
@@ -615,8 +626,8 @@ public class GPBase extends AdvancedRobot {
         double y = max(BORDER_OFFSET, min(FIELD_HEIGHT-BORDER_OFFSET, sp.getY()*DANGER_SCALE+DANGER_SCALE/2));
         safePosition =  new Point.Double(x, y);*/
         Point sp = getMaxPoint(dangerMap);
-        double x = max(BORDER_OFFSET, min(FIELD_WIDTH-BORDER_OFFSET, sp.getX()*DANGER_SCALE+DANGER_SCALE/2));
-        double y = max(BORDER_OFFSET, min(FIELD_HEIGHT-BORDER_OFFSET, sp.getY()*DANGER_SCALE+DANGER_SCALE/2));
+        double x = sp.getX()*DANGER_SCALE + DANGER_SCALE/2;
+        double y = sp.getY()*DANGER_SCALE + DANGER_SCALE/2;
         unSafePosition =  new Point.Double(x, y);
     }
 

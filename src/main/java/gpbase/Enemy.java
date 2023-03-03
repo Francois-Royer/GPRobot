@@ -68,6 +68,7 @@ public class Enemy extends Point.Double implements Tank {
         if (scanCount > 1) {
             if (energy > sre.getEnergy() && this.lastFire + gpBase.FIRE_AGAIN_MIN_TIME < now) {
                 double drop = energy - sre.getEnergy();
+                // TODO, check drop hit wall
                 if (drop >= MIN_BULLET_POWER && drop <= MAX_BULLET_POWER) {
                     double bspeed = getBulletSpeed(drop);
                     gpBase.waves.add(new Wave(name, bspeed, scanLastUpdate, this, gpBase));

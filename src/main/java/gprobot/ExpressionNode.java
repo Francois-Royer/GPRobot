@@ -13,12 +13,11 @@ public class ExpressionNode implements Serializable {
     private static final long serialVersionUID = 8049660827041716275L;
 
     static final double PROB_TERM_UNIV = 0.35;
-    static final double PROB_TERM_BASE = 0.4;
-    static final double PROB_TERM_CONST = 0.15;
+    static final double PROB_TERM_BASE = 0.65;
+    static final double PROB_TERM_CONST = 0.25;
     static final double PROB_TERM_ERC = 0.1;
     static final double[] PROB_TERM = {
             PROB_TERM_CONST,
-            PROB_TERM_UNIV,
             PROB_TERM_BASE
     };
     static final double PROB_FUNC_A1 = 0.2;
@@ -337,8 +336,6 @@ public class ExpressionNode implements Serializable {
             "ROBOT_HIT_DAMAGE",
             "ROBOT_HIT_BONUS",
             "Double.MIN_VALUE",
-            "getWidth()",
-            "getHeight()",
             "1",
             "2",
             "Math.PI",
@@ -364,58 +361,19 @@ public class ExpressionNode implements Serializable {
             "fire",*/
 
             // replace scanned event
-            "target.x",
-            "target.y",
             "target.distance(getCurrentPoint())",
             "target.getVelocity()",
             "target.getDirection()",
             "target.getRotationRate()",
             "target.getAccel()",
             "target.getEnergy()",
-            "target.getAngle()",
-            "getGunHeadingRadians()"
-    };
-
-    // terminals that can only be called during a ScannedRobotEvent
-    static final String[] SCANNED_EVENT_TERMINALS = {
-            "e.getBearingRadians()", // Returns difference between enemy and robot heading
-            "e.getDistance()", // Returns distance to enemy
-            "e.getEnergy()", // Returns energy (life) of enemy
-            "e.getHeadingRadians()", // Returns direction enemy is facing
-            "e.getVelocity()" // Returns the velocity of enemy
-    };
-
-    // terminals that can only be called during a HitByBulletEvent
-    static final String[] HIT_BY_BULLET_EVENT_TERMINALS = {
-            "e.getBearingRadians()", // Returns difference between bullet and robot heading
-            "e.getPower()", // Returns power of bullet
-            "e.getHeadingRadians()", // Returns direction bullet is facing
-            "e.getVelocity()" // Returns the velocity of bullet
-    };
-
-    // terminals that can only be called during a HitRobotEvent
-    static final String[] HIT_ROBOT_EVENT_TERMINALS = {
-            "e.getBearingRadians()", // Returns difference between bullet and robot heading
-            "e.getEnergy()" // Returns energy (life) of enemy
+            "target.getAngle()"
     };
 
     static final String[][] TERMINALS = {
             CONSTANT_TERMINALS,
-            UNIVERSAL_TERMINALS,
             BASE_TERMINAL
     };
-
-    /*public static void setScanEventTerminals() {
-        TERMINALS[2] = SCANNED_EVENT_TERMINALS;
-    }*/
-
-    public static void setHitByBulletEventTerminals() {
-        TERMINALS[2] = HIT_BY_BULLET_EVENT_TERMINALS;
-    }
-
-    public static void setHitRobotEventTerminals() {
-        TERMINALS[2] = HIT_ROBOT_EVENT_TERMINALS;
-    }
 
     static final String[][] FUNCTIONS_A1 = {
             {"Math.abs(", ")"}, // Absolute Value

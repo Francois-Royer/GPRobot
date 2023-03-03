@@ -70,9 +70,9 @@ public class GPUtils {
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
 
         g2D.fillArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc/2, waveArc);
-        /*g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
-        g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc/2)), (int)(w.y + 10000*sin(w.direction+w.arc/2)));
-        g.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc/2)), (int)(w.y + 10000*sin(w.direction-w.arc/2)));*/
+        g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
+        /*g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc/2)), (int)(w.y + 10000*sin(w.direction+w.arc/2)));
+        g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc/2)), (int)(w.y + 10000*sin(w.direction-w.arc/2)));*/
     }
 
     public static int degree(double radians) {

@@ -21,7 +21,7 @@ public class MetaBot implements Serializable {
     }
 
     private static final long serialVersionUID = 5625044536646095912L;
-    final static int SCAN_CHROMOS = 1;
+    final static int SCAN_CHROMOS = 2;
     final static int HIT_BY_BULLET_CHROMOS = 4;
     final static int HIT_ROBOT_CHROMOS = 5;
     final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;

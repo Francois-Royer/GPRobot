@@ -20,9 +20,11 @@ public class Wave extends MovingPoint {
         cp.x += cos(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
         cp.y += sin(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
 
-        this.arc = arc(origin, cp, gpbase.getCurrentPoint())+0.30;
+        //this.arc = arc(origin, cp, gpbase.getCurrentPoint())+0.30;
+        this.arc = arc(origin, cp, gpbase.getCurrentPoint())*2;
         cp = midle(cp, gpbase.getCurrentPoint());
         this.direction = getAngle(origin,cp);
+        //this.direction = getAngle(origin,gpbase.getCurrentPoint());
     }
 
     public double getPower() {

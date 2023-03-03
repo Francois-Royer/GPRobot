@@ -4,6 +4,11 @@ plugins {
     id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
+compileJava {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
 def robotcode_home = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'c:/robocode' : "$System.env.HOME/robocode"
 
 repositories {
@@ -48,6 +53,7 @@ task copyGPBase(type: Copy) {
     include '**/gpbase/**/*.*'
     include '**/net/sf/javaml/core/**/*.*'
     into "$robotcode_home/robots"
+    dependsOn(':compileJava')
 }
 
 task copyLib(type: Copy) {
