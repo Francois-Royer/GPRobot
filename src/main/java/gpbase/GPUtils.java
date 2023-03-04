@@ -2,6 +2,7 @@ package gpbase;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,13 +64,13 @@ public class GPUtils {
         int r = c.getRed();
         int g = c.getGreen();
         int b =  c.getBlue();
-        Color color = new Color(r, g, b, 50);
+        Color color = new Color(r, g, b);
         g2D.setColor(color);
         int waveArc = (int) (w.arc * 180 / PI);
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
 
-        //g2D.fillArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc/2, waveArc);
+        g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc/2, waveArc);
         g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
         g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc/2)), (int)(w.y + 10000*sin(w.direction+w.arc/2)));
         g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc/2)), (int)(w.y + 10000*sin(w.direction-w.arc/2)));
@@ -190,6 +191,12 @@ public class GPUtils {
     }
 
     static double normalDistrib(double x, double median, double deviation) {
-        return 1/deviation/sqrt(2*PI)*exp(-1/2*pow((x-median)/deviation, 2));
+        return 1/(deviation*sqrt(2*PI))*exp(-.5*pow((x-median)/deviation, 2));
+    }
+
+
+    public static void main(String[] args) {
+        for (double i=-5; i<5; i++)
+            System.out.printf("norm(%f)=%f\n", i, normalDistrib(i, 0, 1));
     }
 }

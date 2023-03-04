@@ -243,12 +243,12 @@ public class GPBase extends AdvancedRobot {
         /*if (mostLeft != null && mostRight != null) {
             drawCircle(g2D, Color.RED, mostLeft, TANK_SIZE * 4 / 3);
             drawCircle(g2D, Color.GREEN, mostRight, TANK_SIZE * 4 / 3);
-        }
+        }*/
 
         now = getTime();
         for (Wave w : waves)
             drawWave(g2D, Color.ORANGE, w, now);
-        if (waves.size() > 0) {
+        /*if (waves.size() > 0) {
             Wave w = waves.stream().sorted(new WaveComparator(safePosition, now)).findFirst().get();
             drawWave(g2D, Color.RED, w, now);
         }*/
@@ -467,7 +467,7 @@ public class GPBase extends AdvancedRobot {
                 int h = x + (int) ((r + d) * cos(a));
                 int v = y + (int) ((r + d) * sin(a));
                 if (h >= 0 && v >= 0 && h < DANGER_WIDTH && v < DANGER_HEIGHT) {
-                    double fa = normalDistrib(a, wave.direction, wave.arc/50);
+                    double fa = normalDistrib(a, wave.direction, wave.arc/10);
                     waveMap[h][v] = fa * wave.getPower() / MAX_BULLET_POWER;
                 }
             }
@@ -842,5 +842,12 @@ public class GPBase extends AdvancedRobot {
         Optional<AimingData> opt = aimDatas.stream().filter(aimingData -> aimingData.getAngle() == angle).findFirst();
 
         return opt.isPresent() ? opt.get() : null;
+    }
+
+    boolean WaveInBattleField(Wave w, int now) {
+        for ()
+    }
+    boolean pointInBattleField(Point2D.Double p) {
+        return p.x >= 0 && p.x <= getBattleFieldWidth() && p.y >= 0 && p.y <= getBattleFieldHeight();
     }
 }
