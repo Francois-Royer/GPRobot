@@ -147,7 +147,7 @@ public class GPBase extends AdvancedRobot {
     private void onEvent(Event e) {
         xx = super.getX();
         yy = super.getY();
-        now = getTime();
+        //now = e.getTime();
     }
 
     @Override
@@ -159,7 +159,7 @@ public class GPBase extends AdvancedRobot {
         if (enemy == null)
             enemies.put(name, new Enemy(e, name, this));
         else
-            enemy.update(e);
+            enemy.update(e, this);
     }
 
     @Override
@@ -242,7 +242,12 @@ public class GPBase extends AdvancedRobot {
         aimDatas.clear();
         waves.clear();
         vShells.clear();
-        enemies.forEach((s, enemy) -> enemy.lastUpdate=0);
+        enemies.forEach((s, enemy) -> {
+            enemy.scanLastUpdate=0;
+            enemy.scanCount=0;
+            enemy.setEnergy(0);
+        });
+        mostLeft = mostRight = null;
     }
 
 
@@ -341,8 +346,10 @@ public class GPBase extends AdvancedRobot {
 
     public void doTurn() {
         now = getTime();
+        //out.println("now=" + now);
         xx = super.getX();
         yy = super.getY();
+
         updatePositions();
         updateWaves();
         updateVShells();
@@ -764,7 +771,7 @@ public class GPBase extends AdvancedRobot {
     }
 
     public long aliveCount() {
-        return enemies.values().stream().filter(e -> e.alive).count();
+        return enemies.values().stream().filter(e -> e.alive && e.lastUpdate > 0).count();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -845,43 +852,43 @@ public class GPBase extends AdvancedRobot {
         return new Point.Double(getX(), getY());
     }
 
-    public double ensureXInBatleField(double x) throws Exception {
+    static public double ensureXInBatleField(double x) throws Exception {
         return ensureXInBatleField(x, 2);
     }
 
-    public double ensureYInBatleField(double y) throws Exception {
+    static public double ensureYInBatleField(double y) throws Exception {
         return ensureYInBatleField(y, 2);
     }
 
-    public double ensureXInBatleField(double x, double d) throws Exception {
+    static public double ensureXInBatleField(double x, double d) throws Exception {
         if (x < TANK_SIZE / d) throw new Exception("hit wall x");
         if (x > BATTLE_FIELD_CENTER.getX() * 2 - TANK_SIZE / d) throw new Exception("hit wall x");
         return x;
     }
 
-    public double ensureYInBatleField(double y, double d) throws Exception {
+    static public double ensureYInBatleField(double y, double d) throws Exception {
         if (y < TANK_SIZE / d) throw new Exception("hit wall y");
         if (y > BATTLE_FIELD_CENTER.getY() * 2 - TANK_SIZE / d) throw new Exception("hit wall y");
         return y;
     }
 
-    public double conerDistance(Point.Double p) {
+    static public double conerDistance(Point.Double p) {
         return sqrt(pow(min(p.x, BATTLE_FIELD_CENTER.x * 2 - p.x), 2) +
                 pow(min(p.y, BATTLE_FIELD_CENTER.y * 2 - p.y), 2));
     }
 
-    public double wallDistance(Point.Double p) {
+    static public double wallDistance(Point.Double p) {
         return min(min(p.x, BATTLE_FIELD_CENTER.x * 2 - p.x),
                 min(p.y, BATTLE_FIELD_CENTER.y * 2 - p.y));
     }
 
     private void setupGunners() {
         if (gunners.values().size() == 0) {
-            putGunner(new HeadOnGunner(this));
+            //putGunner(new HeadOnGunner(this));
             //putGunner(new RandomHeadOnGunner(this));
             //putGunner(new OccilatorGunner(this));
             putGunner(new CircularGunner(this));
-            putGunner(new NearestNeighborGunner(this));
+            //putGunner(new NearestNeighborGunner(this));
         }
     }
 

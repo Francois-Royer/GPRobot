@@ -57,11 +57,11 @@ public class Enemy extends Point.Double implements Tank {
 
     public Enemy(ScannedRobotEvent sre, String name, GPBase gpBase) {
         this.name = name;
-        this.gpBase = gpBase;
-        update(sre);
+        update(sre, gpBase);
     }
 
-    public void update(ScannedRobotEvent sre) {
+    public void update(ScannedRobotEvent sre, GPBase gpBase) {
+        this.gpBase = gpBase;
         long now = gpBase.now;
         double  sreNRG = sre.getEnergy();
         double distance = sre.getDistance();
