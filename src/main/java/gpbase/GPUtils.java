@@ -69,11 +69,15 @@ public class GPUtils {
         int waveArc = (int) (w.arc * 180 / PI);
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
-
+        int s=d-5;
+        int e=d+5;
         g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc/2, waveArc);
-        g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction)), (int)(w.y + 10000*sin(w.direction)));
-        g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction+w.arc/2)), (int)(w.y + 10000*sin(w.direction+w.arc/2)));
-        g2D.drawLine((int)w.x, (int)w.y, (int)(w.x + 10000*cos(w.direction-w.arc/2)), (int)(w.y + 10000*sin(w.direction-w.arc/2)));
+        g2D.drawLine((int)(w.x + s*cos(w.direction)), (int)(w.y + s*sin(w.direction)),
+                (int)(w.x + e*cos(w.direction)), (int)(w.y + e*sin(w.direction)));
+        g2D.drawLine((int)(w.x + s*cos(w.direction+w.arc/2)), (int)(w.y + s*sin(w.direction+w.arc/2)),
+                (int)(w.x + e*cos(w.direction+w.arc/2)), (int)(w.y + e*sin(w.direction+w.arc/2)));
+        g2D.drawLine((int)(w.x + s*cos(w.direction-w.arc/2)), (int)(w.y + s*sin(w.direction-w.arc/2)),
+                (int)(w.x + e*cos(w.direction-w.arc/2)), (int)(w.y + e*sin(w.direction-w.arc/2)));
     }
 
     public static int degree(double radians) {
@@ -106,8 +110,7 @@ public class GPUtils {
     }
 
     static public double AvoidNan(double value, double def) {
-        if (Double.isNaN(value)) return def;
-        return value;
+        return Double.isNaN(value) ? def : value;
     }
 
     static double minA2(double a[][]) {
@@ -191,12 +194,17 @@ public class GPUtils {
     }
 
     static double normalDistrib(double x, double median, double deviation) {
-        return 1/(deviation*sqrt(2*PI))*exp(-.5*pow((x-median)/deviation, 2));
+        return (deviation>0) ? 1/(deviation*sqrt(2*PI))*exp(-.5*pow((x-median)/deviation, 2)) : 1;
     }
 
 
-    public static void main(String[] args) {
-        for (double i=-5; i<5; i++)
-            System.out.printf("norm(%f)=%f\n", i, normalDistrib(i, 0, 1));
+    public static void main(String argv[]) {
+        double dir=4.46;
+        double arc=1.34;
+
+        for (double a=dir-arc/2; a<dir+arc/2 ; a+=arc/7)
+            System.out.printf("a=%f arc=%f, norm=%f\n", a, arc, normalDistrib(a, dir, arc/10));
     }
+
+
 }

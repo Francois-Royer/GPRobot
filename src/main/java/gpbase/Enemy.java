@@ -55,34 +55,34 @@ public class Enemy extends Point.Double implements Tank {
 
     long hitMe=0;
 
-    public Enemy(ScannedRobotEvent sre, GPBase gpBase) {
-        name = sre.getName();
+    public Enemy(ScannedRobotEvent sre, String name, GPBase gpBase) {
+        this.name = name;
         this.gpBase = gpBase;
         update(sre);
     }
 
     public void update(ScannedRobotEvent sre) {
-        long now = gpBase.getTime();
+        long now = gpBase.now;
+        double  sreNRG = sre.getEnergy();
+        double distance = sre.getDistance();
         scanCount++;
+        velocity = sre.getVelocity();
 
-        if (scanCount > 1) {
-            if (energy > sre.getEnergy() && this.lastFire + gpBase.FIRE_AGAIN_MIN_TIME < now) {
-                double drop = energy - sre.getEnergy();
+            if (energy > sreNRG && this.lastFire + gpBase.FIRE_AGAIN_MIN_TIME < now) {
+                double drop = energy - sreNRG;
                 if (drop >= MIN_BULLET_POWER && drop <= MAX_BULLET_POWER &&
-                        (getWallDistance() > GPBase.TANK_SIZE/2 || sre.getVelocity()>0)) {
+                        (getWallDistance() > GPBase.TANK_SIZE/2 || velocity>0)) {
                     double bspeed = getBulletSpeed(drop);
                     gpBase.waves.add(new Wave(name, bspeed, scanLastUpdate, this, gpBase));
                     this.lastFire = scanLastUpdate;
                 }
             }
-        }
 
-        velocity = sre.getVelocity();
         direction = trigoAngle(sre.getHeadingRadians());
         angle = trigoAngle(gpBase.getHeadingRadians() + sre.getBearingRadians());
         rDirection = normalRelativeAngle(direction - angle);
-        x = gpBase.getX() + sre.getDistance() * cos(angle);
-        y = gpBase.getY() + sre.getDistance() * sin(angle);
+        x = gpBase.getX() + distance * cos(angle);
+        y = gpBase.getY() + distance * sin(angle);
 
         if (scanCount > 1) {
             double prevTurn = turn;
@@ -118,7 +118,7 @@ public class Enemy extends Point.Double implements Tank {
             }
         }
         alive = true;
-        setEnergy(sre.getEnergy());
+        setEnergy(sreNRG);
         scanLastUpdate = lastUpdate = now;
         scanVelocity = velocity;
         scanDirection = direction;

@@ -313,8 +313,6 @@ public class ExpressionNode implements Serializable {
     static final String[] UNIVERSAL_TERMINALS = {
             "getEnergy()",
             "getVelocity()",
-            "getX()",
-            "getY()",
             "getGunHeat()",
             "getGunCoolingRate()",
             "(double) getOthers()",
@@ -367,7 +365,11 @@ public class ExpressionNode implements Serializable {
             "target.getRotationRate()",
             "target.getAccel()",
             "target.getEnergy()",
-            "target.getAngle()"
+            "target.getAngle()",
+            "(double) now",
+            "dmax",
+            "(double) TANK_SIZE",
+            "(double) aliveCount",
     };
 
     static final String[][] TERMINALS = {
@@ -400,14 +402,18 @@ public class ExpressionNode implements Serializable {
             {"", " / ", ""}, // divide (CHECK FOR ZERO!)
             {"Math.min(", ", ", ")"}, // minimum
             {"Math.max(", ", ", ")"}, // maximum
+            {"target==prevTarget?", " : ", ""}, // target changed
     };
 
     static final String[][] FUNCTIONS_A3 = {
             {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
+            {"", " < 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
+            {"", " == 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo
     };
 
     static final String[][] FUNCTIONS_A4 = {
             {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
+            {"", " == ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
             {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
     };
 
