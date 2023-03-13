@@ -1,16 +1,19 @@
 package gpbase;
 
+import gpbase.kdtree.KdTree;
+import robocode.ScannedRobotEvent;
+
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import gpbase.kdtree.KdTree;
-import robocode.*;
-
+import static gpbase.GPUtils.checkMinMax;
+import static gpbase.GPUtils.trigoAngle;
 import static java.lang.Math.*;
-import static gpbase.GPUtils.*;
-import static robocode.util.Utils.*;
 import static robocode.Rules.*;
+import static robocode.util.Utils.normalAbsoluteAngle;
+import static robocode.util.Utils.normalRelativeAngle;
 
 
 public class Enemy extends Point.Double implements Tank {
@@ -27,6 +30,7 @@ public class Enemy extends Point.Double implements Tank {
     double accel = 0;
     double turn;
     double rotationRate = 0;
+
     double fEnergy;
     long lastUpdate; // Updated by movement prediction
 
@@ -239,5 +243,9 @@ public class Enemy extends Point.Double implements Tank {
     public double getWallDistance() {
         return min(min(x, gpBase.FIELD_WIDTH-x), min(y, gpBase.FIELD_HEIGHT-y));
     }
+    public double getFEnergy() {
+        return fEnergy;
+    }
+
 }
 

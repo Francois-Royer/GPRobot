@@ -51,9 +51,9 @@ public class StatServer {
             t.getResponseHeaders().set("Cache-Control", cacheControl);
             t.sendResponseHeaders(status, content.length);
 
-            OutputStream os = t.getResponseBody();
-            os.write(content);
-            os.close();
+            try(OutputStream os = t.getResponseBody()) {
+                os.write(content);
+            }
         }
     }
 }

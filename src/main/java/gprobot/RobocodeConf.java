@@ -1,9 +1,9 @@
 package gprobot;
 
+import robocode.control.BattlefieldSpecification;
+
 import java.io.File;
 import java.util.Random;
-
-import robocode.control.BattlefieldSpecification;
 
 /**
  * Created by gprobot on 17/01/17.
@@ -38,11 +38,11 @@ public class RobocodeConf {
     public static final int POP_SIZE = 300;
     public static final int MAX_GENS = 400;
     public static final int MIN_DEPTH = 2;
-    public static final int MAX_DEPTH = 7;
+    public static final int MAX_DEPTH = 11;
     public static final int ROUNDS = 10;
     public static final int TOURNY_SIZE = 6; // Selection Pressure
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
-    public static boolean ONE2ONE = false;
+    public static boolean ONE2ONE = true;
     public static final double PROB_CROSSOVER = 0.85;
     public static final double PROB_MUTATION = 0.05;
     public static final String CTX_FILE = "GP_ctx.bin";

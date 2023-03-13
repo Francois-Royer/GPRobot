@@ -30,11 +30,4 @@ public class OccilatorGunner extends AbtractGunner {
         ad.setAngle(na);
         ad.setFiringPosition(new Point2D.Double(gpbase.getX()+d*Math.cos(na), gpbase.getY()+d*Math.sin(na)));
     }
-
-    @Override
-    public void fire(Enemy enemy) {
-        super.fire(enemy);
-        o += step;
-        o%=2*Math.PI;
-    }
 }

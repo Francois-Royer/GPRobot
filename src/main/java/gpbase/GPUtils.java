@@ -2,13 +2,13 @@ package gpbase;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Math.*;
-import static robocode.util.Utils.*;
-import static robocode.Rules.*;
+import static robocode.Rules.MAX_VELOCITY;
+import static robocode.util.Utils.normalAbsoluteAngle;
+import static robocode.util.Utils.normalRelativeAngle;
 
 public class GPUtils {
     // -PI -> PI
@@ -198,13 +198,43 @@ public class GPUtils {
     }
 
 
-    public static void main(String argv[]) {
-        double dir=4.46;
-        double arc=1.34;
-
-        for (double a=dir-arc/2; a<dir+arc/2 ; a+=arc/7)
-            System.out.printf("a=%f arc=%f, norm=%f\n", a, arc, normalDistrib(a, dir, arc/10));
+    static boolean collisionDroiteSeg(Point.Double A,Point.Double B,Point.Double O,Point.Double P)
+    {
+        double abx  = B.x - A.x;
+        double aby = B.y - A.y;
+        double apx = P.x - A.x;
+        double apy = P.y - A.y;
+        double aox = O.x - A.x;
+        double aoy = O.y - A.y;
+        if ((abx*apy - aby*apx)*(abx*aoy - aby*aox)<0)
+            return true;
+        else
+            return false;
     }
 
+    static boolean collisionSegSeg(Point.Double A,Point.Double B,Point.Double O,Point.Double P)
+    {
+        if (collisionDroiteSeg(A,B,O,P)==false)
+            return false;
+        if (collisionDroiteSeg(O,P,A,B)==false)
+            return false;
+        return true;
+    }
 
+    static boolean collisionCercleSeg(Point.Double c, double r,Point.Double O,Point.Double P)
+    {
+        if (c.distance(O) < r || c.distance(P) < r)
+            return true;
+
+        double d = O.distance(P);
+        double angle= acos((O.x-P.x)/d)+ PI/2;
+
+        Point.Double a = new Point.Double(c.x +r*cos(angle), c.y+ r*sin(angle));
+        Point.Double b = new Point.Double(c.x +r*cos(angle+PI), c.y+ r*sin(angle+PI));
+        Point.Double e = new Point.Double(c.x +r*cos(-angle), c.y+ r*sin(-angle));
+        Point.Double f = new Point.Double(c.x +r*cos(-angle+PI), c.y+ r*sin(-angle+PI));
+
+        return collisionSegSeg(a, b, O, P) ||
+                collisionSegSeg(e, f, O, P);
+    }
 }

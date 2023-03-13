@@ -2,9 +2,7 @@ package gprobot;
 
 import java.io.*;
 
-import static gprobot.RobocodeConf.BOT_PREFFIX;
-import static gprobot.RobocodeConf.random;
-import static gprobot.RobocodeConf.TARGET_PACKAGE;
+import static gprobot.RobocodeConf.*;
 
 public class MetaBot implements Serializable {
 

@@ -310,17 +310,6 @@ public class ExpressionNode implements Serializable {
     }
 
     // Zero-Arity Expressions (terminals)
-    static final String[] UNIVERSAL_TERMINALS = {
-            "getEnergy()",
-            "getVelocity()",
-            "getGunHeat()",
-            "getGunCoolingRate()",
-            "(double) getOthers()",
-            "trigoAngle(getHeadingRadians())",
-            "trigoAngle(getGunHeadingRadians())",
-            "trigoAngle(getRadarHeadingRadians())",
-    };
-
     static final String[] CONSTANT_TERMINALS = {
             // Rules Constants
             "ACCELERATION",
@@ -334,6 +323,7 @@ public class ExpressionNode implements Serializable {
             "ROBOT_HIT_DAMAGE",
             "ROBOT_HIT_BONUS",
             "Double.MIN_VALUE",
+            "(-1)",
             "1",
             "2",
             "Math.PI",
@@ -345,20 +335,6 @@ public class ExpressionNode implements Serializable {
     };
 
     static final String[] BASE_TERMINAL = {
-            // From base
-            /*"safePosition.x",
-            "safePosition.y",
-            "aimingData.getFiringPosition().x",
-            "aimingData.getFiringPosition().y",
-            "forward",
-            "scandirection",
-            "turnLeft",
-            "turnGunLeft",
-            "turnRadarLeft",
-            "ahead",
-            "fire",*/
-
-            // replace scanned event
             "target.distance(getCurrentPoint())",
             "target.getVelocity()",
             "target.getDirection()",
@@ -370,6 +346,14 @@ public class ExpressionNode implements Serializable {
             "dmax",
             "(double) TANK_SIZE",
             "(double) aliveCount",
+            "getEnergy()",
+            "getVelocity()",
+            "getGunHeat()",
+            "getGunCoolingRate()",
+            "getHeadingRadians()",
+            "getGunHeadingRadians()",
+            "getRadarHeadingRadians()",
+            "Rules.getBulletSpeed(fire)",
     };
 
     static final String[][] TERMINALS = {
@@ -386,13 +370,7 @@ public class ExpressionNode implements Serializable {
             {"Math.sin(", ")"}, // Sine
             {"Math.sqrt(Math.abs(", "))"}, // square root
             {"Math.exp(", ")"}, // e^x
-            {"Math.log(Math.abs(", "))"},
-//            {"Rules.getBulletDamage(", ")"},
-//            {"Rules.getBulletSpeed(", ")"},
-//            {"Rules.getGunHeat(", ")"},
-//            {"trigoAngle(", ")"},
-//            {"oppositeAngle(", ")"},
-//            {"normalRelativeAngle(", ")"}
+            {"Math.log(Math.abs(", "))"}, // ln
     };
 
     static final String[][] FUNCTIONS_A2 = {
@@ -400,9 +378,9 @@ public class ExpressionNode implements Serializable {
             {"", " + ", ""}, // subtract
             {"", " * ", ""}, // multiply
             {"", " / ", ""}, // divide (CHECK FOR ZERO!)
+            {"", " % ", ""}, // modulo (CHECK FOR ZERO!)
             {"Math.min(", ", ", ")"}, // minimum
             {"Math.max(", ", ", ")"}, // maximum
-            {"target==prevTarget?", " : ", ""}, // target changed
     };
 
     static final String[][] FUNCTIONS_A3 = {

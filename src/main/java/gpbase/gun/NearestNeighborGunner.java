@@ -1,33 +1,27 @@
 package gpbase.gun;
 
 import gpbase.Enemy;
-import gpbase.GPBase;
 import gpbase.Move;
 import gpbase.kdtree.KdTree;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import static gpbase.GPUtils.*;
+import static gpbase.GPUtils.clonePoint;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static robocode.Rules.getBulletSpeed;
 
 public class NearestNeighborGunner extends AbtractGunner {
-    GPBase gpbase;
-
-    public NearestNeighborGunner(GPBase gpbase) {
-        this.gpbase = gpbase;
-        setResetStat(true);
+    public NearestNeighborGunner() {
     }
 
     @Override
     public AimingData aim(Enemy enemy) {
         if (enemy.getKdTree() == null) return null;
 
-        double[] kdPoint = enemy.getKDPoint(gpbase);
+        double[] kdPoint = enemy.getKDPoint(enemy.getGpBase());
         kdPoint[0] = 100;
         List<KdTree.Entry<List<Move>>> el = enemy.getKdTree().nearestNeighbor(kdPoint, 5, true);
 
@@ -55,7 +49,7 @@ public class NearestNeighborGunner extends AbtractGunner {
         Point.Double firePoint = clonePoint(target);
 
         for (int i = 0; i < 5; i++) {
-            double distance = gpbase.getCurrentPoint().distance(firePoint);
+            double distance = target.getGpBase().getCurrentPoint().distance(firePoint);
             long time = (long) (distance / bulletSpeed);
             firePoint = clonePoint(target);
             predMoves.clear();
@@ -76,8 +70,8 @@ public class NearestNeighborGunner extends AbtractGunner {
 
 
                 try {
-                    double x = gpbase.ensureXInBatleField(firePoint.x + dist * cos(dir), 2.1);
-                    double y = gpbase.ensureYInBatleField(firePoint.y + dist * sin(dir), 2.1);
+                    double x = target.getGpBase().ensureXInBatleField(firePoint.x + dist * cos(dir), 2.1);
+                    double y = target.getGpBase().ensureYInBatleField(firePoint.y + dist * sin(dir), 2.1);
                     firePoint.x = x;
                     firePoint.y = y;
                 } catch (Exception e) {
@@ -90,12 +84,5 @@ public class NearestNeighborGunner extends AbtractGunner {
         }
 
         return firePoint;
-    }
-
-    @Override
-    public void resetStat(Enemy enemy) {
-        super.resetStat(enemy);
-        //if (enemy.getKdTree() != null)
-            //System.out.printf("Kd size=%d\n", enemy.getKdTree().size());
     }
 }

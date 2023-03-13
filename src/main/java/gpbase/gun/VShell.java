@@ -2,22 +2,22 @@ package gpbase.gun;
 
 import gpbase.Enemy;
 import gpbase.MovingPoint;
+import robocode.Rules;
 
 public class VShell extends MovingPoint {
-    private Enemy target;
-    private Gunner gunner;
-
-    public VShell(Double origin, double velocity, double direction, long start, Enemy target, Gunner gunner) {
-        super(origin, velocity, direction, start);
-        this.target = target;
-        this.gunner = gunner;
+    private AimingData aimingData;
+    public VShell(Double origin, AimingData aimingData, long start) {
+        super(origin, Rules.getBulletSpeed(aimingData.getFirePower()), aimingData.getAngle(), start);
+        this.aimingData = aimingData;
     }
 
     public Enemy getTarget(){
-        return target;
+        return aimingData.getTarget();
+    }
+    public Gunner getGunner() {
+        return aimingData.getGunner();
     }
 
-    public Gunner getGunner() {
-        return gunner;
-    }
+    public AimingData getAimingData() { return aimingData; }
+
 }

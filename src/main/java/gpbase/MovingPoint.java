@@ -25,11 +25,11 @@ public class MovingPoint extends Point.Double{
         return velocity;
     }
 
-    public double getDistance(double time) {
+    public double getDistance(long time) {
         return velocity * (time - start);
     }
 
-    public Point.Double getPosition(double tick) {
+    public Point.Double getPosition(long tick) {
         double d = getDistance(tick);
         return new Point.Double(x + d * cos(direction), y + d * sin(direction));
     }

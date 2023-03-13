@@ -21,8 +21,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import static gprobot.RobocodeConf.*;
 import static gprobot.RobotCodeUtil.*;

@@ -1,11 +1,10 @@
 package gpbase;
 
-import robocode.Rules;
-
-import java.awt.Point;
+import java.awt.*;
 
 import static gpbase.GPUtils.*;
-import static java.lang.Math.*;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class Wave extends MovingPoint {
     String name;

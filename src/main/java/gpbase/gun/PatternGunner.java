@@ -2,15 +2,6 @@ package gpbase.gun;
 
 import gpbase.Enemy;
 import gpbase.GPBase;
-import gpbase.Move;
-
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import static gpbase.GPUtils.*;
-import static java.lang.Math.*;
-import static robocode.Rules.getBulletSpeed;
 
 public class PatternGunner extends AbtractGunner {
 

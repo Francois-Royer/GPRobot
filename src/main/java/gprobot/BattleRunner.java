@@ -1,5 +1,6 @@
 package gprobot;
 
+import gpbase.GPBase;
 import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
@@ -11,7 +12,10 @@ import robocode.control.events.BattleErrorEvent;
 import robocode.control.events.TurnEndedEvent;
 import robocode.control.snapshot.IRobotSnapshot;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.FileSystems;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -69,7 +73,6 @@ public class BattleRunner{
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
         return result.getScore();
-        //return result.getBulletDamage();
     }
 
     public void setOpponentsName(String[] names) {
@@ -96,7 +99,7 @@ public class BattleRunner{
         if (opponentsRobots.length > 1 && ONE2ONE)
             fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots).mapToDouble(opponent ->
                 getRobotFitness(robot, new String[]{opponent})
-            ).sum()) / opponentsRobots.length / 2;
+            ).sum());
 
         return fitnessScore;
     }
@@ -104,16 +107,11 @@ public class BattleRunner{
     private double computeFitness(String robot, BattleObserver battleObserver) {
         BattleResults []results = battleObserver.getResults();
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
-        //log.info("score = " + getScore(br.get()) +", remainEnergy = " + battleObserver.getRemainEnergy() + ", round duration=" + battleObserver.getRoundDuration());
 
         int botScore = br.isPresent() ? getScore(br.get()) : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
 
-        if (totalScore == 0) {
-            // OMG, these robots are so poor that they do not score a single point
-            return 0;
-        }
-        return (double) botScore / totalScore * 100;
+        return (double) botScore / (totalScore+1-botScore);
     }
 
     public void startCmdReader() {

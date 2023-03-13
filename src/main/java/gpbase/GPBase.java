@@ -1,24 +1,26 @@
 package gpbase;
 
 import gpbase.gun.*;
-import robocode.*;
 import robocode.Event;
+import robocode.*;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static gpbase.GPUtils.*;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 
 public class GPBase extends AdvancedRobot {
-    public int FIELD_WIDTH;
-    public int FIELD_HEIGHT;
+    public static int FIELD_WIDTH;
+    public static int FIELD_HEIGHT;
     public static Point.Double BATTLE_FIELD_CENTER;
     public static int TANK_SIZE = 36;
 
@@ -77,9 +79,12 @@ public class GPBase extends AdvancedRobot {
     boolean drawPoint = true;
     boolean drawEnemy = true;
 
+    public  static FireStat gpStat;
+
     public GPBase() {
         super();
         setupGunners();
+        gpStat = new FireStat();
     }
 
     @Override
@@ -165,18 +170,16 @@ public class GPBase extends AdvancedRobot {
     @Override
     public void onBulletHit(BulletHitEvent bhe) {
         onEvent(bhe);
+        gpStat.hit();
         Enemy e = enemies.get(bhe.getName());
         if (e != null) {
             e.setEnergy(bhe.getEnergy(), getBulletDamage(bhe.getBullet().getPower()));
 
             AimingData ad = getAimingDataByAngle(bhe.getBullet().getHeadingRadians());
             if (ad != null) {
-                if (e.getName() == ad.getTarget().getName()) {
-                    ad.getGunner().hit(ad.getTarget());
-                }
-                ///else
-                //out.printf("%s hit %s but was aiming to %s...\n",
-                //ad.getGunner().getName(), e.getName(), ad.getTarget().getName());
+                if (e.getName() == ad.getTarget().getName())
+                    ad.getGunner().getEnemyRoundFireStat(ad.getTarget()).hit();
+
                 ad.getTarget().fEnergy += getBulletDamage(ad.getFirePower());
                 aimDatas.remove(ad);
             }
@@ -200,6 +203,7 @@ public class GPBase extends AdvancedRobot {
     @Override
     public void onBulletHitBullet(BulletHitBulletEvent bhbe) {
         onEvent(bhbe);
+        gpStat.hitByBullet();
         if (waves.size() > 0) {
             Bullet b = bhbe.getHitBullet();
             Point.Double p = new Point.Double(b.getX(), b.getY());
@@ -216,6 +220,7 @@ public class GPBase extends AdvancedRobot {
             //ad.getGunner().getName(), ad.getTarget().getName());
             aimDatas.remove(ad);
             ad.getTarget().fEnergy += getBulletDamage(ad.getFirePower());
+            ad.getGunner().getEnemyRoundFireStat(ad.getTarget()).hitByBullet();
         }
     }
 
@@ -274,10 +279,12 @@ public class GPBase extends AdvancedRobot {
             drawFillCircle(g2D, Color.RED, unSafePosition, 10);
         }
 
-        if (drawEnemy)
+        if (drawEnemy) {
             for (Enemy e : enemies.values())
                 if (e.alive)
                     drawCircle(g2D, Color.PINK, e, TANK_SIZE);
+            drawCircle(g2D, Color.green, this.getCurrentPoint(), TANK_SIZE);
+        }
 
         if (aimingData != null && drawAiming) {
             for (Point.Double p : aimingData.getExpectedMoves())
@@ -298,29 +305,33 @@ public class GPBase extends AdvancedRobot {
                 drawWave(g2D, Color.RED, w, now);
             }
         }
-        if (drawVShell)
-            for (VShell vs : vShells)
+        if (drawVShell) {
+            for (VShell vs : vShells) {
                 drawFillCircle(g2D, Color.MAGENTA, vs.getPosition(now), 5);
+                /*Point2D.Double p = vs.getPosition(now + (int) (dmax / 20));
+                g2D.drawLine((int) vs.getX(), (int) vs.getY(), (int) p.getX(), (int) p.getY());*/
+            }
+        }
 
         if (drawDanger)
-            drowDangerMap(g2D);
+            drawDangerMap(g2D);
     }
 
-    private void drowDangerMap(Graphics2D g2D) {
+    private void drawDangerMap(Graphics2D g2D) {
         int r = Color.PINK.getRed();
         int g = Color.PINK.getGreen();
         int b = Color.PINK.getBlue();
         double min = minA2(dangerMap);
         double max = maxA2(dangerMap);
-        for (int x, y = 0; y < DANGER_HEIGHT; y++) {
-            int alpha = 0;
-            for (x = 0; x < DANGER_WIDTH; x++) {
-                alpha = (int) range(dangerMap[x][y], min, max, 0, 100);
+        BufferedImage img = new BufferedImage(FIELD_WIDTH, FIELD_HEIGHT, TYPE_INT_RGB);
+        for (int  y = 0; y < DANGER_HEIGHT; y++)
+            for (int x = 0; x < DANGER_WIDTH; x++) {
+                int alpha = (int) range(dangerMap[x][y], min, max, 0, 100);
                 Color c = new Color(r, g, b, alpha);
                 g2D.setColor(c);
                 g2D.fillRect(x * DANGER_SCALE, y * DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
             }
-        }
+
     }
 
     @Override
@@ -415,31 +426,15 @@ public class GPBase extends AdvancedRobot {
     private void updateVShells() {
         List<VShell> newVShells = vShells.stream().filter(vs -> {
             Point.Double p = vs.getPosition(now);
-            AimingData aimingData = getAimingDataByAngle(vs.getDirection());
-            if (aimingData==null)
-                return false;
-            Enemy enemy = aimingData.getTarget();
-            if (p.x >= 0 && p.x <= getBattleFieldWidth() && p.y >= 0 && p.y <= getBattleFieldHeight()) {
+            AimingData aimingData = vs.getAimingData();
+            if (p.x >= 0 && p.x <= FIELD_WIDTH && p.y >= 0 && p.y <= FIELD_HEIGHT) {
                 Enemy e = vs.getTarget();
-                boolean hit = false;
+                Point.Double o = vs.getPosition(now+1);
 
-                if (p.distance(e) < TANK_SIZE / 2)
-                    hit = true;
-                else {
-                    Point.Double pp = vs.getPosition(now - 0.1);
-                    if (pp.distance(e) < p.distance(e))
-                        for (double t = now - 1; t < now; t += 0.1) {
-                            pp = vs.getPosition(t);
-                            if (pp.distance(e) < TANK_SIZE / 2) {
-                                hit = true;
-                                break;
-                            }
-                        }
-                }
+                boolean hit = collisionCercleSeg(e, TANK_SIZE / 2, o, p);
+                if (hit)
+                    vs.getGunner().getEnemyRoundFireStat(aimingData.getTarget()).hit();
 
-                if (hit) {
-                    vs.getGunner().hit(aimingData.getTarget());
-                }
                 return !hit;
             }
 
@@ -707,24 +702,19 @@ public class GPBase extends AdvancedRobot {
             return;
 
         if (getCurrentPoint().distance(aimingData.getFiringPosition()) * sin(abs(getGunTurnRemainingRadians())) > FIRE_TOLERANCE ||
-                abs(getGunTurnRemainingRadians()) > PI / 2) {
+                abs(getGunTurnRemainingRadians()) > PI / 2)
             return;
-        }
 
         setFire(fire);
-        //out.printf("target is %s(x=%.0f, y = %.0f) energy(%.02f, %.02f)\n", target.getName(), target.getX(), target.getY(), target.getEnergy(), target.fEnergy);
-        //out.printf("Gunner is %s fire at x=%.0f, y = %.0f, turnRemain= %f\n", aimingData.getGunner().getName(),
-        //aimingData.getFiringPosition().getX(), aimingData.getFiringPosition().getY(), getGunTurnRemainingRadians());
-        lastFireTime = now;
-        aimingData.getGunner().fire(target);
-        target.fEnergy -= getBulletDamage(fire);
 
+        gpStat.fire();
+        lastFireTime = now;
+        aimingData.getGunner().getEnemyRoundFireStat(target).fire();
+        target.fEnergy -= getBulletDamage(fire);
         aimingData.setAngle(getGunHeadingRadians());
         aimDatas.add(aimingData);
 
         fireVirtualShell();
-        //out.printf("Shooting %s, power %.02f, gunner %s confidence=%.02f\n",
-        //target.name, fire, aimingData.getGunner().getName(), aimingData.getConfidence());
     }
 
     private void fireVirtualShell() {
@@ -733,14 +723,8 @@ public class GPBase extends AdvancedRobot {
                 final AimingData ad = gunner.aim(aimingData.getTarget());
                 if (ad != null) {
                     aimDatas.add(ad);
-                    gunner.fire(aimingData.getTarget());
-                    vShells.add(new VShell(
-                            getCurrentPoint(),
-                            Rules.getBulletSpeed(ad.getFirePower()),
-                            ad.getAngle(),
-                            now,
-                            ad.getTarget(),
-                            ad.getGunner()));
+                    gunner.getEnemyRoundFireStat(aimingData.getTarget()).fire();
+                    vShells.add(new VShell(getCurrentPoint(), ad, now));
                 }
             }
         });
@@ -752,13 +736,14 @@ public class GPBase extends AdvancedRobot {
         if (target == null)
             return 0;
 
-        if (target.getEnergy() == 0)
+        /*if (target.getEnergy() == 0)
             aimingData = gunners.get("HeadOnGunner").aim(target);
-        else
+        else*/
             for (Gunner gunner : gunners.values()) {
                 AimingData temp = gunner.aim(target);
                 if (aimingData == null ||
-                        (temp != null && temp.getGunner().hitRate(target) > aimingData.getGunner().hitRate(target)))
+                        (temp != null && temp.getGunner().getEnemyRoundFireStat(target).getHitRate() >
+                                aimingData.getGunner().getEnemyRoundFireStat(target).getHitRate()))
                     aimingData = temp;
             }
         if (aimingData != null) {
@@ -777,19 +762,15 @@ public class GPBase extends AdvancedRobot {
     //////////////////////////////////////////////////////////////////////////////////////////
     // Utils
     private void resetRoundStat() {
-        gunners.values().forEach(gunner -> {
-            gunner.resetStat();
-            enemies.values().forEach(enemy -> {
-                gunner.resetStat(enemy);
-            });
-        });
+        gunners.values().forEach(gunner -> gunner.resetRoundStat());
     }
 
     private void printStat() {
         gunners.values().forEach(gunner -> {
-            out.printf("%s hitrate = %.0f%% / %d\n", gunner.getName(), gunner.hitRate() * 100, gunner.fireCount());
+            out.printf("==== %s ====\n", gunner.getName());
             enemies.values().forEach(enemy -> {
-                out.printf("    %s hitrate = %.0f%% / %d\n", enemy.getName(), gunner.hitRate(enemy) * 100, gunner.fireCount(enemy));
+                FireStat fs = gunner.getEnemyRoundFireStat(enemy);
+                out.printf("    %s hitrate = %.0f%% / %d\n", enemy.getName(), fs.getHitRate() * 100, fs.getFireCount());
             });
         });
     }
@@ -821,8 +802,6 @@ public class GPBase extends AdvancedRobot {
             dx = (getBattleFieldWidth() - BORDER_OFFSET - p.x) / cos(a);
             dy = (p.y - BORDER_OFFSET) / sin(a);
         }
-
-        // out.printf("a=%.02f dx=%.02f dy=%.02f\n", a, dx ,dy);
 
         double d = abs((abs(dx) >= abs(dy)) ? dy : dx);
         return new Point.Double(p.x + d * cos(a), p.y + d * sin(a));
@@ -862,19 +841,14 @@ public class GPBase extends AdvancedRobot {
 
     static public double ensureXInBatleField(double x, double d) throws Exception {
         if (x < TANK_SIZE / d) throw new Exception("hit wall x");
-        if (x > BATTLE_FIELD_CENTER.getX() * 2 - TANK_SIZE / d) throw new Exception("hit wall x");
+        if (x > FIELD_WIDTH - TANK_SIZE / d) throw new Exception("hit wall x");
         return x;
     }
 
     static public double ensureYInBatleField(double y, double d) throws Exception {
         if (y < TANK_SIZE / d) throw new Exception("hit wall y");
-        if (y > BATTLE_FIELD_CENTER.getY() * 2 - TANK_SIZE / d) throw new Exception("hit wall y");
+        if (y > FIELD_HEIGHT - TANK_SIZE / d) throw new Exception("hit wall y");
         return y;
-    }
-
-    static public double conerDistance(Point.Double p) {
-        return sqrt(pow(min(p.x, BATTLE_FIELD_CENTER.x * 2 - p.x), 2) +
-                pow(min(p.y, BATTLE_FIELD_CENTER.y * 2 - p.y), 2));
     }
 
     static public double wallDistance(Point.Double p) {
@@ -884,11 +858,11 @@ public class GPBase extends AdvancedRobot {
 
     private void setupGunners() {
         if (gunners.values().size() == 0) {
-            //putGunner(new HeadOnGunner(this));
-            //putGunner(new RandomHeadOnGunner(this));
-            //putGunner(new OccilatorGunner(this));
-            putGunner(new CircularGunner(this));
-            //putGunner(new NearestNeighborGunner(this));
+            putGunner(new HeadOnGunner());
+            //putGunner(new RandomHeadOnGunner());
+            //putGunner(new OccilatorGunner());
+            putGunner(new CircularGunner());
+            putGunner(new NearestNeighborGunner());
         }
     }
 
