@@ -72,7 +72,8 @@ public class BattleRunner{
             + result.getBulletDamageBonus()
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
-        return result.getScore();
+        return result.getBulletDamage();
+        //return result.getScore();
     }
 
     public void setOpponentsName(String[] names) {
@@ -106,12 +107,13 @@ public class BattleRunner{
 
     private double computeFitness(String robot, BattleObserver battleObserver) {
         BattleResults []results = battleObserver.getResults();
-        Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName())).findFirst();
+        Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName()))
+                .findFirst();
 
         int botScore = br.isPresent() ? getScore(br.get()) : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
 
-        return (double) botScore / (totalScore+1-botScore);
+        return (double) botScore;// / (1+totalScore-botScore);
     }
 
     public void startCmdReader() {

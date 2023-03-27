@@ -42,7 +42,7 @@ public class RobocodeConf {
     public static final int ROUNDS = 10;
     public static final int TOURNY_SIZE = 6; // Selection Pressure
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
-    public static boolean ONE2ONE = true;
+    public static boolean ONE2ONE = false;
     public static final double PROB_CROSSOVER = 0.85;
     public static final double PROB_MUTATION = 0.05;
     public static final String CTX_FILE = "GP_ctx.bin";

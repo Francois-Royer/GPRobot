@@ -1,6 +1,9 @@
 package gpbase;
 
+import gpbase.gun.CircularGunner;
+
 import java.awt.*;
+import java.awt.geom.Point2D;
 
 import static gpbase.GPUtils.*;
 import static java.lang.Math.cos;
@@ -10,20 +13,26 @@ public class Wave extends MovingPoint {
     String name;
     double arc;
 
+    Point2D.Double headon;
+    Point2D.Double middle;
+    Point2D.Double circular;
+
+
     public Wave(String name, double velocity, long start, Point.Double origin, GPBase gpbase) {
         super(origin, velocity, 0, start);
         this.name = name;
-        Point.Double cp = gpbase.getCurrentPoint();
-        double distance = origin.distance(cp);
+        headon = gpbase.getCurrentPoint();
+        double distance = origin.distance(headon);
         double time = distance/velocity;
-        cp.x += cos(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
-        cp.y += sin(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
 
-        //this.arc = arc(origin, cp, gpbase.getCurrentPoint())+0.30;
-        this.arc = arc(origin, cp, gpbase.getCurrentPoint())*3+.01;
-        cp = midle(cp, gpbase.getCurrentPoint());
-        this.direction = getAngle(origin,cp);
-        //this.direction = getAngle(origin,gpbase.getCurrentPoint());
+        circular = new Point2D.Double();
+
+        circular.x = headon.x + cos(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
+        circular.y = headon.y + sin(trigoAngle(gpbase.getHeadingRadians())) * time * gpbase.getVelocity();
+
+        this.arc = arc(origin, circular, headon)*3+.01;
+        middle = midle(headon, gpbase.getCurrentPoint());
+        this.direction = getAngle(origin, middle);
     }
 
     public double getPower() {
