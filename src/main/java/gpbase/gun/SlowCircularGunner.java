@@ -1,32 +1,26 @@
 package gpbase.gun;
 
 import gpbase.Enemy;
-import robocode.Rules;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static gpbase.GPBase.*;
+import static gpbase.GPBase.ensureXInBatleField;
+import static gpbase.GPBase.ensureYInBatleField;
 import static gpbase.GPUtils.checkMinMax;
 import static gpbase.GPUtils.clonePoint;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 
-public class CircularGunner extends AbtractGunner {
+public class SlowCircularGunner extends AbtractGunner {
 
     @Override
     public AimingData aim(Enemy enemy) {
-        double firePower = getFirePower(enemy) * 2;
+        double firePower = getFirePower(enemy);
 
         List<Point.Double> predMoves = new ArrayList<>();
-        Point.Double firingPosition = null;
-        while (firePower > MIN_BULLET_POWER && firingPosition == null) {
-            firePower /= 2;
-            firingPosition = forwardMovementPrediction(enemy, predMoves, firePower);
-        }
-
-        if (firingPosition == null) return null;
+        Point.Double firingPosition = forwardMovementPrediction(enemy, predMoves, firePower);
 
         return new AimingData(this, enemy, firingPosition, firePower, predMoves);
     }
@@ -58,19 +52,19 @@ public class CircularGunner extends AbtractGunner {
                 predMoves.clear();
 
                 for (long t = 0; t < time; t++) {
-                    double accel = target.getAccel();
-                    v = checkMinMax(v + accel, max(target.getvMin(), -MAX_VELOCITY), min(target.getvMax(), MAX_VELOCITY));
-                    if (v == 0)
-                        return null;
 
+                    v = checkMinMax(v + target.getAccel(), max(target.getvMin(), -MAX_VELOCITY/3), min(target.getvMax(), MAX_VELOCITY/3));
                     direction += min(abs(target.getRotationRate()), getTurnRateRadians(v)) * signum(target.getRotationRate());
 
-                    firePoint.x += v * cos(direction);
-                    firePoint.y += v * sin(direction);
+                    try {
+                        double x = ensureXInBatleField(firePoint.x + v * cos(direction));
+                        double y = ensureYInBatleField(firePoint.y + v * sin(direction));
 
-                    if (! pointInBattleField(firePoint,  (double) TANK_SIZE / 2.0001))
-                        return null;
+                        firePoint.x=x;
+                        firePoint.y=y;
 
+                    } catch (Exception e) { // Hitwall
+                    }
                     predMoves.add(clonePoint(firePoint));
                 }
             }

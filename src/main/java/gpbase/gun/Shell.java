@@ -4,9 +4,9 @@ import gpbase.Enemy;
 import gpbase.MovingPoint;
 import robocode.Rules;
 
-public class VShell extends MovingPoint {
+public class Shell extends MovingPoint {
     private AimingData aimingData;
-    public VShell(Double origin, AimingData aimingData, long start) {
+    public Shell(Double origin, AimingData aimingData, long start) {
         super(origin, Rules.getBulletSpeed(aimingData.getFirePower()), aimingData.getAngle(), start);
         this.aimingData = aimingData;
     }

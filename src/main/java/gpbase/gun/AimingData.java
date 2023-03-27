@@ -21,6 +21,10 @@ public class AimingData {
         this(gunner, target, target, firePower, new ArrayList<>());
     }
 
+    public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower) {
+        this(gunner, target, firingPosition, firePower, new ArrayList<>());
+    }
+
     public AimingData(Gunner gunner, Enemy target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves) {
         this(gunner, target, firingPosition, firePower, expectedMoves, null);
     }
@@ -66,5 +70,11 @@ public class AimingData {
 
     public double[] getKdPoint() {
         return kdPoint;
+    }
+
+    public double hitRate() { return gunner.getEnemyRoundFireStat(target).getHitRate() ;}
+
+    public AimingData copy() {
+        return new AimingData(gunner, target, firingPosition, firePower, expectedMoves, kdPoint);
     }
 }

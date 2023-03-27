@@ -1,5 +1,6 @@
 package gpbase;
 
+import gpbase.gun.AimingData;
 import gpbase.kdtree.KdTree;
 import robocode.ScannedRobotEvent;
 
@@ -8,8 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static gpbase.GPUtils.checkMinMax;
-import static gpbase.GPUtils.trigoAngle;
+import static gpbase.GPUtils.*;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
@@ -18,73 +18,53 @@ import static robocode.util.Utils.normalRelativeAngle;
 
 public class Enemy extends Point.Double implements Tank {
     private static int KDTREE_MAX_SIZE = 1000;
-    double VARIANCE_SAMPLING = 10;
-    String name;
+    private double VARIANCE_SAMPLING = 10;
+    private String name;
+    private double velocity;
+    private double direction; // enemy direction
+    private double angle; // angle from current pos to this enemy
+    private double accel = 0;
+    private double turn;
+    private double rotationRate = 0;
+    private double fEnergy;
+
+    private long lastUpdate; // Updated by movement prediction
+    private double vMax = 0;
+    private double vMin = 0;
+    private double velocityVariance = 0;
+    private double turnVariance = 0;
+    private double velocityVarianceMax = 0;
+    private double turnVarianceMax = 0;
+    private long scanCount = 0;
+    private double scanDirection;
+    private double scanVelocity;
+    private long scanLastUpdate;
+    private long lastFire;
+    private Boolean alive = true;
+    private ArrayList<Move> moveLog = new ArrayList<>();
+    private GPBase gpBase;
+    private int hitMe = 0;
     private double energy;
-    double velocity;
-
-    double direction; // enemy direction
-    double angle; // angle from current pos to this enemy
-    double rDirection; // direction - angle
-
-    double accel = 0;
-    double turn;
-    double rotationRate = 0;
-
-    double fEnergy;
-    long lastUpdate; // Updated by movement prediction
-
-    double vMax = 0;
-    double vMin = 0;
-    double vAvg = 0;
-    double velocityVariance = 0;
-    double turnVariance = 0;
-    double velocityVarianceMax = 0;
-    double turnVarianceMax = 0;
-
-    long scanCount = 0;
-    double scanDirection;
-    double scanVelocity;
-    long scanLastUpdate;
-    long lastFire;
-
-    long lifeTime=0;
-
-    Boolean alive = true;
-
     private KdTree<List<Move>> kdTree = null;
-    ArrayList<Move> moveLog = new ArrayList<>();
 
-    GPBase gpBase;
-
-    long hitMe=0;
-
-    public Enemy(ScannedRobotEvent sre, String name, GPBase gpBase) {
+    public Enemy(ScannedRobotEvent sre, String name, GPBase gpBase, ArrayList<Wave> waves) {
         this.name = name;
-        update(sre, gpBase);
+        update(sre, gpBase, waves);
     }
 
-    public void update(ScannedRobotEvent sre, GPBase gpBase) {
+    public void update(ScannedRobotEvent sre, GPBase gpBase, ArrayList<Wave> waves) {
         this.gpBase = gpBase;
         long now = gpBase.now;
-        double  sreNRG = sre.getEnergy();
+        double sreNRG = sre.getEnergy();
         double distance = sre.getDistance();
         scanCount++;
         velocity = sre.getVelocity();
 
-            if (energy > sreNRG && this.lastFire + gpBase.FIRE_AGAIN_MIN_TIME < now) {
-                double drop = energy - sreNRG;
-                if (drop >= MIN_BULLET_POWER && drop <= MAX_BULLET_POWER &&
-                        (getWallDistance() > GPBase.TANK_SIZE/2 || velocity>0)) {
-                    double bspeed = getBulletSpeed(drop);
-                    gpBase.waves.add(new Wave(name, bspeed, scanLastUpdate, this, gpBase));
-                    this.lastFire = scanLastUpdate;
-                }
-            }
+        checkEnemyFire(gpBase, now, sreNRG, waves);
 
         direction = trigoAngle(sre.getHeadingRadians());
         angle = trigoAngle(gpBase.getHeadingRadians() + sre.getBearingRadians());
-        rDirection = normalRelativeAngle(direction - angle);
+
         x = gpBase.getX() + distance * cos(angle);
         y = gpBase.getY() + distance * sin(angle);
 
@@ -109,7 +89,7 @@ public class Enemy extends Point.Double implements Tank {
             moveLog.add(new Move(getKDPoint(gpBase), turn, velocity, now - scanLastUpdate));
 
             if (moveLog.size() >= gpBase.aimingMoveLogSize) {
-                Move m = moveLog.get(gpBase.aimingMoveLogSize-1);
+                Move m = moveLog.get(gpBase.aimingMoveLogSize - 1);
                 if (kdTree == null) kdTree = new KdTree.SqrEuclid<List<Move>>(m.getKdpoint().length, KDTREE_MAX_SIZE);
                 try {
                     List<Move> lm = new ArrayList<>(moveLog.subList(0, gpBase.aimingMoveLogSize));
@@ -122,31 +102,69 @@ public class Enemy extends Point.Double implements Tank {
             }
         }
         alive = true;
-        setEnergy(sreNRG);
+        setEnergy(sreNRG, 0);
         scanLastUpdate = lastUpdate = now;
         scanVelocity = velocity;
         scanDirection = direction;
         //out.printf("%s x=%d y=%d a=%d dir=%d\n", name, (int) x, (int) y, degree(angle), degree(direction));
     }
 
+    public void move(long iteration, long now) {
+        for (long i = 0; i < iteration; i++) {
+            velocity = checkMinMax(velocity + accel, vMin, vMax);
+            direction += min(abs(rotationRate), getTurnRateRadians(velocity)) * signum(rotationRate);
+            try {
+                double h = gpBase.ensureXInBatleField(x + velocity * cos(direction));
+                double v = gpBase.ensureYInBatleField(y + velocity * sin(direction));
+                x = h;
+                y = v;
+            } catch (Exception ex) {
+                // HitWall
+            }
+        }
+
+        angle = normalAbsoluteAngle(GPUtils.getAngle(gpBase.getCurrentPoint(), this));
+        lastUpdate = now;
+
+    }
+
+    public void die() {
+        energy = fEnergy = rotationRate = velocity = scanVelocity = 0;
+        scanLastUpdate = lastFire = 0;
+        alive = false;
+    }
+
+    private void checkEnemyFire(GPBase gpBase, long now, double sreNRG, ArrayList<Wave> waves) {
+        //if (gpBase.aliveCount<3)
+            if (energy > sreNRG && this.lastFire + gpBase.FIRE_AGAIN_MIN_TIME < now) {
+                double drop = energy - sreNRG;
+                if (drop >= 0) {
+                    double bspeed = getBulletSpeed(max(min(drop, MAX_BULLET_POWER), MIN_BULLET_POWER));
+                    waves.add(new Wave(name, bspeed, scanLastUpdate, this, gpBase));
+                    this.lastFire = scanLastUpdate;
+
+                    if (gpBase.aliveCount == 1)
+                        // defense fire can be done
+                        gpBase.defenseFire = true;
+                }
+            }
+    }
+
     public double[] getKDPoint(GPBase robot) {
-        return new double[] {
-                getX() * 200 / robot.FIELD_WIDTH,
-                getY() * 200 / robot.FIELD_HEIGHT,
-                (normalAbsoluteAngle(direction))*200 / 2 / PI,
-                velocity * 200 / MAX_VELOCITY,
-                (velocity >= 0) ? 100 : 0,
-                //accel * 100 / DECELERATION,
-                //(accel>=0) ? 100 : 0,
-                rotationRate * 100 / MAX_TURN_RATE_RADIANS,
-                (rotationRate>=0) ? 100 : 0,
-                // robot.enemyCount* 100 /robot.aliveCount,
-                //robot.getCurrentPoint().distance(this) * 100 / GPBase.dmax,
-                //normalAbsoluteAngle(direction-GPUtils.getAngle(this, robot.getCurrentPoint())) * 100 / 2 / PI,
+        return new double[]{
+                robot.aliveCount * 20,
+                getX() / robot.FIELD_WIDTH/10,
+                getY() / robot.FIELD_HEIGHT/10,
+                (normalAbsoluteAngle(direction)) * 5 / PI,
+                velocity / MAX_VELOCITY,
+                (velocity >= 0) ? 20 : 0,
+                rotationRate / MAX_TURN_RATE_RADIANS,
+                (rotationRate >= 0) ? 1 : 0,
                 energy,
-                //robot.getEnergy(),
-                //(1/(robot.conerDistance(this)+ java.lang.Double.MIN_VALUE)) * 100 / robot.dmax,
-                //((double) robot.getTime() - robot.lastFireTime) / GPBase.FIRE_AGAIN_MIN_TIME / 100
+                robot.aliveCount == 1 ? robot.getCurrentPoint().distance(this) / GPBase.DISTANCE_MAX : 0,
+                robot.aliveCount == 1 ? normalAbsoluteAngle(robot.getHeadingRadians()) / 2 / PI : 0,
+                robot.aliveCount == 1 ? robot.getEnergy() : 0,
+                robot.aliveCount == 1 ? robot.getVelocity()/MAX_VELOCITY : 0,
         };
     }
 
@@ -170,15 +188,16 @@ public class Enemy extends Point.Double implements Tank {
         return energy;
     }
 
+    public void setEnergy(double energy, ArrayList<AimingData> aimDatas) {
+        this.energy = energy;
+        this.fEnergy = energy;
+        aimDatas.stream().filter(a -> a.getTarget() == this)
+                .forEach(a -> this.fEnergy -= getBulletDamage(a.getFirePower()));
+    }
+
     @Override
     public double getAngle() {
         return angle;
-    }
-
-    public void setEnergy(double energy) {
-        double delta = energy - this.energy;
-        fEnergy += delta;
-        this.energy = energy;
     }
 
     public void setEnergy(double energy, double bulletDommage) {
@@ -228,24 +247,44 @@ public class Enemy extends Point.Double implements Tank {
         return turnVarianceMax;
     }
 
-    public KdTree<List<Move>> getKdTree() {
-        return kdTree;
+    public long getLastUpdate() {
+        return lastUpdate;
     }
 
-    public List<Move> getMoveLog() {
-        return moveLog;
+    public long getScanLastUpdate() {
+        return scanLastUpdate;
+
+    }
+    public Boolean isAlive() {
+        return alive;
+    }
+
+
+    public double getFEnergy() { return fEnergy; }
+    public void addFEnergy(double v) { fEnergy += v; }
+
+    public void removeFEnergy(double v) { fEnergy -= v; }
+    public int getHitMe() { return hitMe; }
+
+    public void hitMe() { hitMe++; }
+    public long getLastUpdateDelta() {
+        return  lastUpdate-scanLastUpdate;
+    }
+
+    public KdTree<List<Move>> getKdTree() {
+        return kdTree;
     }
 
     public GPBase getGpBase() {
         return gpBase;
     }
 
-    public double getWallDistance() {
-        return min(min(x, gpBase.FIELD_WIDTH-x), min(y, gpBase.FIELD_HEIGHT-y));
-    }
-    public double getFEnergy() {
-        return fEnergy;
+    public List<Move> getMoveLog() {
+        return moveLog;
     }
 
+    public double getWallDistance() {
+        return min(min(x, gpBase.FIELD_WIDTH - x), min(y, gpBase.FIELD_HEIGHT - y));
+    }
 }
 

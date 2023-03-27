@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Math.*;
-import static robocode.Rules.MAX_VELOCITY;
+import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 
@@ -64,7 +64,7 @@ public class GPUtils {
         int r = c.getRed();
         int g = c.getGreen();
         int b =  c.getBlue();
-        Color color = new Color(r, g, b);
+        Color color = new Color(r, g, b, (int) (w.getPower()/MAX_BULLET_POWER*255));
         g2D.setColor(color);
         int waveArc = (int) (w.arc * 180 / PI);
         int d = (int) w.getDistance(tick);
@@ -105,6 +105,17 @@ public class GPUtils {
     static double computeTurnGun2Target(GPBase base, Point.Double target) {
         double ga = trigoAngle(base.getGunHeadingRadians());
         double ta = getAngle(base.getCurrentPoint(), target);
+        double angle = (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
+
+        if (abs(angle) < GUN_TURN_RATE_RADIANS)
+            return angle;
+
+        return computeTurnGun2TargetNextPos(base, target);
+    }
+
+    static double computeTurnGun2TargetNextPos(GPBase base, Point.Double target) {
+        double ga = trigoAngle(base.getGunHeadingRadians());
+        double ta = getAngle(base.getNextPoint(), target);
 
         return  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
     }
@@ -188,7 +199,7 @@ public class GPUtils {
             int x=from.x + p*(to.x-from.x)/d;
             int y=from.y + p*(to.y-from.y)/d;
             if (x<dangerMap.length && y <dangerMap[x].length)
-                danger += dangerMap[x][y];
+                danger += pow(dangerMap[x][y], 2);
         }
         return danger/d;
     }
