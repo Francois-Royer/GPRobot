@@ -38,9 +38,9 @@ public class GPBase extends AdvancedRobot {
     public double BORDER_OFFSET = TANK_SIZE * 7 / 8;
     public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 3;
     public static double DANGER_DISTANCE_MAX;
-    private static int DANGER_WIDTH;
-    private static int DANGER_HEIGHT;
-    private static int DANGER_SCALE = TANK_SIZE_INT * 2 / 5;
+    public static int DANGER_WIDTH;
+    public  static int DANGER_HEIGHT;
+    public  static int DANGER_SCALE = TANK_SIZE_INT;// * 2 / 5;
     public int aimingMoveLogSize;
     public int moveLogMaxSize;
     public int aliveCount;
@@ -168,22 +168,17 @@ public class GPBase extends AdvancedRobot {
     }
 
     private void updateDangerMap() {
-        Arrays.stream(dangerMap).forEach(a -> Arrays.fill(a, 0));
-        int maxHitme = getEmenmiesMaxHitMe();
         conersDanger();
-
-        enemies.values().stream().filter(e -> e.isAlive() && e.getScanLastUpdate() > 0).forEach(enemy -> enemyDanger(enemy, maxHitme));
+        enemysDanger();
         waves.stream().forEach(wave -> waveDanger(wave));
     }
 
     private void conersDanger() {
         for (int x = 0; x < DANGER_WIDTH; x++)
-            for (int y = 0; y < DANGER_HEIGHT; y++)
-                dangerMap[x][y] = cornerMap[x][y];
-
+            System.arraycopy(cornerMap[x], 0, dangerMap[x], 0, DANGER_HEIGHT);
     }
-    private static double ROTATION_FACTOR=2.4*PI;
-    private static double RADIUS_STEP=.5;
+    public static double ROTATION_FACTOR=2.4*PI;
+    public static double RADIUS_STEP=.5;
     private void computeCornerDangerMap() {
         double dmax = 1;
         double rmax = DANGER_DISTANCE_MAX / 2;
@@ -199,34 +194,17 @@ public class GPBase extends AdvancedRobot {
             }
         }
     }
-    private void enemyDanger(Enemy enemy, int maxHitMe) {
-        double[][] enemyMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
-        double max_danger_radius =  TANK_SIZE*2/DANGER_SCALE;
-        int x = (int) enemy.getX() / DANGER_SCALE;
-        int y = (int) enemy.getY() / DANGER_SCALE;
-        for (double r = DANGER_DISTANCE_MAX - 1; r > 0; r -= RADIUS_STEP) {
-            int num = (int) (r * ROTATION_FACTOR);
-            for (int i = 0; i < num; i++) {
-                double a = i * PI / num * 2;
-                int h = x + (int) (r * cos(a));
-                int v = y + (int) (r * sin(a));
-                if (h >= 0 && v >= 0 && h < DANGER_WIDTH && v < DANGER_HEIGHT) {
-                    if (sqrt(pow(x-h, 2)+pow(y-v, 2)) > max_danger_radius) {
-                        enemyMap[h][v] = Math.pow((DANGER_DISTANCE_MAX - r + TANK_SIZE * 2 / DANGER_DISTANCE_MAX) / (DANGER_DISTANCE_MAX), 4);
-                        enemyMap[h][v] *= (enemy.getHitMe() + 1) / (maxHitMe + 1);
-                    } else
-                        enemyMap[h][v] = 1;
-                }
+    private void enemysDanger() {
+        for (int x=0; x<DANGER_WIDTH; x++)
+            for (int y=0; y<DANGER_HEIGHT; y++) {
+                double danger = dangerMap[x][y];
+                for (Enemy enemy : enemies.values())
+                    if (enemy.isAlive() && enemy.getScanLastUpdate() > 0)
+                        danger = max(danger, enemy.getDanger(x, y));
+                dangerMap[x][y]=danger;
             }
-        }
-
-        if (x >= 0 && x < DANGER_WIDTH && y >= 0 && y < DANGER_HEIGHT)
-            enemyMap[x][y] = 1;
-
-        for (x = 0; x < DANGER_WIDTH; x++)
-            for (y = 0; y < DANGER_HEIGHT; y++)
-                dangerMap[x][y] = max(dangerMap[x][y], enemyMap[x][y]);
     }
+
 
     private void waveDanger(Wave wave) {
         double[][] waveMap = new double[DANGER_WIDTH][DANGER_HEIGHT];
@@ -310,7 +288,7 @@ public class GPBase extends AdvancedRobot {
         return enemies.values().stream().mapToDouble(e -> e.getEnergy()).sum();
     }
 
-    private int getEmenmiesMaxHitMe() {
+    public int getEmenmiesMaxHitMe() {
         int max = 0;
         for (Enemy enemy : enemies.values()) if (enemy.isAlive()) max = max(max, enemy.getHitMe());
         return max;

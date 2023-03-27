@@ -343,7 +343,7 @@ public class ExpressionNode implements Serializable {
             "target.getEnergy()",
             "target.getAngle()",
             "(double) now",
-            "dmax",
+            "DISTANCE_MAX",
             "(double) TANK_SIZE",
             "(double) aliveCount",
             "getEnergy()",
