@@ -5,7 +5,7 @@ import java.awt.*;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
-public class MovingPoint extends Point.Double{
+public class MovingPoint extends Point.Double {
     double velocity;
     double direction;
     long start;

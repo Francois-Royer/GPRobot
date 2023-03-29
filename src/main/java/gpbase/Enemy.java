@@ -5,6 +5,7 @@ import gpbase.kdtree.KdTree;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,12 +48,13 @@ public class Enemy extends Point.Double implements Tank {
     private int hitMe = 0;
     private double energy;
     private KdTree<List<Move>> kdTree = null;
-    double[][] dangerMap;
+    int fireHead =0;
+    int fireMiddle = 0;
+    int fireCircular=0;
 
     public Enemy(ScannedRobotEvent sre, String name, GPBase gpBase, ArrayList<Wave> waves) {
         this.name = name;
         update(sre, gpBase, waves);
-        computeDanger();
     }
 
     public void update(ScannedRobotEvent sre, GPBase gpBase, ArrayList<Wave> waves) {
@@ -137,38 +139,13 @@ public class Enemy extends Point.Double implements Tank {
         alive = false;
     }
 
-    private void computeDanger() {
-        dangerMap = new double[DANGER_WIDTH*2-1][DANGER_HEIGHT*2-1];
-        double max_danger_radius =  TANK_SIZE*2/DANGER_SCALE;
-        int maxHitMe = gpBase.getEmenmiesMaxHitMe();
-        int x = DANGER_WIDTH-1;
-        int y = DANGER_HEIGHT-1;
-        for (double r = DANGER_DISTANCE_MAX - 1; r > 0; r -= RADIUS_STEP) {
-            int num = (int) (r * ROTATION_FACTOR);
-            for (int i = 0; i < num; i++) {
-                double a = i * PI / num * 2;
-                int h = x + (int) (r * cos(a));
-                int v = y + (int) (r * sin(a));
-                if (h >= 0 && v >= 0 && h < DANGER_WIDTH*2-1 && v < DANGER_HEIGHT*2-1) {
-                    if (sqrt(pow(x-h, 2)+pow(y-v, 2)) > max_danger_radius) {
-                        dangerMap[h][v] = Math.pow((DANGER_DISTANCE_MAX - r + TANK_SIZE * 2 / DANGER_DISTANCE_MAX) / (DANGER_DISTANCE_MAX), 4);
-                        dangerMap[h][v] *= (hitMe + 1) / (maxHitMe + 1);
-                    } else
-                        dangerMap[h][v] = 1;
-                }
-            }
-        }
-
-        dangerMap[x][y] = 1;
-    }
-
     private void checkEnemyFire(GPBase gpBase, long now, double sreNRG, ArrayList<Wave> waves) {
         //if (gpBase.aliveCount<3)
             if (energy > sreNRG && this.lastFire + gpBase.FIRE_AGAIN_MIN_TIME < now) {
                 double drop = energy - sreNRG;
                 if (drop >= MIN_BULLET_POWER && drop <=MAX_BULLET_POWER) {
                     double bspeed = getBulletSpeed(drop);
-                    waves.add(new Wave(name, bspeed, scanLastUpdate, this, gpBase));
+                    waves.add(new Wave(this, bspeed, scanLastUpdate, this, gpBase));
                     this.lastFire = scanLastUpdate;
 
                     if (gpBase.aliveCount == 1)
@@ -294,7 +271,7 @@ public class Enemy extends Point.Double implements Tank {
     public void removeFEnergy(double v) { fEnergy -= v; }
     public int getHitMe() { return hitMe; }
 
-    public void hitMe() { hitMe++; computeDanger(); }
+    public void hitMe() { hitMe++; }
     public long getLastUpdateDelta() {
         return  lastUpdate-scanLastUpdate;
     }
@@ -315,8 +292,13 @@ public class Enemy extends Point.Double implements Tank {
         return min(min(x, gpBase.FIELD_WIDTH - x), min(y, gpBase.FIELD_HEIGHT - y));
     }
 
-    public double getDanger(int x, int y) {
-        return dangerMap[x-(int)(getX()/DANGER_SCALE)+DANGER_WIDTH-1][y-(int)(getY()/DANGER_SCALE)+DANGER_HEIGHT-1];
+    public double getDanger(int x, int y, int maxHitMe) {
+        double d = sqrt(pow(x - getX()/DANGER_SCALE, 2) + pow(y - getY()/DANGER_SCALE, 2));
+        if (d > MAX_DANGER_RADIUS) {
+            double danger = Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 4);
+            return danger * (hitMe + 1) / (maxHitMe + 1);
+        }
+        return  1;
     }
 }
 

@@ -11,12 +11,21 @@ import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 
 public class GPUtils {
+
     // -PI -> PI
-    public static double getAngle(Point.Double s, Point.Double d) {
-        double a = acos((d.x - s.x) / s.distance(d));
-        if (d.y < s.y)
-            a = 2 * PI - a;
-        return normalRelativeAngle(a);
+    public static double getAngle(Point.Double a, Point.Double b) {
+        double angle = acos((b.x - a.x) / a.distance(b));
+        if (b.y < a.y)
+            angle = 2 * PI - angle;
+        return normalRelativeAngle(angle);
+    }
+
+    // Return angle of s vertex 0-> PI
+    public static double getVertexAngle(Point.Double s, Point.Double a, Point.Double b) {
+        double ab = a.distance(b);
+        double sa = a.distance(s);
+        double sb = b.distance(s);
+        return acos( (pow(sa, 2) + pow(sb, 2) - pow(ab, 2))/2/sa/sb);
     }
 
     // -PI -> PI
@@ -96,12 +105,6 @@ public class GPUtils {
         return new Point.Double((a.getX()+b.getX())/2,(a.getY()+b.getY())/2);
     }
 
-    static public double arc(Point.Double center, Point.Double a, Point2D.Double b) {
-        double arc =  abs(normalAbsoluteAngle(getAngle(center, a))-normalAbsoluteAngle(getAngle(center, b)));
-        if (arc>PI) arc=2*PI-arc;
-        return arc;
-    }
-
     static double computeTurnGun2Target(GPBase base, Point.Double target) {
         double ga = trigoAngle(base.getGunHeadingRadians());
         double ta = getAngle(base.getCurrentPoint(), target);
@@ -122,21 +125,6 @@ public class GPUtils {
 
     static public double AvoidNan(double value, double def) {
         return Double.isNaN(value) ? def : value;
-    }
-
-    static double minA2(double a[][]) {
-        double min = Double.MAX_VALUE;
-        for (int x=0; x<a.length; x++)
-            for (int y=0; y<a[x].length; y++)
-                min = Math.min(min, a[x][y]);
-        return min;
-    }
-    static double maxA2(double a[][]) {
-        double max = 0;
-        for (int x=0; x<a.length; x++)
-            for (int y=0; y<a[x].length; y++)
-                max = Math.max(max, a[x][y]);
-        return max;
     }
 
     static Point getMinPoint(double a[][]) {
