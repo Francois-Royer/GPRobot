@@ -306,7 +306,7 @@ public abstract class KdTree<T> {
 
         @Override
         public int compareTo(Entry<T> o) {
-            return new Double(distance).compareTo(o.distance);
+            return Double.compare(distance, o.distance);
         }
     }
 

@@ -294,11 +294,10 @@ public class Enemy extends Point.Double implements Tank {
 
     public double getDanger(int x, int y, int maxHitMe) {
         double d = sqrt(pow(x - getX()/DANGER_SCALE, 2) + pow(y - getY()/DANGER_SCALE, 2));
-        if (d > MAX_DANGER_RADIUS) {
-            double danger = Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 4);
-            return danger * (hitMe + 1) / (maxHitMe + 1);
-        }
-        return  1;
+        double danger = 1;
+        if (d >= MAX_DANGER_RADIUS)
+            danger *= (hitMe + 1) / (maxHitMe + 1) * Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 8);
+        return danger;
     }
 }
 

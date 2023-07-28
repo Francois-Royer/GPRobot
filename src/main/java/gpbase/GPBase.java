@@ -40,7 +40,7 @@ public class GPBase extends AdvancedRobot {
     public static double DANGER_DISTANCE_MAX;
     public static int DANGER_WIDTH;
     public  static int DANGER_HEIGHT;
-    public  static int DANGER_SCALE = TANK_SIZE_INT; //* 2 / 5;
+    public  static int DANGER_SCALE = TANK_SIZE_INT / 2;
     public  static double MAX_DANGER_RADIUS = TANK_SIZE * 2 / DANGER_SCALE;
     public int aimingMoveLogSize;
     public int moveLogMaxSize;
@@ -178,10 +178,10 @@ public class GPBase extends AdvancedRobot {
                 double danger = dangerMap[x][y];
                 for (Enemy enemy : enemies.values())
                     if (enemy.isAlive() && enemy.getScanLastUpdate() > 0)
-                        danger = max(danger, enemy.getDanger(x, y, maxHitMe));
+                        danger = enemy.getDanger(x, y, maxHitMe);
                 for (Wave wave : waves)
-                    danger = max(danger, getWaveDanger(wave, x, y));
-                dangerMap[x][y]=danger;
+                    danger += getWaveDanger(wave, x, y, maxHitMe);
+                dangerMap[x][y]+=danger;
             }
     }
 
@@ -193,10 +193,9 @@ public class GPBase extends AdvancedRobot {
     public static double ROTATION_FACTOR=2.4*PI;
     public static double RADIUS_STEP=.5;
     private void computeCornerDangerMap() {
-        double dmax = 1;
         double rmax = DANGER_DISTANCE_MAX / 2;
         for (double r = DANGER_HEIGHT / 2; r < rmax; r += RADIUS_STEP) {
-            double danger = range(r, DANGER_HEIGHT / 2, rmax, 0, dmax);
+            double danger = range(r, DANGER_HEIGHT / 2, rmax, 0, 1);
             int num = (int) (r * ROTATION_FACTOR);
             for (int i = 0; i < num; i++) {
                 double a = i * 2 * PI / num;
@@ -207,21 +206,21 @@ public class GPBase extends AdvancedRobot {
             }
         }
     }
-    public double getWaveDanger(Wave wave, int x, int y) {
+    public double getWaveDanger(Wave wave, int x, int y, int maxHitMe) {
         Point2D.Double waveNow = wave.getPosition(now);
         double d = wave.getDistance(now);
-        Point2D.Double p = new Point2D.Double(x*DANGER_SCALE, y*DANGER_SCALE);
-        double r= p.distance(wave);
+        Point2D.Double p = new Point2D.Double(x * DANGER_SCALE, y * DANGER_SCALE);
+        double r = p.distance(wave);
 
         if (d > r)
             return 0;
 
-        double angle = getVertexAngle(wave, waveNow, p);
+        d = p.distance(waveNow) / DANGER_SCALE;
+        double danger = wave.getPower() / MAX_BULLET_POWER * (wave.enemy.getHitMe() + 1) / (maxHitMe + 1);
+        if (d >= MAX_DANGER_RADIUS)
+            danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 4);
 
-        if (angle> wave.arc ) return 0;
-
-        double fa = normalDistrib(angle+wave.median, wave.median, wave.deviation) / wave.normalMedian;
-        return fa * wave.getPower() / MAX_BULLET_POWER * Math.pow((DANGER_DISTANCE_MAX - (r-d)/DANGER_SCALE) / (DANGER_DISTANCE_MAX), 2);
+        return danger;
     }
 
     private void updateLeftRightEnemies() {
@@ -666,7 +665,7 @@ public class GPBase extends AdvancedRobot {
         BufferedImage img = new BufferedImage(FIELD_WIDTH, FIELD_HEIGHT, TYPE_INT_RGB);
         for (int y = 0; y < DANGER_HEIGHT; y++)
             for (int x = 0; x < DANGER_WIDTH; x++) {
-                int alpha = (int) range(dangerMap[x][y], 0, 1, 0, 100);
+                int alpha = (int) range(dangerMap[x][y], 0, 3, 0, 100);
                 Color c = new Color(r, g, b, alpha);
                 g2D.setColor(c);
                 g2D.fillRect(x * DANGER_SCALE, y * DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
