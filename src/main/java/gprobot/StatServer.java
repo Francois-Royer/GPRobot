@@ -26,7 +26,7 @@ public class StatServer {
         @Override
         public void handle(HttpExchange t) throws IOException {
             String cacheControl="public, max-age=3600";
-            byte[] content = new byte[0];
+            byte[] content;
             int status = 200;
             String path = t.getRequestURI().getPath();
             if (path.length() <= 1) {
@@ -44,7 +44,11 @@ public class StatServer {
                     while (len < content.length)
                         len += is.read(content,len, content.length-len);
                 } catch (Exception e) {
+<<<<<<< HEAD
                     content = ("Ressource "+path+" not found").getBytes();
+=======
+                    content = ("Ressource "+ path + "not found").getBytes();
+>>>>>>> c6643faf0724e217bfcd9f348e75cab02048c120
                     status = 404;
                 }
             }

@@ -195,10 +195,9 @@ public class GPBase extends AdvancedRobot {
     public static double ROTATION_FACTOR=2.4*PI;
     public static double RADIUS_STEP=.5;
     private void computeCornerDangerMap() {
-        double dmax = 1;
         double rmax = DANGER_DISTANCE_MAX / 2;
         for (double r = DANGER_HEIGHT / 2; r < rmax; r += RADIUS_STEP) {
-            double danger = range(r, DANGER_HEIGHT / 2, rmax, 0, dmax);
+            double danger = range(r, DANGER_HEIGHT / 2, rmax, 0, 1);
             int num = (int) (r * ROTATION_FACTOR);
             for (int i = 0; i < num; i++) {
                 double a = i * 2 * PI / num;
@@ -212,8 +211,8 @@ public class GPBase extends AdvancedRobot {
     public double getWaveDanger(Wave wave, int x, int y, int maxHitMe) {
         Point2D.Double waveNow = wave.getPosition(now);
         double d = wave.getDistance(now);
-        Point2D.Double p = new Point2D.Double(x*DANGER_SCALE, y*DANGER_SCALE);
-        double r= p.distance(wave);
+        Point2D.Double p = new Point2D.Double(x * DANGER_SCALE, y * DANGER_SCALE);
+        double r = p.distance(wave);
 
         if (d > r)
             return 0;
@@ -662,7 +661,7 @@ public class GPBase extends AdvancedRobot {
         BufferedImage img = new BufferedImage(FIELD_WIDTH, FIELD_HEIGHT, TYPE_INT_RGB);
         for (int y = 0; y < DANGER_HEIGHT; y++)
             for (int x = 0; x < DANGER_WIDTH; x++) {
-                int alpha = (int) range(dangerMap[x][y], 0, 1, 0, 100);
+                int alpha = (int) range(dangerMap[x][y], 0, 3, 0, 100);
                 Color c = new Color(r, g, b, alpha);
                 g2D.setColor(c);
                 g2D.fillRect(x * DANGER_SCALE, y * DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
