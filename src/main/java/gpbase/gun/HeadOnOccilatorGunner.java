@@ -20,7 +20,7 @@ public class HeadOnOccilatorGunner extends HeadOnGunner {
 
     void addOscilation(AimingData ad) {
         double d = ad.getFiringPosition().distance(ad.getTarget().getGpBase().getCurrentPoint());
-        Double arc = Math.atan(GPBase.TANK_SIZE/2/d);
+        Double arc = Math.atan(GPBase.TANK_SIZE/d);
         Double na = ad.getAngle()+ arc * Math.sin(ad.getTarget().getGpBase().now);
         ad.setAngle(na);
         ad.setFiringPosition(new Point2D.Double(ad.getTarget().getGpBase().getX()+d*Math.cos(na),

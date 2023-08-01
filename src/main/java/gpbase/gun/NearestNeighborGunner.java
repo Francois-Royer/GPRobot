@@ -20,12 +20,12 @@ public class NearestNeighborGunner extends AbtractGunner {
 
     @Override
     public AimingData aim(Enemy enemy) {
-        if (enemy.getKdTree() == null) return null;
+        if (enemy.getMoveKdTree() == null) return null;
 
-        double[] kdPoint = enemy.getKDPoint(enemy.getGpBase());
+        double[] kdPoint = enemy.getMoveKdPoint();
         double firePower = getFirePower(enemy)*2;
         //kdPoint[0] = 100;
-        List<KdTree.Entry<List<Move>>> el = enemy.getKdTree().nearestNeighbor(kdPoint, 5, true);
+        List<KdTree.Entry<List<Move>>> el = enemy.getMoveKdTree().nearestNeighbor(kdPoint, 5, true);
         Point.Double firingPosition = null;
         List<Point.Double> expectedMoves;
 

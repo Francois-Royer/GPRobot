@@ -44,7 +44,7 @@ public class StatServer {
                     while (len < content.length)
                         len += is.read(content,len, content.length-len);
                 } catch (Exception e) {
-                    content = "Ressource not found".getBytes();
+                    content = ("Ressource "+path+" not found").getBytes();
                     status = 404;
                 }
             }

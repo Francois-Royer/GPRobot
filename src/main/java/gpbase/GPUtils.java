@@ -5,6 +5,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import static gpbase.GPBase.DISTANCE_MAX;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
@@ -70,11 +71,7 @@ public class GPUtils {
     }
 
     public static void drawWave(Graphics2D g2D, Color c, Wave w, long tick) {
-        int r = c.getRed();
-        int g = c.getGreen();
-        int b =  c.getBlue();
-        Color color = new Color(r, g, b, (int) (w.getPower()/MAX_BULLET_POWER*255));
-        g2D.setColor(color);
+        g2D.setColor(c);
         int waveArc = (int) (w.arc * 180 / PI);
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
@@ -169,8 +166,10 @@ public class GPUtils {
 
     static List<Point> listClosePoint(Point pc, double d, int maxX, int maxY) {
         List<Point> closePoints = new ArrayList<>();
-        for (int x=0; x<maxX; x++)
-            for (int y=0; y<maxY; y++) {
+        maxX = (int) min(maxX, pc.x+d+1);
+        maxY = (int) min(maxY, pc.y+d+1);
+        for (int x=(int) max(0, pc.x-d-1); x<maxX; x++)
+            for (int y=(int) max(0, pc.y-d-1); y<maxY; y++) {
                 Point pt = new Point(x, y);
                 if (pt.distance(pc)<d) {
                     closePoints.add(pt);
