@@ -25,10 +25,10 @@ public class NearestNeighborGunner extends AbtractGunner {
         double[] kdPoint = enemy.getMoveKdPoint();
         double firePower = getFirePower(enemy)*2;
         //kdPoint[0] = 100;
-        List<KdTree.Entry<List<Move>>> el = enemy.getMoveKdTree().nearestNeighbor(kdPoint, 5, true);
+        List<KdTree.Entry<List<Move>>> el = enemy.getMoveKdTree().nearestNeighbor(kdPoint, 10, true);
         Point.Double firingPosition = null;
         List<Point.Double> expectedMoves;
-
+        if (el.size() == 0) return null;
         while (firePower > MIN_BULLET_POWER && firingPosition == null) {
             firePower/=2;
             for (KdTree.Entry<List<Move>> kdEntry:el) {
@@ -81,7 +81,7 @@ public class NearestNeighborGunner extends AbtractGunner {
                 firePoint.x += dist * cos(dir);
                 firePoint.y += dist * sin(dir);
 
-                if (! pointInBattleField(firePoint,  (double) TANK_SIZE / 2.1))
+                if (! pointInBattleField(firePoint, (double) TANK_SIZE / 2.5))
                     return null;
 
 

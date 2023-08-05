@@ -6,7 +6,7 @@ import robocode.ScannedRobotEvent;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static gpbase.GPBase.*;
@@ -43,7 +43,7 @@ public class Enemy extends Point.Double implements Tank {
     private long scanLastUpdate;
     private long lastFire;
     private Boolean alive = true;
-    private final ArrayList<Move> moveLog = new ArrayList<>();
+    private final List<Move> moveLog = new LinkedList<Move>();
     private GPBase gpBase;
     private int hitMe = 0;
     private double energy;
@@ -55,6 +55,7 @@ public class Enemy extends Point.Double implements Tank {
         this.name = name;
         gpBase.getGunHeat();
         update(sre, gpBase, waves);
+        this.moveKdTree = new KdTree.SqrEuclid<>(getMoveKdPoint().length, KDTREE_MAX_SIZE);
     }
 
     public void update(ScannedRobotEvent sre, GPBase gpBase, ArrayList<Wave> waves) {
@@ -95,17 +96,10 @@ public class Enemy extends Point.Double implements Tank {
 
             moveLog.add(new Move(getMoveKdPoint(), turn, velocity, now - scanLastUpdate));
 
-            if (moveLog.size() >= gpBase.aimingMoveLogSize) {
-                Move m = moveLog.get(gpBase.aimingMoveLogSize - 1);
-                if (moveKdTree == null) moveKdTree = new KdTree.SqrEuclid<>(m.getKdpoint().length, KDTREE_MAX_SIZE);
-                try {
-                    List<Move> lm = new ArrayList<>(moveLog.subList(0, gpBase.aimingMoveLogSize));
-                    Collections.reverse(lm);
-                    moveKdTree.addPoint(m.getKdpoint(), lm);
-                } catch (Exception e) {
-                }
-                if (moveLog.size() > gpBase.moveLogMaxSize)
-                    moveLog.remove(0);
+            if (moveLog.size() > gpBase.aimingMoveLogSize) {
+                Move m = moveLog.get(0);
+                moveKdTree.addPoint(m.getKdpoint(), new ArrayList<>(moveLog.subList(0, gpBase.aimingMoveLogSize)));
+                moveLog.remove(0);
             }
         }
         alive = true;
@@ -161,14 +155,15 @@ public class Enemy extends Point.Double implements Tank {
 
     public double[] getMoveKdPoint() {
         return new double[]{
-                gpBase.aliveCount > 1 ? 1: 0,
-                normalAbsoluteAngle(direction) / PI,
+                //gpBase.aliveCount > 1 ? 1: 0,
+                getWallDistance()/(FIELD_WIDTH+FIELD_HEIGHT)*2,
+                //normalAbsoluteAngle(direction) / 2 / PI,
                 velocity / MAX_VELOCITY,
                 (velocity >= 0) ? 1 : 0,
                 rotationRate / MAX_TURN_RATE_RADIANS,
                 (rotationRate >= 0) ? 1 : 0,
-                energy,
-                gpBase.getCurrentPoint().distance(this) / GPBase.DISTANCE_MAX
+                //energy == 0 ? 10 : 0,
+                //gpBase.getCurrentPoint().distance(this) / GPBase.DISTANCE_MAX
         };
     }
 
@@ -307,7 +302,7 @@ public class Enemy extends Point.Double implements Tank {
     }
 
     public double getWallDistance() {
-        return min(min(x, FIELD_WIDTH - x), min(y, FIELD_HEIGHT - y));
+        return min(x, FIELD_WIDTH - x) + min(y, FIELD_HEIGHT - y);
     }
 
     public double getDanger(int x, int y, int maxHitMe) {

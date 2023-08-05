@@ -69,7 +69,7 @@ public class GPBase extends AdvancedRobot {
     boolean drawWave = false;
     boolean drawDanger = false;
     boolean drawPoint = false;
-    boolean drawAiming = false;
+    boolean drawAiming = true;
     boolean drawShell = false;
     boolean drawEnemy = false;
     private RobotCache robotCache;
@@ -461,8 +461,8 @@ public class GPBase extends AdvancedRobot {
         DANGER_DISTANCE_MAX = DISTANCE_MAX / DANGER_SCALE;
         computeCornerDangerMap();
 
-        aimingMoveLogSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 2) * 2;
-        moveLogMaxSize = aimingMoveLogSize * 100;
+        aimingMoveLogSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 1);
+        moveLogMaxSize = aimingMoveLogSize;
         FIRE_AGAIN_MIN_TIME = (long) (Rules.getGunHeat(MIN_BULLET_POWER) / getGunCoolingRate());
 
         enemyCount = aliveCount = super.getOthers();
@@ -705,8 +705,7 @@ public class GPBase extends AdvancedRobot {
     }
 
     public static boolean pointInBattleField(Point.Double p, double offset) {
-        return (!(p.x < offset)) && (!(p.x >= FIELD_WIDTH - offset)) &&
-                (!(p.y < offset)) && (!(p.y >= FIELD_HEIGHT - offset));
+        return p.x >= offset && p.x < FIELD_WIDTH - offset && p.y >= offset && p.y < FIELD_HEIGHT - offset;
     }
 
     static public boolean pointInBattleField(Point2D.Double p) {
