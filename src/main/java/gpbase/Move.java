@@ -1,21 +1,26 @@
 package gpbase;
 
 public class Move {
-    private double[] kdpoint; // Point for kdtree
+    private double[] patternKdPoint; // Point for kdtree
+    private double[] surferKdPoint; // Point for kdtree
     private double turn, velocity;
     private long duration;
 
-    public Move(double[] kdpoint, double turn, double velocity, long duration) {
-        this.kdpoint = kdpoint;
+    public Move(double[] patternKdPoint, double[] surferKdPoint, double turn, double velocity, long duration) {
+        this.patternKdPoint = patternKdPoint;
+        this.surferKdPoint = surferKdPoint;
         this.turn = turn;
         this.velocity = velocity;
         this.duration = duration;
     }
 
-    public double[] getKdpoint() {
-        return kdpoint;
+    public double[] getPatternKdPoint() {
+        return patternKdPoint;
     }
 
+    public double[] getSurferKdPoint() {
+        return surferKdPoint;
+    }
     public double getTurn() {
         return turn;
     }

@@ -42,6 +42,8 @@ public class Wave extends MovingPoint {
         middle = midle(head, circular);
 
         direction = getAngle(origin, middle);
+        //gpbase.out.printf("direction=%02f ex=%02f ey=%02f rx=%02f ry=%02f\n",direction*180/PI,
+        //        enemy.getX(), enemy.getY(), gpbase.getX(), gpbase.getY());
         if (enemy.getFireKdTree() != null) {
             List<KdTree.Entry<java.lang.Double>> el = enemy.getFireKdTree().nearestNeighbor(enemy.getFireKdPoint(power), 1, true);
 

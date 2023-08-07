@@ -29,7 +29,6 @@ public class Enemy extends Point.Double implements Tank {
     private double turn;
     private double rotationRate = 0;
     private double fEnergy;
-
     private long lastUpdate; // Updated by movement prediction
     private double vMax = 0;
     private double vMin = 0;
@@ -38,16 +37,17 @@ public class Enemy extends Point.Double implements Tank {
     private double velocityVarianceMax = 0;
     private double turnVarianceMax = 0;
     private long scanCount = 0;
-    private double scanDirection;
-    private double scanVelocity;
-    private long scanLastUpdate;
-    private long lastFire;
+    private double prevDirection;
+    private double prevVelocity;
+    private long prevUpdate;
+    private long lastStop;
     private Boolean alive = true;
     private final List<Move> moveLog = new LinkedList<Move>();
     private GPBase gpBase;
     private int hitMe = 0;
     private double energy;
-    private KdTree<List<Move>> moveKdTree = null;
+    private KdTree<List<Move>> patternKdTree = null;
+    private KdTree<List<Move>> surferKdTree = null;
     private KdTree<java.lang.Double> fireKdTree = null;
     double gunHeat=3;
 
@@ -55,7 +55,8 @@ public class Enemy extends Point.Double implements Tank {
         this.name = name;
         gpBase.getGunHeat();
         update(sre, gpBase, waves);
-        this.moveKdTree = new KdTree.SqrEuclid<>(getMoveKdPoint().length, KDTREE_MAX_SIZE);
+        this.patternKdTree = new KdTree.WeightedManhattan<>(getPatternPoint().length, KDTREE_MAX_SIZE);
+        this.surferKdTree = new KdTree.WeightedManhattan<>(getSurferPoint().length, KDTREE_MAX_SIZE);
     }
 
     public void update(ScannedRobotEvent sre, GPBase gpBase, ArrayList<Wave> waves) {
@@ -64,9 +65,11 @@ public class Enemy extends Point.Double implements Tank {
         double sreNRG = sre.getEnergy();
         double distance = sre.getDistance();
         scanCount++;
+
+        if (signum(velocity) != signum(sre.getVelocity()))
+            lastStop = now;
         velocity = sre.getVelocity();
-        gunHeat -= GUN_COOLING_RATE * (now-lastUpdate);
-        if (gunHeat<0) gunHeat=0;
+        gunHeat = max(0, gunHeat - GUN_COOLING_RATE * (now-lastUpdate));
 
         checkEnemyFire(gpBase, now, sreNRG, waves);
 
@@ -78,39 +81,40 @@ public class Enemy extends Point.Double implements Tank {
 
         if (scanCount > 1) {
             double prevTurn = turn;
-            turn = normalRelativeAngle(direction - scanDirection);
+            turn = normalRelativeAngle(direction - prevDirection);
 
             // Compute variances
-            velocityVariance = (abs(velocity - scanVelocity) / (now - scanLastUpdate) + velocityVariance * (VARIANCE_SAMPLING - 1)) / VARIANCE_SAMPLING;
+            velocityVariance = (abs(velocity - prevVelocity) / (now - prevUpdate) + velocityVariance * (VARIANCE_SAMPLING - 1)) / VARIANCE_SAMPLING;
             velocityVarianceMax = max(velocityVariance, velocityVarianceMax);
-            turnVariance = (abs(turn - prevTurn) / (now - scanLastUpdate) + turnVariance * (VARIANCE_SAMPLING - 1)) / VARIANCE_SAMPLING;
+            turnVariance = (abs(turn - prevTurn) / (now - prevUpdate) + turnVariance * (VARIANCE_SAMPLING - 1)) / VARIANCE_SAMPLING;
             turnVarianceMax = max(turnVariance, turnVarianceMax);
 
-            rotationRate = turn / (now - scanLastUpdate);
+            rotationRate = turn / (now - prevUpdate);
             this.rotationRate = checkMinMax(this.rotationRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
-            boolean isDecelerate = abs(velocity) < abs(scanVelocity);
-            accel = checkMinMax(velocity - scanVelocity / (now - scanLastUpdate), isDecelerate ? -DECELERATION : -ACCELERATION, ACCELERATION);
+            boolean isDecelerate = abs(velocity) < abs(prevVelocity);
+            accel = checkMinMax(velocity - prevVelocity / (now - prevUpdate), isDecelerate ? -DECELERATION : -ACCELERATION, ACCELERATION);
 
             vMax = max(vMax, velocity);
             vMin = min(vMin, velocity);
 
-            moveLog.add(new Move(getMoveKdPoint(), turn, velocity, now - scanLastUpdate));
+            moveLog.add(new Move(getPatternPoint(), getSurferPoint(), turn, velocity, now - prevUpdate));
 
             if (moveLog.size() > gpBase.aimingMoveLogSize) {
-                Move m = moveLog.get(0);
-                moveKdTree.addPoint(m.getKdpoint(), new ArrayList<>(moveLog.subList(0, gpBase.aimingMoveLogSize)));
+                List<Move> log = new ArrayList<>(moveLog.subList(moveLog.size()-gpBase.aimingMoveLogSize, moveLog.size()));
+                Move m = log.get(0);
+                patternKdTree.addPoint(m.getPatternKdPoint(), log);
+                surferKdTree.addPoint(m.getSurferKdPoint(), log);
                 moveLog.remove(0);
             }
         }
         alive = true;
         setEnergy(sreNRG, 0);
-        scanLastUpdate = lastUpdate = now;
-        scanVelocity = velocity;
-        scanDirection = direction;
-        //out.printf("%s x=%d y=%d a=%d dir=%d\n", name, (int) x, (int) y, degree(angle), degree(direction));
+        prevUpdate = lastUpdate = now;
+        prevVelocity = velocity;
+        prevDirection = direction;
     }
 
-    public void move(long iteration, long now) {
+    public void move(long iteration) {
         for (long i = 0; i < iteration; i++) {
             velocity = checkMinMax(velocity + accel, vMin, vMax);
             direction += min(abs(rotationRate), getTurnRateRadians(velocity)) * signum(rotationRate);
@@ -125,45 +129,52 @@ public class Enemy extends Point.Double implements Tank {
         }
 
         angle = normalAbsoluteAngle(GPUtils.getAngle(gpBase.getCurrentPoint(), this));
-        lastUpdate = now;
+        lastUpdate += iteration;
         gunHeat -= GUN_COOLING_RATE*iteration;
         if (gunHeat<0) gunHeat=0;
     }
 
     public void die() {
         gunHeat=3;
-        energy = fEnergy = rotationRate = velocity = scanVelocity = 0;
-        scanLastUpdate = lastFire = 0;
+        energy = fEnergy = rotationRate = velocity = prevVelocity = 0;
+        lastUpdate = prevUpdate = 0;
         alive = false;
     }
 
     private void checkEnemyFire(GPBase gpBase, long now, double sreNRG, ArrayList<Wave> waves) {
-        //if (gpBase.aliveCount<3)
-            if (energy > sreNRG && this.lastFire + FIRE_AGAIN_MIN_TIME < now) {
-                double drop = energy - sreNRG;
-                if (drop >= MIN_BULLET_POWER && drop <=MAX_BULLET_POWER) {
-                    gunHeat=1 + (drop / 5);
-                    waves.add(new Wave(this, drop, scanLastUpdate, this, gpBase, getFireKdPoint(drop)));
-                    this.lastFire = scanLastUpdate;
+        double drop = min(energy - sreNRG, MAX_BULLET_POWER);
+        if (drop < MIN_BULLET_POWER || gunHeat>0)
+            return;
 
-                    if (gpBase.aliveCount == 1)
-                        // defense fire can be done
-                        gpBase.defenseFire = true;
-                }
-            }
+        gunHeat = 1 + (drop / 5);
+        waves.add(new Wave(this, drop, prevUpdate, this, gpBase, getFireKdPoint(drop)));
+
+        if (gpBase.aliveCount == 1 && abs(gpBase.getVelocity()) < 1)
+            // defense fire can be done
+            gpBase.defenseFire = true;
     }
 
-    public double[] getMoveKdPoint() {
+    public double[] getPatternPoint() {
         return new double[]{
-                //gpBase.aliveCount > 1 ? 1: 0,
-                getWallDistance()/(FIELD_WIDTH+FIELD_HEIGHT)*2,
-                //normalAbsoluteAngle(direction) / 2 / PI,
+                getForwardWallDistance()/max(FIELD_WIDTH,FIELD_HEIGHT),
                 velocity / MAX_VELOCITY,
                 (velocity >= 0) ? 1 : 0,
                 rotationRate / MAX_TURN_RATE_RADIANS,
-                (rotationRate >= 0) ? 1 : 0,
-                //energy == 0 ? 10 : 0,
-                //gpBase.getCurrentPoint().distance(this) / GPBase.DISTANCE_MAX
+                (rotationRate>= 0) ? 1 : 0,
+                energy == 0 ?  1 : 0
+        };
+    }
+
+    public double[] getSurferPoint() {
+        return new double[]{
+                getForwardWallDistance()/max(FIELD_WIDTH,FIELD_HEIGHT),
+                velocity / MAX_VELOCITY,
+                (velocity >= 0) ? 1 : 0,
+                rotationRate / MAX_TURN_RATE_RADIANS,
+                (rotationRate>= 0) ? 1 : 0,
+                energy == 0 ?  1 : 0,
+                gpBase.getCurrentPoint().distance(this)/DISTANCE_MAX,
+                normalRelativeAngle(direction-angle)/PI
         };
     }
 
@@ -266,8 +277,8 @@ public class Enemy extends Point.Double implements Tank {
         return lastUpdate;
     }
 
-    public long getScanLastUpdate() {
-        return scanLastUpdate;
+    public long getPrevUpdate() {
+        return prevUpdate;
 
     }
     public Boolean isAlive() {
@@ -283,11 +294,15 @@ public class Enemy extends Point.Double implements Tank {
 
     public void hitMe() { hitMe++; }
     public long getLastUpdateDelta() {
-        return  lastUpdate-scanLastUpdate;
+        return  lastUpdate- prevUpdate;
     }
 
-    public KdTree<List<Move>> getMoveKdTree() {
-        return moveKdTree;
+    public KdTree<List<Move>> getPatternKdTree() {
+        return patternKdTree;
+    }
+
+    public KdTree<List<Move>> getSurferKdTree() {
+        return surferKdTree;
     }
 
     public KdTree<java.lang.Double> getFireKdTree() {
@@ -302,16 +317,33 @@ public class Enemy extends Point.Double implements Tank {
     }
 
     public double getWallDistance() {
-        return min(x, FIELD_WIDTH - x) + min(y, FIELD_HEIGHT - y);
+        return sqrt(pow(getWallDistanceX(),2)+pow(getWallDistanceY(),2));
     }
 
+    public double getForwardWallDistance() {
+        return distance(wallIntersection(this, getDynamicDirection()));
+    }
+
+    public double getWallDistanceX() {
+        return min(x, FIELD_WIDTH - x);
+    }
+    public double getWallDistanceY() {
+        return min(y, FIELD_HEIGHT - y);
+    }
+    public double getClosestWallDistance() {
+        return min(getWallDistanceX(), getWallDistanceY());
+    }
     public double getDanger(int x, int y, int maxHitMe) {
         double d = sqrt(pow(x - getX()/DANGER_SCALE, 2) + pow(y - getY()/DANGER_SCALE, 2));
         if (d > MAX_DANGER_RADIUS) {
-            double danger = Math.pow((DANGER_DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DANGER_DISTANCE_MAX, 8);
+            double danger = Math.pow((DANGER_DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DANGER_DISTANCE_MAX, 2);
             return danger * (hitMe + 1) / (maxHitMe + 1);
         }
         return  1;
+    }
+
+    public double getDynamicDirection() {
+        return normalRelativeAngle(direction + ((velocity>=0)?0:PI));
     }
 }
 

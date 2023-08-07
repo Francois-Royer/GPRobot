@@ -5,7 +5,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import static gpbase.GPBase.DISTANCE_MAX;
+import static gpbase.GPBase.*;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
@@ -105,7 +105,7 @@ public class GPUtils {
     static double computeTurnGun2Target(GPBase base, Point.Double target) {
         double ga = trigoAngle(base.getGunHeadingRadians());
         double ta = getAngle(base.getCurrentPoint(), target);
-        double angle = (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
+        double angle =  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
 
         if (abs(angle) < GUN_TURN_RATE_RADIANS)
             return angle;
@@ -234,5 +234,37 @@ public class GPUtils {
 
         return collisionSegSeg(a, b, O, P) ||
                 collisionSegSeg(e, f, O, P);
+    }
+
+    static Point.Double wallIntersection(Point.Double source, double direction) {
+        if (direction == PI/2) return new Point.Double(source.getX(), FIELD_HEIGHT);
+        if (direction == -PI/2) return new Point.Double(source.getX(), 0);
+        if (direction == 0) return new Point.Double(FIELD_WIDTH, source.getY());
+        if (direction == PI) return new Point.Double(0, source.getY());
+
+        if (direction > 0) {
+            if (direction < PI / 2) {
+                double y = source.getY() + (FIELD_WIDTH - source.getX()) * tan(direction);
+                if (y <= FIELD_HEIGHT) return new Point.Double(FIELD_WIDTH, y);
+                double x = source.getX() + (FIELD_HEIGHT - source.getY()) / tan(direction);
+                return new Point.Double(x, FIELD_HEIGHT);
+            }
+            double y = source.getY() - source.getX() * tan(direction);
+            if (y <= FIELD_HEIGHT) return new Point.Double(0, y);
+            double x = source.getX() + (FIELD_HEIGHT -source.getY()) / tan(direction);
+            return new Point.Double(x,  FIELD_HEIGHT);
+        }
+
+        if (direction > -PI / 2) {
+            double y = source.getY() + (FIELD_WIDTH - source.getX()) * tan(direction);
+            if (y >= 0) return new Point.Double(FIELD_WIDTH, y);
+            double x = source.getX() - (source.getY()) / tan(direction);
+            return new Point.Double(x, 0);
+        }
+
+        double y = source.getY() - source.getX() * tan(direction);
+        if (y >= 0) return new Point.Double(0, y);
+        double x = source.getX() - source.getY() / tan(direction);
+        return new Point.Double(x,  0);
     }
 }
