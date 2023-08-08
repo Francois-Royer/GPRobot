@@ -48,15 +48,18 @@ public abstract class AbtractGunner implements Gunner {
         if (enemy.getGpBase().isDefenseFire()) return MIN_BULLET_POWER;
         if (isEasyShot(enemy)) return MAX_BULLET_POWER;
 
-        double d = Math.max(TANK_SIZE*3, Math.min(TANK_SIZE*10, enemy.getGpBase().getCurrentPoint().distance(enemy)));
-        //double power = range((hitRate(enemy) + 2*d)/3, 0, 1, MIN_BULLET_POWER, MAX_BULLET_POWER);
-        double power = range(d, TANK_SIZE*3, TANK_SIZE*10, MAX_BULLET_POWER, MIN_BULLET_POWER);
+        //double d = Math.max(TANK_SIZE*3, Math.min(TANK_SIZE*10, enemy.getGpBase().getCurrentPoint().distance(enemy)));
+        //double power = range(d, TANK_SIZE*3, TANK_SIZE*10, MAX_BULLET_POWER, MIN_BULLET_POWER);
+        double power = MAX_BULLET_POWER;
 
         // Apply a hitrate factor
-        power *= Math.pow(getEnemyRoundFireStat(enemy).getHitRate()+.5, 8);
+        //power *= Math.pow(getEnemyRoundFireStat(enemy).getHitRate()+.5, 8);
 
         // Apply lastScan factor
-        power /= (1+enemy.getLastUpdateDelta());
+        //power /= (1+enemy.getLastUpdateDelta());
+
+        // Apply energy factor
+        power *= enemy.getGpBase().getEnergy()/100;
 
         power = Math.min(MAX_BULLET_POWER, Math.max(MIN_BULLET_POWER, power));
 

@@ -2,6 +2,7 @@ package gpbase;
 
 import gpbase.gun.AimingData;
 import gpbase.kdtree.KdTree;
+import robocode.Rules;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
@@ -42,6 +43,7 @@ public class Enemy extends Point.Double implements Tank {
     private long prevUpdate;
     private long lastStop;
     private Boolean alive = true;
+    private boolean isDecelerate = false;
     private final List<Move> moveLog = new LinkedList<Move>();
     private GPBase gpBase;
     private int hitMe = 0;
@@ -91,7 +93,7 @@ public class Enemy extends Point.Double implements Tank {
 
             rotationRate = turn / (now - prevUpdate);
             this.rotationRate = checkMinMax(this.rotationRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
-            boolean isDecelerate = abs(velocity) < abs(prevVelocity);
+            isDecelerate = abs(velocity) < abs(prevVelocity);
             accel = checkMinMax(velocity - prevVelocity / (now - prevUpdate), isDecelerate ? -DECELERATION : -ACCELERATION, ACCELERATION);
 
             vMax = max(vMax, velocity);
@@ -159,6 +161,7 @@ public class Enemy extends Point.Double implements Tank {
                 getForwardWallDistance()/max(FIELD_WIDTH,FIELD_HEIGHT),
                 velocity / MAX_VELOCITY,
                 (velocity >= 0) ? 1 : 0,
+                accel / (isDecelerate ? DECELERATION : ACCELERATION),
                 rotationRate / MAX_TURN_RATE_RADIANS,
                 (rotationRate>= 0) ? 1 : 0,
                 energy == 0 ?  1 : 0
@@ -166,16 +169,11 @@ public class Enemy extends Point.Double implements Tank {
     }
 
     public double[] getSurferPoint() {
-        return new double[]{
-                getForwardWallDistance()/max(FIELD_WIDTH,FIELD_HEIGHT),
-                velocity / MAX_VELOCITY,
-                (velocity >= 0) ? 1 : 0,
-                rotationRate / MAX_TURN_RATE_RADIANS,
-                (rotationRate>= 0) ? 1 : 0,
-                energy == 0 ?  1 : 0,
-                gpBase.getCurrentPoint().distance(this)/DISTANCE_MAX,
-                normalRelativeAngle(direction-angle)/PI
-        };
+        return concatArray(getPatternPoint(),
+                new double[]{
+                    gpBase.getCurrentPoint().distance(this)/DISTANCE_MAX,
+                    normalRelativeAngle(direction-angle)/PI
+                });
     }
 
     public double[] getFireKdPoint(double firePower) {

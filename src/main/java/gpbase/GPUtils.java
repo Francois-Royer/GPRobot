@@ -1,8 +1,8 @@
 package gpbase;
 
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static gpbase.GPBase.*;
@@ -177,6 +177,21 @@ public class GPUtils {
             }
         return closePoints;
     }
+    static List<Point> listCirclePoint(Point pc, double d, int maxX, int maxY) {
+        List<Point> points = new ArrayList<>();
+        int num = (int) (d * PI * 2.4);
+        Point p = new Point(-1,-1);
+        for (int i = 0; i < num; i++) {
+            double a = i * 2 * PI / num;
+            int x = (int) (pc.getX() + d * cos(a));
+            int y = (int) (pc.getY() + d * sin(a));
+            if (x < 0 || x >= maxX || y < 0 || y >= maxY || (x == p.getX() && y == p.getY()))
+                continue;
+
+            points.add(p = new Point(x, y));
+        }
+        return points;
+    }
 
     static double computeMoveDanger(Point from, Point to, double dangerMap[][]) {
         int d = (int)Math.ceil(from.distance(to));
@@ -186,9 +201,9 @@ public class GPUtils {
             int x=from.x + p*(to.x-from.x)/d;
             int y=from.y + p*(to.y-from.y)/d;
             if (x<dangerMap.length && y <dangerMap[x].length)
-                danger += pow(dangerMap[x][y], 2);
+                danger += dangerMap[x][y];
         }
-        return danger/d;
+        return danger/pow(d,2);
     }
 
     static double normalDistrib(double x, double median, double deviation) {
@@ -266,5 +281,28 @@ public class GPUtils {
         if (y >= 0) return new Point.Double(0, y);
         double x = source.getX() - source.getY() / tan(direction);
         return new Point.Double(x,  0);
+    }
+
+    static <T> T[] concatArray(T[] first, T[] ... rest){
+        int totalLength = first.length;
+        for (T[] array : rest) totalLength += array.length;
+        T[] result = Arrays.copyOf(first, totalLength);
+        int offset = first.length;
+        for (T[] array : rest) {
+            System.arraycopy(array, 0, result, offset, array.length);
+            offset += array.length;
+        }
+        return result;
+    }
+    static double[] concatArray(double[] first, double[] ... rest){
+        int totalLength = first.length;
+        for (double[] array : rest) totalLength += array.length;
+        double[] result = Arrays.copyOf(first, totalLength);
+        int offset = first.length;
+        for (double[] array : rest) {
+            System.arraycopy(array, 0, result, offset, array.length);
+            offset += array.length;
+        }
+        return result;
     }
 }

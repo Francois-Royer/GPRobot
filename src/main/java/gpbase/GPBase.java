@@ -22,7 +22,7 @@ import static robocode.util.Utils.normalRelativeAngle;
 public class GPBase extends AdvancedRobot {
     public static double TANK_SIZE = 36;
     public static int TANK_SIZE_INT = (int) TANK_SIZE;
-    public static double FIRE_TOLERANCE = TANK_SIZE / 2.5;
+    public static double FIRE_TOLERANCE = TANK_SIZE / 4;
     public static int FIELD_WIDTH;
     public static int FIELD_HEIGHT;
     public static Point.Double BATTLE_FIELD_CENTER;
@@ -66,9 +66,9 @@ public class GPBase extends AdvancedRobot {
     public boolean defenseFire = false;
     double[][] dangerMap;
     double[][] cornerMap;
-    boolean drawWave = true;
-    boolean drawDanger = false;
-    boolean drawPoint = false;
+    boolean drawWave = false;
+    boolean drawDanger = true;
+    boolean drawPoint = true;
     boolean drawAiming = true;
     boolean drawShell = false;
     boolean drawEnemy = false;
@@ -99,10 +99,11 @@ public class GPBase extends AdvancedRobot {
         computeSafePosition();
 
         int oc = getOthers();
-        if (oc > 0 && aliveCount() >= oc) {
+        if (aliveCount() == oc && oc > 0) {
             updateLeftRightEnemies();
             double ra = normalAbsoluteAngle(trigoAngle(getRadarHeadingRadians()));
             turnRadarLeft = scanLeftRight(ra, mostLeft.getAngle(), mostRight.getAngle());
+
         } else
             turnRadarLeft = 2 * PI;
 
@@ -182,7 +183,7 @@ public class GPBase extends AdvancedRobot {
                         danger = max(danger, enemy.getDanger(x, y, maxHitMe));
                 for (Wave wave : waves)
                     if (danger<1)
-                        danger = max(danger, getWaveDanger(wave, x, y, maxHitMe));
+                        danger = max(danger, wave.getDanger(x, y, now));
                 dangerMap[x][y]=danger;
             }
     }
@@ -220,12 +221,11 @@ public class GPBase extends AdvancedRobot {
         double angle = getVertexAngle(wave, waveNow, p);
 
         d = p.distance(waveNow) / DANGER_SCALE;
-        double danger = 1;
-        if (d >= MAX_DANGER_RADIUS || true) {
-            //danger *= wave.getPower() / MAX_BULLET_POWER * (wave.enemy.getHitMe() + 1) / (maxHitMe + 1);
+        double danger = wave.getPower() / MAX_BULLET_POWER;
+        if (d >= MAX_DANGER_RADIUS) {
+            //danger *= (wave.enemy.getHitMe() + 1) / (maxHitMe + 1);
             danger *= normalDistrib(angle+wave.median, wave.median, wave.deviation) / wave.normalMedian;
             danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 1);
-            //danger *= range(aliveCount, 1, enemyCount, 1, .1);
         }
 
 
@@ -333,10 +333,11 @@ public class GPBase extends AdvancedRobot {
     }
 
     private void computeSafePositionDangerMap() {
-        int dist = (int) MAX_VELOCITY * 30 / DANGER_SCALE;
+        int dist = (int) MAX_VELOCITY * 15 / DANGER_SCALE;
 
         Point gp = new Point((int) getX() / DANGER_SCALE, (int) getY() / DANGER_SCALE);
         List<Point> points = GPUtils.listClosePoint(gp, dist, DANGER_WIDTH, DANGER_HEIGHT);
+        //List<Point> points = GPUtils.listCirclePoint(gp, dist, DANGER_WIDTH, DANGER_HEIGHT);
         double danger = Double.MAX_VALUE;
         for (Point p : points) {
             double d = GPUtils.computeMoveDanger(gp, p, dangerMap);
@@ -588,7 +589,8 @@ public class GPBase extends AdvancedRobot {
     public void onRobotDeath(RobotDeathEvent event) {
         onEvent(event);
         Enemy enemy = enemies.get(event.getName());
-        enemy.die();
+        if (enemy != null) // If robot die before we scan it
+            enemy.die();
         aliveCount--;
     }
 

@@ -17,13 +17,13 @@ public class CircularGunner extends AbtractGunner {
 
     @Override
     public AimingData aim(Enemy enemy) {
-        double firePower = getFirePower(enemy) * 2;
+        double firePower = getFirePower(enemy);
 
         List<Point.Double> predMoves = new ArrayList<>();
         Point.Double firingPosition = null;
-        while (firePower > MIN_BULLET_POWER && firingPosition == null) {
-            firePower /= 2;
+        while (firePower >= MIN_BULLET_POWER && firingPosition == null) {
             firingPosition = forwardMovementPrediction(enemy, predMoves, firePower);
+            firePower -= .1;
         }
 
         if (firingPosition == null) return null;
