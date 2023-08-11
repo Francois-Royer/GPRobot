@@ -37,7 +37,7 @@ public class BattleControler {
 
             new File(workerFolder, ROBOTS_FOLDER + File.separator).mkdirs();
             copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
-            copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "gpbase");
+            copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "tankbase");
             copyOrLinkFile(new File(RobocodeConf.ROBO_CODE_PATH + File.separator + ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath(),
                     new File(workerFolder, ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath());
         } catch (Exception ex) {

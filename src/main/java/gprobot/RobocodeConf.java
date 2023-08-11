@@ -23,13 +23,10 @@ public class RobocodeConf {
 
     // Jars
     public static final String ROBOCODE_JAR = "robocode.jar";
-
-
     public static final String ROBOTS_FOLDER = "robots";
     public static final String TARGET_PACKAGE = "sample";
     public static final String TARGET_FOLDER = ROBO_CODE_PATH + File.separator + ROBOTS_FOLDER + File.separator + TARGET_PACKAGE;
     public static final BattlefieldSpecification BATTLEFIELD = new BattlefieldSpecification(800, 600);
-
     public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
     public static final String BOT_PREFFIX = "X_GPbot_";
 
@@ -39,7 +36,7 @@ public class RobocodeConf {
     public static final int MAX_GENS = 400;
     public static final int MIN_DEPTH = 2;
     public static final int MAX_DEPTH = 11;
-    public static final int ROUNDS = 50;
+    public static final int ROUNDS = 10;
     public static final int TOURNY_SIZE = 6; // Selection Pressure
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
     public static boolean ONE2ONE = false;

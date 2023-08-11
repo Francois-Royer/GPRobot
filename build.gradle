@@ -50,7 +50,7 @@ shadowJar {
 task copyGPBase(type: Copy) {
     from 'src/main/java'
     from 'build/classes/java/main'
-    include '**/gpbase/**/*.*'
+    include '**/tankbase/**/*.*'
     include '**/net/sf/javaml/core/**/*.*'
     into "$robotcode_home/robots"
     dependsOn(':compileJava')

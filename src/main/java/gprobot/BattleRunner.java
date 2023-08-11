@@ -1,6 +1,5 @@
 package gprobot;
 
-import gpbase.GPBase;
 import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
@@ -72,7 +71,7 @@ public class BattleRunner{
             + result.getBulletDamageBonus()
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
-        return result.getBulletDamage();
+        return result.getScore();
         //return result.getScore();
     }
 
@@ -100,7 +99,7 @@ public class BattleRunner{
         if (opponentsRobots.length > 1 && ONE2ONE)
             fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots).mapToDouble(opponent ->
                 getRobotFitness(robot, new String[]{opponent})
-            ).sum());
+            ).sum())/2/opponents.length;
 
         return fitnessScore;
     }
@@ -112,8 +111,10 @@ public class BattleRunner{
 
         int botScore = br.isPresent() ? getScore(br.get()) : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
+        if (totalScore == 0)
+            return 0;
 
-        return (double) botScore;// / (1+totalScore-botScore);
+        return (double) botScore/(totalScore)*100;
     }
 
     public void startCmdReader() {
