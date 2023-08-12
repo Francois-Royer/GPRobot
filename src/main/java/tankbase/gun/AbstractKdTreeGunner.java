@@ -22,7 +22,8 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
         super(tank);
     }
 
-    public AimingData getKdTreeAimingData(ITank target, double firePower, List<KdTree.Entry<List<Move>>> el) {
+    public AimingData getKdTreeAimingData(ITank target, List<KdTree.Entry<List<Move>>> el) {
+        double firePower = getFirePower(target);
         Point.Double firingPosition = null;
         List<Point.Double> expectedMoves;
         if (el.size() == 0) return null;

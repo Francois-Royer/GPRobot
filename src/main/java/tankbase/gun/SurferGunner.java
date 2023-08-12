@@ -21,13 +21,11 @@ public class SurferGunner extends AbstractKdTreeGunner {
         if (target.getPatternKdTree() == null) return null;
 
         double[] kdPoint = getSurferPoint(target, getTank());
-        double firePower = getFirePower(target)*2;
         List<KdTree.Entry<List<Move>>> el = target.getSurferKdTree().nearestNeighbor(kdPoint, 10, true);
 
-        return getKdTreeAimingData(target, firePower, el);
+        return getKdTreeAimingData(target, el);
     }
 
     @Override
     public Color getColor() { return Color.BLUE; }
-
 }

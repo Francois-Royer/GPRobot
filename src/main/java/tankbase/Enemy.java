@@ -89,9 +89,8 @@ public class Enemy extends Point.Double implements ITank {
                 surferKdTree.addPoint(m.getSurferKdPoint(), log);
                 moveLog.remove(0);
             }
-        }
-
-        if (!alive) fEnergy = energy;
+        } else
+            fEnergy = energy;
 
         alive = true;
         setEnergy(sreNRG, true);
@@ -191,8 +190,8 @@ public class Enemy extends Point.Double implements ITank {
 
     public void setEnergy(double energy, boolean updateFenergy) {
         if (updateFenergy) {
-            double delta = energy - this.energy;
-            fEnergy += delta;
+            double delta = this.energy-energy;
+            fEnergy -= delta;
         }
         this.energy = energy;
     }
@@ -232,7 +231,9 @@ public class Enemy extends Point.Double implements ITank {
 
 
     public double getFEnergy() { return fEnergy; }
-    public void addFEnergy(double v) { fEnergy += v; }
+    public void addFEnergy(double v) {
+        fEnergy += v;
+    }
     public int getHitMe() { return hitMe; }
 
     public void hitMe() { hitMe++; }

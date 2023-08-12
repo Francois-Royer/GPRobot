@@ -61,8 +61,10 @@ public abstract class AbtractGunner implements Gunner {
 
         // Apply energy factor
         power *= tank.getEnergy()/100;
+
         power = Math.min(MAX_BULLET_POWER, Math.max(MIN_BULLET_POWER, power));
 
+        // enemy with 0 energy should be shoot asap for kill bonus and avoid it regain energy
         if (target.getEnergy() == 0)
             power = MIN_BULLET_POWER;
 

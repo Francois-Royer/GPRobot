@@ -47,7 +47,7 @@ shadowJar {
     dependsOn ('jar')
 }
 
-task copyGPBase(type: Copy) {
+task copyBase(type: Copy) {
     from 'src/main/java'
     from 'build/classes/java/main'
     include '**/tankbase/**/*.*'
@@ -60,7 +60,7 @@ task copyLib(type: Copy) {
     from 'build/libs'
     include 'gprobot-all.jar'
     into "$robotcode_home/libs"
-    dependsOn ('shadowJar', 'copyGPBase')
+    dependsOn ('shadowJar', 'copyBase')
 }
 
 task runGPBase(type: Exec) {

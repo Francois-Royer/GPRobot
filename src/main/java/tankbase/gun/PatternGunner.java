@@ -23,10 +23,9 @@ public class PatternGunner extends AbstractKdTreeGunner {
         if (target.getPatternKdTree() == null) return null;
 
         double[] kdPoint = getPatternPoint(target);
-        double firePower = getFirePower(target);
         List<KdTree.Entry<List<Move>>> el = target.getPatternKdTree().nearestNeighbor(kdPoint, 10, true);
 
-        return getKdTreeAimingData(target, firePower, el);
+        return getKdTreeAimingData(target, el);
     }
 
     @Override
