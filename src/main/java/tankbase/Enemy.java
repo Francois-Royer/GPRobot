@@ -133,7 +133,7 @@ public class Enemy extends Point.Double implements ITank {
         gunHeat = 1 + (drop / 5);
         waves.add(new Wave(this, drop, prevUpdate, this, tankBase, getFireKdPoint(drop)));
 
-        if (tankBase.aliveCount == 1 && abs(tankBase.getVelocity()) < 1)
+        if (tankBase.aliveCount == 1)
             // defense fire can be done
             tankBase.defenseFire = true;
     }
