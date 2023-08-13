@@ -1,11 +1,14 @@
 package tankbase.gun;
 
+import robocode.Rules;
 import tankbase.ITank;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static tankbase.TankBase.TANK_SIZE;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.MIN_BULLET_POWER;
@@ -46,11 +49,6 @@ public abstract class AbtractGunner implements Gunner {
     public Color getColor() { return Color.BLACK; }
 
     public double getFirePower(ITank target) {
-        //if (target.getGpBase().isDefenseFire()) return MIN_BULLET_POWER;
-        //if (isEasyShot(target)) return MAX_BULLET_POWER;
-
-        //double d = Math.max(TANK_SIZE*3, Math.min(TANK_SIZE*10, target.getGpBase().getCurrentPoint().distance(target)));
-        //double power = range(d, TANK_SIZE*3, TANK_SIZE*10, MAX_BULLET_POWER, MIN_BULLET_POWER);
         double power = MAX_BULLET_POWER;
 
         // Apply a hitrate factor
@@ -62,7 +60,11 @@ public abstract class AbtractGunner implements Gunner {
         // Apply energy factor
         power *= tank.getEnergy()/100;
 
-        power = Math.min(MAX_BULLET_POWER, Math.max(MIN_BULLET_POWER, power));
+        // shot for remaining energie
+        power = min(power, getBulletPowerForDamage(target.getEnergy()+1));
+
+        // check min/max
+        power = min(MAX_BULLET_POWER, max(MIN_BULLET_POWER, power));
 
         // enemy with 0 energy should be shoot asap for kill bonus and avoid it regain energy
         if (target.getEnergy() == 0)
@@ -71,11 +73,10 @@ public abstract class AbtractGunner implements Gunner {
         return power;
     }
 
-    public boolean isEasyShot(ITank enemy) {
-        //if (enemy.getLastUpdateDelta()>2) return false;
-
-        return enemy.getEnergy() == 0 || enemy.getPosition().distance(tank.getPosition()) < TANK_SIZE*2;
-               // || (enemy.getAccel() == 0 && enemy.getVelocity() == 0 );
+    double getBulletPowerForDamage(double damage) {
+        if (damage < 4)
+            return damage / 4;
+        return (damage+2)/6;
     }
 
     @Override

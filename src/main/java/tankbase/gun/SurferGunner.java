@@ -1,14 +1,11 @@
 package tankbase.gun;
 
-import tankbase.Enemy;
 import tankbase.ITank;
 import tankbase.Move;
 import tankbase.kdtree.KdTree;
 
 import java.awt.*;
 import java.util.List;
-
-import static tankbase.TankUtils.getSurferPoint;
 
 public class SurferGunner extends AbstractKdTreeGunner {
 

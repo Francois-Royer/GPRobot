@@ -14,7 +14,7 @@ import static tankbase.TankUtils.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 
 public class Wave extends MovingPoint {
-    Enemy target;
+    ITank target;
 
     TankBase robotBase;
 
@@ -26,36 +26,24 @@ public class Wave extends MovingPoint {
     double median;
     double normalMedian;
     double deviation;
-    double[] fireKdPoint;
-
     boolean kdangle = false;
 
-    public Wave(Enemy enemy, double power, long start, Point.Double origin, TankBase gpbase, double[] fireKdPoint) {
+    public Wave(ITank target, double power, long start, Point.Double origin, ITank source) {
         super(origin, getBulletSpeed(power), 0, start);
-        this.target = enemy;
-        this.fireKdPoint = fireKdPoint;
-        head = gpbase.getPosition();
+        this.target = target;
+        head = source.getPosition();
         double distance = origin.distance(head);
         double time = distance / velocity;
-        double rv = gpbase.getVelocity();
+        double rv = source.getVelocity();
 
         circular = new Point.Double();
-        circular.x = head.x + cos(gpbase.getHeadingRadians()) * time * rv;
-        circular.y = head.y + sin(gpbase.getHeadingRadians()) * time * rv;
+        circular.x = head.x + cos(source.getHeadingRadians()) * time * rv;
+        circular.y = head.y + sin(source.getHeadingRadians()) * time * rv;
 
         this.arc = max(getVertexAngle(origin, circular, head), .3);
         middle = midle(head, circular);
 
         direction = getPointAngle(origin, middle);
-
-        if (enemy.getFireKdTree() != null) {
-            List<KdTree.Entry<java.lang.Double>> el = enemy.getFireKdTree().nearestNeighbor(enemy.getFireKdPoint(power), 1, true);
-
-            if (el.size() == 1 && el.get(0).distance < 10) {
-                direction = trigoAngle(el.get(0).value);
-                kdangle = true;
-            }
-        }
 
         median = normalAbsoluteAngle(direction);
         deviation = arc / 4;
@@ -79,7 +67,7 @@ public class Wave extends MovingPoint {
 
         d = p.distance(waveNow) / DANGER_SCALE;
         double danger = getPower() / MAX_BULLET_POWER;
-        if (d >= MAX_DANGER_RADIUS|| true) {
+        if (d >= MAX_DANGER_RADIUS) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
             danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 1);
         }

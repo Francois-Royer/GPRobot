@@ -1,8 +1,7 @@
 package tankbase.gun;
 
-import tankbase.Enemy;
 import tankbase.ITank;
-import tankbase.TankBase;
+import tankbase.TankUtils;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -72,7 +71,7 @@ public class CircularGunner extends AbtractGunner {
                 firePoint.x += v * cos(direction);
                 firePoint.y += v * sin(direction);
 
-                if (! pointInBattleField(firePoint,  (double) TANK_SIZE / 2.1))
+                if (! TankUtils.pointInBattleField(firePoint,  (double) TANK_SIZE / 2.1))
                     return null;
 
                 predMoves.add(clonePoint(firePoint));

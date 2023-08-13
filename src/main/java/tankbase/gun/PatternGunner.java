@@ -1,6 +1,5 @@
 package tankbase.gun;
 
-import tankbase.Enemy;
 import tankbase.ITank;
 import tankbase.Move;
 import tankbase.kdtree.KdTree;
@@ -8,9 +7,8 @@ import tankbase.kdtree.KdTree;
 import java.awt.*;
 import java.util.List;
 
-import static tankbase.TankBase.pointInBattleField;
+import static tankbase.TankUtils.pointInBattleField;
 import static java.lang.Math.abs;
-import static tankbase.TankUtils.getPatternPoint;
 
 public class PatternGunner extends AbstractKdTreeGunner {
 

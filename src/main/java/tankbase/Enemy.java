@@ -1,11 +1,11 @@
 package tankbase;
 
+import tankbase.gun.AbstractKdTreeGunner;
 import tankbase.gun.AimingData;
 import tankbase.kdtree.KdTree;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,17 +41,18 @@ public class Enemy extends Point.Double implements ITank {
     private TankBase tankBase;
     private int hitMe = 0;
     private double energy;
-    private KdTree<List<Move>> patternKdTree = null;
-    private KdTree<List<Move>> surferKdTree = null;
-    private KdTree<java.lang.Double> fireKdTree = null;
+    private KdTree.WeightedManhattan<List<Move>> patternKdTree = null;
+    private KdTree.WeightedManhattan<List<Move>> surferKdTree = null;
     double gunHeat=3;
     double angle;
 
     public Enemy(ScannedRobotEvent sre, String name, TankBase tankBase, ArrayList<Wave> waves) {
         this.name = name;
         update(sre, tankBase, waves);
-        this.patternKdTree = new KdTree.WeightedManhattan<>(getPatternPoint(this).length, KDTREE_MAX_SIZE);
-        this.surferKdTree = new KdTree.WeightedManhattan<>(getSurferPoint(this, tankBase).length, KDTREE_MAX_SIZE);
+        patternKdTree = new KdTree.WeightedManhattan<>(AbstractKdTreeGunner.getPatternPoint(this).length, KDTREE_MAX_SIZE);
+        patternKdTree.setWeights(AbstractKdTreeGunner.patternWeights);
+        surferKdTree = new KdTree.WeightedManhattan<>(AbstractKdTreeGunner.getSurferPoint(this, tankBase).length, KDTREE_MAX_SIZE);
+        surferKdTree.setWeights(AbstractKdTreeGunner.surferWeights);
     }
 
     public void update(ScannedRobotEvent sre, TankBase tankBase, ArrayList<Wave> waves) {
@@ -65,9 +66,6 @@ public class Enemy extends Point.Double implements ITank {
         headingRadians = trigoAngle(sre.getHeadingRadians());
         angle = normalAbsoluteAngle(tankBase.getHeadingRadians() - sre.getBearingRadians());
 
-        x = tankBase.getPosition().getX() + distance * cos(angle);
-        y = tankBase.getPosition().getY() + distance * sin(angle);
-
         if (alive) {
             checkEnemyFire(tankBase, now, sreNRG, waves);
             double prevTurn = turn;
@@ -80,7 +78,9 @@ public class Enemy extends Point.Double implements ITank {
             vMax = max(vMax, velocity);
             vMin = min(vMin, velocity);
 
-            moveLog.add(new Move(getPatternPoint(this), getSurferPoint(this, tankBase), turn, velocity, now - prevUpdate));
+            moveLog.add(new Move(AbstractKdTreeGunner.getPatternPoint(this),
+                    AbstractKdTreeGunner.getSurferPoint(this, tankBase),
+                    turn, velocity, now - prevUpdate));
 
             if (moveLog.size() > tankBase.aimingMoveLogSize) {
                 List<Move> log = new ArrayList<>(moveLog.subList(moveLog.size()- tankBase.aimingMoveLogSize, moveLog.size()));
@@ -91,6 +91,9 @@ public class Enemy extends Point.Double implements ITank {
             }
         } else
             fEnergy = energy;
+
+        x = tankBase.getPosition().getX() + distance * cos(angle);
+        y = tankBase.getPosition().getY() + distance * sin(angle);
 
         alive = true;
         setEnergy(sreNRG, true);
@@ -130,27 +133,11 @@ public class Enemy extends Point.Double implements ITank {
         if (drop < MIN_BULLET_POWER || gunHeat>0)
             return;
 
-        gunHeat = 1 + (drop / 5);
-        waves.add(new Wave(this, drop, prevUpdate, this, tankBase, getFireKdPoint(drop)));
+        waves.add(new Wave(this, drop, prevUpdate, this, tankBase));
 
         if (tankBase.aliveCount == 1)
             // defense fire can be done
             tankBase.defenseFire = true;
-    }
-
-    public double[] getFireKdPoint(double firePower) {
-        return new double[]{
-                distance(tankBase.getPosition())/DISTANCE_MAX*100,
-                tankBase.getVelocity() / MAX_VELOCITY*100,
-                tankBase.getHeadingRadians() * 50 / PI,
-                (tankBase.getVelocity() >= 0) ? 100 : 0,
-                firePower/MAX_BULLET_POWER*100
-        };
-    }
-
-    public void addKDFire(double []fireKdPoint, double angle) {
-        if (fireKdTree == null) fireKdTree = new KdTree.SqrEuclid<java.lang.Double>(fireKdPoint.length, KDTREE_MAX_SIZE);
-        fireKdTree.addPoint(fireKdPoint, angle);
     }
 
     // Getters
@@ -234,6 +221,12 @@ public class Enemy extends Point.Double implements ITank {
     public void addFEnergy(double v) {
         fEnergy += v;
     }
+
+    @Override
+    public int getAliveCount() {
+        return tankBase.getAliveCount();
+    }
+
     public int getHitMe() { return hitMe; }
 
     public void hitMe() { hitMe++; }
@@ -249,9 +242,6 @@ public class Enemy extends Point.Double implements ITank {
         return surferKdTree;
     }
 
-    public KdTree<java.lang.Double> getFireKdTree() {
-        return fireKdTree;
-    }
     public TankBase getGpBase() {
         return tankBase;
     }
@@ -299,6 +289,10 @@ public class Enemy extends Point.Double implements ITank {
     @Override
     public boolean isDecelerate() {
         return isDecelerate;
+    }
+
+    public List<AimingData> getAimingLog(String target){
+        return new ArrayList<>();
     }
 }
 

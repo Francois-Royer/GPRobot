@@ -1,26 +1,28 @@
 package tankbase.gun;
 
-import tankbase.Enemy;
 import tankbase.ITank;
 import tankbase.Move;
+import tankbase.TankUtils;
 import tankbase.kdtree.KdTree;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static tankbase.TankBase.TANK_SIZE;
-import static tankbase.TankBase.pointInBattleField;
+import static java.lang.Math.max;
+import static robocode.Rules.*;
+import static robocode.util.Utils.normalRelativeAngle;
+import static tankbase.TankBase.*;
 import static tankbase.TankUtils.clonePoint;
 import static java.lang.Math.*;
-import static robocode.Rules.MIN_BULLET_POWER;
-import static robocode.Rules.getBulletSpeed;
+import static tankbase.TankUtils.concatArray;
 
 abstract public class AbstractKdTreeGunner extends AbtractGunner {
 
     public AbstractKdTreeGunner(ITank tank) {
         super(tank);
     }
+
 
     public AimingData getKdTreeAimingData(ITank target, List<KdTree.Entry<List<Move>>> el) {
         double firePower = getFirePower(target);
@@ -79,7 +81,7 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
                 firePoint.x += dist * cos(dir);
                 firePoint.y += dist * sin(dir);
 
-                if (! pointInBattleField(firePoint, (double) TANK_SIZE / 2.5))
+                if (! TankUtils.pointInBattleField(firePoint, (double) TANK_SIZE / 2.5))
                     return null;
 
 
@@ -90,4 +92,31 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
 
         return firePoint;
     }
+    static public double[] patternWeights = {1,1,1,1,1};
+
+    static public double[] getPatternPoint(ITank target) {
+        Point.Double pos = target.getPosition();
+        return new double[] {
+                target.getPosition().distance(TankUtils.wallIntersection(target.getPosition(),
+                        target.getMovingDirection()))/max(FIELD_WIDTH,FIELD_HEIGHT),
+                target.getVelocity() / MAX_VELOCITY,
+                target.getAccel() / (target.isDecelerate() ? DECELERATION : ACCELERATION),
+                target.getTurnRate() / MAX_TURN_RATE_RADIANS,
+                target.getEnergy() == 0 ?  1 : 0,
+        };
+    }
+
+    static public double[] surferWeights = {1,1,1,1,1,1,1};
+    static public double[] getSurferPoint(ITank target, ITank source) {
+        List<AimingData> aimLog = source.getAimingLog(target.getName());
+
+
+        return concatArray(getPatternPoint(target),
+                new double[] {
+                        target.getPosition().distance(source.getPosition())/DISTANCE_MAX,
+                        normalRelativeAngle(target.getHeadingRadians() -
+                                TankUtils.getPointAngle(source.getPosition(), target.getPosition()))/PI,
+                });
+    }
+
 }

@@ -1,6 +1,7 @@
 package tankbase;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -103,7 +104,7 @@ public class TankUtils {
     }
 
     static double computeTurnGun2Target(TankBase base, Point.Double target) {
-        double ga = trigoAngle(base.getGunHeadingRadians());
+        double ga = base.getGunHeadingRadians();
         double ta = getPointAngle(base.getPosition(), target);
         double angle =  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
 
@@ -114,7 +115,7 @@ public class TankUtils {
     }
 
     static double computeTurnGun2TargetNextPos(TankBase base, Point.Double target) {
-        double ga = trigoAngle(base.getGunHeadingRadians());
+        double ga = base.getGunHeadingRadians();
         double ta = getPointAngle(base.getNextPosition(), target);
 
         return  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
@@ -251,7 +252,7 @@ public class TankUtils {
                 collisionSegSeg(e, f, O, P);
     }
 
-    static Point.Double wallIntersection(Point.Double source, double direction) {
+    public static Point.Double wallIntersection(Point.Double source, double direction) {
         if (direction == PI/2) return new Point.Double(source.getX(), FIELD_HEIGHT);
         if (direction == -PI/2) return new Point.Double(source.getX(), 0);
         if (direction == 0) return new Point.Double(FIELD_WIDTH, source.getY());
@@ -283,7 +284,7 @@ public class TankUtils {
         return new Point.Double(x,  0);
     }
 
-    static <T> T[] concatArray(T[] first, T[] ... rest){
+    public static <T> T[] concatArray(T[] first, T[] ... rest){
         int totalLength = first.length;
         for (T[] array : rest) totalLength += array.length;
         T[] result = Arrays.copyOf(first, totalLength);
@@ -294,7 +295,7 @@ public class TankUtils {
         }
         return result;
     }
-    static double[] concatArray(double[] first, double[] ... rest){
+    public static double[] concatArray(double[] first, double[] ... rest){
         int totalLength = first.length;
         for (double[] array : rest) totalLength += array.length;
         double[] result = Arrays.copyOf(first, totalLength);
@@ -306,27 +307,11 @@ public class TankUtils {
         return result;
     }
 
-    static public double[] getPatternPoint(ITank target) {
-        return new double[]{
-                target.getPosition().distance(wallIntersection(target.getPosition(),
-                        target.getMovingDirection()))/max(FIELD_WIDTH,FIELD_HEIGHT),
-                target.getVelocity() / MAX_VELOCITY,
-                (target.getVelocity() >= 0) ? 1 : 0,
-                target.getAccel() / (target.isDecelerate() ? DECELERATION : ACCELERATION),
-                target.getTurnRate() / MAX_TURN_RATE_RADIANS,
-                (target.getTurnRate()>= 0) ? 1 : 0,
-                target.getEnergy() == 0 ?  1 : 0
-        };
+    public static boolean pointInBattleField(Point.Double p, double offset) {
+        return p.x >= offset && p.x < FIELD_WIDTH - offset && p.y >= offset && p.y < FIELD_HEIGHT - offset;
     }
 
-    static public double[] getSurferPoint(ITank target, ITank source) {
-        return concatArray(getPatternPoint(target),
-                new double[]{
-                        target.getPosition().distance(source.getPosition())/DISTANCE_MAX,
-                        normalRelativeAngle(target.getHeadingRadians() -
-                                getPointAngle(source.getPosition(), target.getPosition()))/PI
-                });
+    static public boolean pointInBattleField(Point2D.Double p) {
+        return pointInBattleField(p, 0);
     }
-
-
 }
