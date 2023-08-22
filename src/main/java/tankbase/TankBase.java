@@ -75,8 +75,8 @@ public class TankBase extends AdvancedRobot implements ITank {
     boolean drawDanger = false;
     boolean drawPoint = false;
     boolean drawAiming = true;
-    boolean drawShell = true;
-    boolean drawEnemy = true;
+    boolean drawShell = false;
+    boolean drawEnemy = false;
     static private RobotCache robotCache;
 
     double turnRate=0;
@@ -194,7 +194,7 @@ public class TankBase extends AdvancedRobot implements ITank {
             for (int y=0; y<DANGER_HEIGHT; y++) {
                 double danger = dangerMap[x][y];
                 for (Enemy enemy : enemies.values())
-                    if (enemy.isAlive() && enemy.getPrevUpdate() > 0 && danger<1)
+                    if (enemy.isAlive() && enemy.getLastScan() > 0 && danger<1)
                         danger = max(danger, enemy.getDanger(x, y, maxHitMe));
                 for (Wave wave : waves)
                     if (danger<1)
@@ -381,16 +381,22 @@ public class TankBase extends AdvancedRobot implements ITank {
     }
 
     private void fireTargetIfPossible(double fire) {
-        if (getGunHeat() > 0 || getEnergy() == 0 || fire == 0 || target == null || aimingData == null ||
-                !target.isAlive() || target.getFEnergy() < 0)
+        if (getGunHeat() > 0 || fire == 0 || target == null || turnAimDatas.size() == 0 ||
+                !target.isAlive() || (target.getFEnergy() < 0 && getAimingLog(target.getName()).size()>0))
             return;
 
-        if (getPosition().distance(aimingData.getFiringPosition()) * abs(tan(getGunTurnRemainingRadians()))
-                > FIRE_TOLERANCE) {
-            //out.printf("Fire on %s rejected by tolerance, turn remaining=%.0f , %.0f\n", target.getName(), getGunTurnRemaining());
+
+        aimingData = null;
+        for (AimingData ad: turnAimDatas)
+            if (getPosition().distance(ad.getFiringPosition()) * abs(tan(getGunTurnRemainingRadians()))
+                < FIRE_TOLERANCE) {
+                aimingData = ad;
+                break;
+            }
+        if (aimingData == null) {
+            //out.printf("Fire on %s rejected by tolerance, turn remaining=%.0f\n", target.getName(), getGunTurnRemaining());
             return;
         }
-
         setFire(fire);
         gpStat.fire();
         target.addFEnergy(-getBulletDamage(fire));
@@ -430,10 +436,13 @@ public class TankBase extends AdvancedRobot implements ITank {
             }
         });
 
-        if (target.getEnergy() == 0 || defenseFire) {
+        turnAimDatas.sort(new AimComparator(target));
+
+        if (target.getEnergy() == 0) {
             aimingData = headOnGunner.aim(target);
             turnAimDatas.add(aimingData);
         }
+
 
         if (aimingData != null) {
             fire = aimingData.getFirePower();
@@ -447,6 +456,7 @@ public class TankBase extends AdvancedRobot implements ITank {
     public long aliveCount() {
         return enemies.values().stream().filter(e -> e.isAlive()).count();
     }
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // AdvancedRobot overrides
@@ -565,17 +575,28 @@ public class TankBase extends AdvancedRobot implements ITank {
 
     @Override
     public void onHitByBullet(HitByBulletEvent hbbe) {
+        onEvent(hbbe);
+
         Enemy e = enemies.get(hbbe.getName());
         if (e == null) return;
 
-        onEvent(hbbe);
         e.setEnergy(e.getEnergy() + getBulletHitBonus(hbbe.getPower()), true);
         e.hitMe();
 
-        Optional<Wave> ow = waves.stream().filter(w -> w.target.getName() == hbbe.getName())
+        Optional<Wave> ow = waves.stream().filter(w -> w.getSource().getName().equals(hbbe.getName()))
                 .min(new WaveComparator(getPosition(), now));
 
         ow.ifPresent(wave -> {
+            double bulletHeading = trigoAngle(hbbe.getHeadingRadians());
+            double headOn = getPointAngle(wave, wave.head);
+            double circular = getPointAngle(wave, wave.circular);
+
+            if (abs(headOn - bulletHeading) < abs(circular -  bulletHeading))
+                e.fireHead();
+            else
+                e.fireCircular();
+
+
             waves.remove(wave);
         });
     }
@@ -807,6 +828,21 @@ public class TankBase extends AdvancedRobot implements ITank {
         @Override
         public int compare(Wave w1, Wave w2) {
             return (int) (p.distance(w1.getPosition(tick)) - p.distance(w2.getPosition(tick)));
+        }
+    }
+
+    class AimComparator implements Comparator<AimingData> {
+        ITank target;
+
+        public AimComparator(ITank target) {
+            this.target = target;
+        }
+
+        @Override
+        public int compare(AimingData a1, AimingData a2) {
+            double d1 = a1.getGunner().getEnemyRoundFireStat(target).getHitRate();
+            double d2 = a2.getGunner().getEnemyRoundFireStat(target).getHitRate();
+            return Double.compare(d1, d2);
         }
     }
 

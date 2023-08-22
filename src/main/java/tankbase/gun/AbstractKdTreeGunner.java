@@ -12,6 +12,7 @@ import java.util.List;
 import static java.lang.Math.max;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalRelativeAngle;
+import static tankbase.Enemy.MAX_GUN_HEAT;
 import static tankbase.TankBase.*;
 import static tankbase.TankUtils.clonePoint;
 import static java.lang.Math.*;
@@ -92,7 +93,7 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
 
         return firePoint;
     }
-    static public double[] patternWeights = {1,1,1,1,1};
+    static public double[] patternWeights = {1,1,1,1};
 
     static public double[] getPatternPoint(ITank target) {
         Point.Double pos = target.getPosition();
@@ -102,11 +103,10 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
                 target.getVelocity() / MAX_VELOCITY,
                 target.getAccel() / (target.isDecelerate() ? DECELERATION : ACCELERATION),
                 target.getTurnRate() / MAX_TURN_RATE_RADIANS,
-                target.getEnergy() == 0 ?  1 : 0,
         };
     }
 
-    static public double[] surferWeights = {1,1,1,1,1,1,1};
+    static public double[] surferWeights = {1,1,1,1,1,1,1, 1};
     static public double[] getSurferPoint(ITank target, ITank source) {
         List<AimingData> aimLog = source.getAimingLog(target.getName());
 

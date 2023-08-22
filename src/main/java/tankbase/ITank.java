@@ -27,6 +27,8 @@ public interface ITank {
 
     double getMovingDirection();
 
+    double getGunHeat();
+
     boolean isDecelerate();
 
     boolean isAlive();

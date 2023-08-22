@@ -99,10 +99,13 @@ public class TankUtils {
         return asin(MAX_VELOCITY/vb);
     }
 
-    static public Point.Double midle(Point.Double a, Point.Double b) {
-        return new Point.Double((a.getX()+b.getX())/2,(a.getY()+b.getY())/2);
+    static public Point.Double middle(Point.Double a, Point.Double b) {
+        return middle(a,b, 1,1);
     }
 
+    static public Point.Double middle(Point.Double a, Point.Double b, int ac, int bc) {
+        return new Point.Double((a.getX()*ac+b.getX()*bc)/(ac+bc),(a.getY()*ac+b.getY()*bc)/(ac+bc));
+    }
     static double computeTurnGun2Target(TankBase base, Point.Double target) {
         double ga = base.getGunHeadingRadians();
         double ta = getPointAngle(base.getPosition(), target);

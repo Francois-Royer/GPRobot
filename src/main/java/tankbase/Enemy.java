@@ -1,5 +1,6 @@
 package tankbase;
 
+import robocode.Rules;
 import tankbase.gun.AbstractKdTreeGunner;
 import tankbase.gun.AimingData;
 import tankbase.kdtree.KdTree;
@@ -21,6 +22,7 @@ import static robocode.util.Utils.normalRelativeAngle;
 
 public class Enemy extends Point.Double implements ITank {
     private static final int KDTREE_MAX_SIZE = 1000;
+    public static final int MAX_GUN_HEAT = 3;
     private final double VARIANCE_SAMPLING = 10;
     private final String name;
     private double velocity;
@@ -29,12 +31,12 @@ public class Enemy extends Point.Double implements ITank {
     private double turn;
     private double turnRate = 0;
     private double fEnergy;
-    private long lastUpdate; // Updated by movement prediction
+    private long lastUpdate; // Updated every turn
     private double vMax = 0;
     private double vMin = 0;
     private double prevHeadingRadians;
     private double prevVelocity;
-    private long prevUpdate;
+    private long lastScan;
     private Boolean alive = false;
     private boolean isDecelerate = false;
     private final List<Move> moveLog = new LinkedList<Move>();
@@ -43,8 +45,11 @@ public class Enemy extends Point.Double implements ITank {
     private double energy;
     private KdTree.WeightedManhattan<List<Move>> patternKdTree = null;
     private KdTree.WeightedManhattan<List<Move>> surferKdTree = null;
-    double gunHeat=3;
+    double gunHeat= MAX_GUN_HEAT;
     double angle;
+
+    int fireHead=1;
+    int fireCircular=0;
 
     public Enemy(ScannedRobotEvent sre, String name, TankBase tankBase, ArrayList<Wave> waves) {
         this.name = name;
@@ -71,16 +76,16 @@ public class Enemy extends Point.Double implements ITank {
             double prevTurn = turn;
             turn = normalRelativeAngle(headingRadians - prevHeadingRadians);
 
-            turnRate = turn / (now - prevUpdate);
+            turnRate = turn / (now - lastScan);
             this.turnRate = checkMinMax(this.turnRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
             isDecelerate = abs(velocity) < abs(prevVelocity);
-            accel = velocity - prevVelocity / (now - prevUpdate);
+            accel = velocity - prevVelocity / (now - lastScan);
             vMax = max(vMax, velocity);
             vMin = min(vMin, velocity);
 
             moveLog.add(new Move(AbstractKdTreeGunner.getPatternPoint(this),
                     AbstractKdTreeGunner.getSurferPoint(this, tankBase),
-                    turn, velocity, now - prevUpdate));
+                    turn, velocity, now - lastScan));
 
             if (moveLog.size() > tankBase.aimingMoveLogSize) {
                 List<Move> log = new ArrayList<>(moveLog.subList(moveLog.size()- tankBase.aimingMoveLogSize, moveLog.size()));
@@ -97,7 +102,7 @@ public class Enemy extends Point.Double implements ITank {
 
         alive = true;
         setEnergy(sreNRG, true);
-        prevUpdate = lastUpdate = now;
+        lastScan = lastUpdate = now;
         prevVelocity = velocity;
         prevHeadingRadians = headingRadians;
     }
@@ -122,9 +127,9 @@ public class Enemy extends Point.Double implements ITank {
     }
 
     public void die() {
-        gunHeat=3;
+        gunHeat= MAX_GUN_HEAT;
         energy = fEnergy = turnRate = velocity = prevVelocity = 0;
-        lastUpdate = prevUpdate = 0;
+        lastUpdate = lastScan = 0;
         alive = false;
     }
 
@@ -133,11 +138,8 @@ public class Enemy extends Point.Double implements ITank {
         if (drop < MIN_BULLET_POWER || gunHeat>0)
             return;
 
-        waves.add(new Wave(this, drop, prevUpdate, this, tankBase));
-
-        if (tankBase.aliveCount == 1)
-            // defense fire can be done
-            tankBase.defenseFire = true;
+        gunHeat = Rules.getGunHeat(drop);
+        waves.add(new Wave(tankBase, drop, lastScan, this, fireHead, fireCircular));
     }
 
     // Getters
@@ -206,8 +208,8 @@ public class Enemy extends Point.Double implements ITank {
         return lastUpdate;
     }
 
-    public long getPrevUpdate() {
-        return prevUpdate;
+    public long getLastScan() {
+        return lastScan;
 
     }
 
@@ -231,7 +233,7 @@ public class Enemy extends Point.Double implements ITank {
 
     public void hitMe() { hitMe++; }
     public long getLastUpdateDelta() {
-        return  lastUpdate-prevUpdate;
+        return  lastUpdate- lastScan;
     }
 
     public KdTree<List<Move>> getPatternKdTree() {
@@ -276,7 +278,7 @@ public class Enemy extends Point.Double implements ITank {
     public double getDanger(int x, int y, int maxHitMe) {
         double d = sqrt(pow(x - getX()/DANGER_SCALE, 2) + pow(y - getY()/DANGER_SCALE, 2));
         if (d > MAX_DANGER_RADIUS) {
-            double danger = Math.pow((DANGER_DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DANGER_DISTANCE_MAX, 2);
+            double danger = Math.pow((DANGER_DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DANGER_DISTANCE_MAX, 4);
             return danger * (hitMe + 1) / (maxHitMe + 1);
         }
         return  1;
@@ -287,12 +289,35 @@ public class Enemy extends Point.Double implements ITank {
     }
 
     @Override
+    public double getGunHeat() {
+        return gunHeat;
+    }
+
+    @Override
     public boolean isDecelerate() {
         return isDecelerate;
     }
 
     public List<AimingData> getAimingLog(String target){
         return new ArrayList<>();
+    }
+
+    int FIRE_STAT_COUNT_MAX=5;
+    public void fireHead() {
+        tankBase.out.printf("%s hit head, %d %d\n", name, fireHead, fireCircular);
+        fireHead++;
+        if (fireHead + fireCircular > FIRE_STAT_COUNT_MAX) {
+            if (fireHead > FIRE_STAT_COUNT_MAX) fireHead--;
+            else fireCircular--;
+        }
+    }
+    public void fireCircular() {
+        tankBase.out.printf("%s hit circular, %d %d\n", name, fireHead, fireCircular);
+        fireCircular++;
+        if (fireHead + fireCircular > FIRE_STAT_COUNT_MAX) {
+            if (fireCircular > FIRE_STAT_COUNT_MAX) fireCircular--;
+            else fireHead--;
+        }
     }
 }
 

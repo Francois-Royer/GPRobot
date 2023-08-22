@@ -1,6 +1,7 @@
 package tankbase;
 
-import tankbase.kdtree.KdTree;
+import tankbase.gun.AimingData;
+import tankbase.gun.CircularGunner;
 
 import static tankbase.TankBase.*;
 import static java.lang.Math.*;
@@ -8,12 +9,12 @@ import static robocode.Rules.*;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.util.List;
 
 import static tankbase.TankUtils.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 
 public class Wave extends MovingPoint {
+    ITank source;
     ITank target;
 
     TankBase robotBase;
@@ -28,25 +29,35 @@ public class Wave extends MovingPoint {
     double deviation;
     boolean kdangle = false;
 
-    public Wave(ITank target, double power, long start, Point.Double origin, ITank source) {
-        super(origin, getBulletSpeed(power), 0, start);
+    public Wave(AimingData ad, long start) {
+        this(ad.getTarget(), ad.getFirePower(), start,  ad.getGunner().getTank());
+    }
+    public Wave(ITank target, double power, long start, ITank source, int headCount, int circularCount) {
+        this(target, power, start, source);
+        middle = middle(head, circular, headCount, circularCount);
+        direction = getPointAngle(this, middle);
+    }
+
+    public Wave(ITank target, double power, long start, ITank source) {
+        super(source.getPosition(), getBulletSpeed(power), 0, start);
+
+        this.source = source;
         this.target = target;
-        head = source.getPosition();
-        double distance = origin.distance(head);
+
+        head = target.getPosition();
+        double distance = distance(head);
         double time = distance / velocity;
-        double rv = source.getVelocity();
 
         circular = new Point.Double();
-        circular.x = head.x + cos(source.getHeadingRadians()) * time * rv;
-        circular.y = head.y + sin(source.getHeadingRadians()) * time * rv;
+        circular.x = head.x + cos(target.getHeadingRadians()) * time * min (MAX_VELOCITY, target.getVelocity()*2);
+        circular.y = head.y + sin(target.getHeadingRadians()) * time * min(MAX_VELOCITY, target.getVelocity()*2);
 
-        this.arc = max(getVertexAngle(origin, circular, head), .3);
-        middle = midle(head, circular);
-
-        direction = getPointAngle(origin, middle);
-
+        this.arc = getVertexAngle(this, circular, head);
+        middle = TankUtils.middle(head, circular);
+        direction = getPointAngle(this, middle)
+        ;
         median = normalAbsoluteAngle(direction);
-        deviation = arc / 4;
+        deviation = arc / 3;
         normalMedian = normalDistrib(median, median, deviation);
     }
 
@@ -69,8 +80,13 @@ public class Wave extends MovingPoint {
         double danger = getPower() / MAX_BULLET_POWER;
         if (d >= MAX_DANGER_RADIUS) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
-            danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 1);
+            danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 2);
         }
         return danger;
     }
+    public ITank getSource() {
+        return source;
+    }
 }
+
+
