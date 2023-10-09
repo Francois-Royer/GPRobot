@@ -2,7 +2,7 @@ package tankbase;
 
 import robocode.Rules;
 import tankbase.gun.AbstractKdTreeGunner;
-import tankbase.gun.AimingData;
+import tankbase.gun.Shell;
 import tankbase.kdtree.KdTree;
 import robocode.ScannedRobotEvent;
 
@@ -23,7 +23,6 @@ import static robocode.util.Utils.normalRelativeAngle;
 public class Enemy extends Point.Double implements ITank {
     private static final int KDTREE_MAX_SIZE = 1000;
     public static final int MAX_GUN_HEAT = 3;
-    private final double VARIANCE_SAMPLING = 10;
     private final String name;
     private double velocity;
     private double headingRadians; // enemy direction
@@ -229,6 +228,11 @@ public class Enemy extends Point.Double implements ITank {
         return tankBase.getAliveCount();
     }
 
+    @Override
+    public long getDate() {
+        return tankBase.getDate();
+    }
+
     public int getHitMe() { return hitMe; }
 
     public void hitMe() { hitMe++; }
@@ -298,7 +302,7 @@ public class Enemy extends Point.Double implements ITank {
         return isDecelerate;
     }
 
-    public List<AimingData> getAimingLog(String target){
+    public List<Shell> getFireLog(String target){
         return new ArrayList<>();
     }
 

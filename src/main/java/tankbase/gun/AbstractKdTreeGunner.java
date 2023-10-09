@@ -1,5 +1,6 @@
 package tankbase.gun;
 
+import robocode.Rules;
 import tankbase.ITank;
 import tankbase.Move;
 import tankbase.TankUtils;
@@ -8,11 +9,11 @@ import tankbase.kdtree.KdTree;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.lang.Math.max;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalRelativeAngle;
-import static tankbase.Enemy.MAX_GUN_HEAT;
 import static tankbase.TankBase.*;
 import static tankbase.TankUtils.clonePoint;
 import static java.lang.Math.*;
@@ -96,7 +97,6 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
     static public double[] patternWeights = {1,1,1,1};
 
     static public double[] getPatternPoint(ITank target) {
-        Point.Double pos = target.getPosition();
         return new double[] {
                 target.getPosition().distance(TankUtils.wallIntersection(target.getPosition(),
                         target.getMovingDirection()))/max(FIELD_WIDTH,FIELD_HEIGHT),
@@ -106,17 +106,19 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
         };
     }
 
-    static public double[] surferWeights = {1,1,1,1,1,1,1, 1};
+    static public double[] surferWeights = {1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     static public double[] getSurferPoint(ITank target, ITank source) {
-        List<AimingData> aimLog = source.getAimingLog(target.getName());
+        List<Shell> aimLog = source.getFireLog(target.getName());
+        double[] surferPoint = { target.getPosition().distance(source.getPosition())/DISTANCE_MAX,
+                normalRelativeAngle(target.getHeadingRadians() -
+                TankUtils.getPointAngle(source.getPosition(), target.getPosition()))/PI, 2, 2, 2, 2, 2, 2, 2, 2};
 
+        for (int i=0; i<aimLog.size() && i*2+3 < surferPoint.length ; i++) {
+            surferPoint[i*2+2] = aimLog.get(i).getAimingData().getFirePower() / MAX_BULLET_POWER;
+            surferPoint[i*2+3] = aimLog.get(i).age(source.getDate()) / DISTANCE_MAX * Rules.getBulletSpeed(MAX_BULLET_POWER);
+        }
 
-        return concatArray(getPatternPoint(target),
-                new double[] {
-                        target.getPosition().distance(source.getPosition())/DISTANCE_MAX,
-                        normalRelativeAngle(target.getHeadingRadians() -
-                                TankUtils.getPointAngle(source.getPosition(), target.getPosition()))/PI,
-                });
+        return concatArray(getPatternPoint(target), surferPoint);
     }
 
 }

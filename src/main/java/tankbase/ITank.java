@@ -1,6 +1,7 @@
 package tankbase;
 
 import tankbase.gun.AimingData;
+import tankbase.gun.Shell;
 import tankbase.kdtree.KdTree;
 
 import java.awt.*;
@@ -36,11 +37,13 @@ public interface ITank {
     KdTree<List<Move>> getPatternKdTree();
     KdTree<List<Move>> getSurferKdTree();
     List<Move> getMoveLog();
-    List<AimingData> getAimingLog(String targetName);
+    List<Shell> getFireLog(String targetName);
     double hit();
 
     void addFEnergy(double energy);
     double getFEnergy();
 
     int getAliveCount();
+
+    long getDate();
 }

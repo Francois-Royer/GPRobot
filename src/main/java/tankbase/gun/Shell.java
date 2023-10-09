@@ -20,5 +20,4 @@ public class Shell extends MovingPoint {
     }
 
     public AimingData getAimingData() { return aimingData; }
-
 }
