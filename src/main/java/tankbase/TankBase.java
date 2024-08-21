@@ -39,12 +39,12 @@ public class TankBase extends AdvancedRobot implements ITank {
     private ArrayList<Wave> waves = new ArrayList<>();
     private ArrayList<Shell> virtualShells = new ArrayList<>();
     public double BORDER_OFFSET = TANK_SIZE * 7 / 8;
-    public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 3;
+    public double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 2;
     public static double DANGER_DISTANCE_MAX;
     public static int DANGER_WIDTH;
-    public  static int DANGER_HEIGHT;
-    public  static int DANGER_SCALE = TANK_SIZE_INT/4;
-    public  static double MAX_DANGER_RADIUS = TANK_SIZE * 2 / DANGER_SCALE;
+    public static int DANGER_HEIGHT;
+    public static int DANGER_SCALE = TANK_SIZE_INT/2;
+    public static double MAX_DANGER_RADIUS = 0;//TANK_SIZE * 2 / DANGER_SCALE;
     public static double GUN_COOLING_RATE=0.1;
     public int aimingMoveLogSize;
     public int moveLogMaxSize;
@@ -60,7 +60,6 @@ public class TankBase extends AdvancedRobot implements ITank {
     public double ahead = 0;
     public double fire = 0;
 
-
     public Enemy prevTarget = null;
     public Enemy target;
     public Enemy mostLeft;
@@ -68,15 +67,13 @@ public class TankBase extends AdvancedRobot implements ITank {
     public AimingData aimingData = null;
     public long lastFireTime = -1;
     public long now;
-    public boolean defenseFire = false;
     double[][] dangerMap;
     double[][] cornerMap;
     boolean drawWave = false;
-    boolean drawDanger = false;
-    boolean drawPoint = false;
+    boolean drawDanger = true;
     boolean drawAiming = true;
     boolean drawShell = false;
-    boolean drawEnemy = false;
+    boolean drawEnemy = true;
     static private RobotCache robotCache;
 
     double turnRate=0;
@@ -98,29 +95,21 @@ public class TankBase extends AdvancedRobot implements ITank {
 
     public void doTurn() {
         now = getTime();
-        updateRobotCache();
 
-        updatePositions();
+        updateRobotCache();
+        updateEnemies();
         updateWaves();
         updateShells();
         updateDangerMap();
+
         computeSafePosition();
+        computeAiming();
+        selectTarget();
 
-        int oc = getOthers();
-        if (aliveCount() == oc && oc > 0) {
-            long lastupdateDelta = updateLeftRightEnemies();
-            if (lastupdateDelta > 5) turnRadarLeft = 2*PI;
-            else {
-                double ra = normalAbsoluteAngle(trigoAngle(getRadarHeadingRadians()));
-                turnRadarLeft = scanLeftRight(ra, mostLeft.getAngle(), mostRight.getAngle());
-            }
-
-        } else
-            turnRadarLeft = 2 * PI;
-
-        turnLeft = getTurn2Safe();
-        ahead = getSafeAhead();
-        turnGunLeft = getTurn2Targert();
+        turnRadarLeft = getTurnRadar();
+        turnLeft = getTurn();
+        ahead = getAhead();
+        turnGunLeft = getTurnGun();
         fire = (aimingData == null) ? 0 : aimingData.getFirePower();
 
         if (aimingData != null) {
@@ -130,7 +119,18 @@ public class TankBase extends AdvancedRobot implements ITank {
         robotSetActions();
         if (target != null)
             prevTarget = target;
-        defenseFire = false;
+    }
+
+    private double getTurnRadar() {
+        int oc = getOthers();
+        if (aliveCount() == oc && oc > 0) {
+            long lastupdateDelta = updateLeftRightEnemies();
+            // One enemy is not scan since 5 turns, we need to scan all around
+            if (lastupdateDelta > 5) return 2*PI;
+            double ra = normalAbsoluteAngle(trigoAngle(getRadarHeadingRadians()));
+            return scanLeftRight(ra, mostLeft.getAngle(), mostRight.getAngle());
+        }
+        return 2 * PI;
     }
 
     public List<Wave> getWave(String targetname) {
@@ -167,8 +167,10 @@ public class TankBase extends AdvancedRobot implements ITank {
                 Point.Double o = vs.getPosition(now + 1);
 
                 boolean hit = collisionCercleSeg(target.getPosition(), TANK_SIZE / 2, o, p);
-                if (hit)
+                if (hit) {
+                    //out.printf("%s hit %s\n", vs.getGunner().getName(), target.getName());
                     vs.getGunner().getEnemyRoundFireStat(aimingData.getTarget()).hit();
+                }
 
                 return !hit;
             } else if (!vs.getTarget().isAlive())
@@ -195,10 +197,11 @@ public class TankBase extends AdvancedRobot implements ITank {
                 double danger = dangerMap[x][y];
                 for (Enemy enemy : enemies.values())
                     if (enemy.isAlive() && enemy.getLastScan() > 0 && danger<1)
-                        danger = max(danger, enemy.getDanger(x, y, maxHitMe));
+                        danger = min(1, danger + enemy.getDanger(x, y, maxHitMe));
+
                 for (Wave wave : waves)
                     if (danger<1)
-                        danger = max(danger, wave.getDanger(x, y, now));
+                        danger = min(1, danger + wave.getDanger(x, y, now)/waves.size());
                 dangerMap[x][y]=danger;
             }
     }
@@ -224,6 +227,7 @@ public class TankBase extends AdvancedRobot implements ITank {
             }
         }
     }
+
     private long updateLeftRightEnemies() {
         long lastUpdateDelta=0;
         List<Enemy> sEnemies = enemies.values().stream().filter(e -> e.isAlive()).collect(Collectors.toList());
@@ -258,32 +262,56 @@ public class TankBase extends AdvancedRobot implements ITank {
     }
 
     private void moveEnemy(Enemy enemy, long now) {
-        if (enemy.getLastUpdate() >= now || enemy.getEnergy() == 0)
+        if ( enemy.getEnergy() == 0)
             return;
-        enemy.move(now - enemy.getLastUpdate());
+        enemy.move(1);
+
     }
 
-    private void updatePositions() {
-        double minDistance = Double.POSITIVE_INFINITY;
-
+    private void selectTarget() {
         Enemy newTarget = null;
+        double minDistance = Double.POSITIVE_INFINITY;
         for (Enemy e : enemies.values()) {
-            moveEnemy(e, now);
-
+            if (e == prevTarget) continue;
+            if (!e.isAlive()) continue;
+            if (e.getTurnAimDatas().isEmpty() && newTarget == null) continue;
             double distance = getPosition().distance(e);
-            if (e.isAlive() && (distance < minDistance|| e.getEnergy()==0) &&
-                    e.getLastUpdateDelta() < 3 && e.getFEnergy()>=0) {
-                // target closest alive opponent
-                newTarget = e;
-                minDistance = distance;
+            if (distance> minDistance) continue;
+            // new target should be 2/3 closer to avoid target switch to often
+            if (prevTarget != null && prevTarget.isAlive() && prevTarget.getFEnergy() > 0 &&
+                    distance > prevTarget.distance(getPosition())*2/3)
+                continue;
+
+            newTarget = e;
+            minDistance = distance;
+        }
+
+        if (newTarget != null) {
+            target = newTarget;
+        }
+    }
+
+    private void computeAiming() {
+        for (Enemy target : enemies.values()) {
+            if (target.isAlive())
+                computeAimingTarget(target);
+        }
+    }
+
+    private void computeAimingTarget(Enemy target) {
+        ArrayList<AimingData> aimings = new ArrayList<>();
+        for (Gunner gunner : gunners.values()) {
+            AimingData ad = gunner.aim(target);
+            if (ad != null) {
+                aimings.add(ad);
             }
         }
-        if (newTarget != null) {
-            if (newTarget.getEnergy() != 0 && prevTarget != null && prevTarget.isAlive() && prevTarget.getFEnergy()>=0 &&
-                target.distance(getPosition()) < prevTarget.distance(getPosition())*2/3)
-                target = prevTarget;
-            else
-                target = newTarget;
+        target.setTurnAimDatas(aimings);
+    }
+
+    private void updateEnemies() {
+        for (Enemy e : enemies.values()) {
+            moveEnemy(e, now);
         }
     }
 
@@ -298,44 +326,7 @@ public class TankBase extends AdvancedRobot implements ITank {
     }
 
     private void computeSafePosition() {
-        computeSafePositionDangerMap();
-    }
-
-    private void computeSafePositionBaryCentric() {
-        double x = 0;
-        double y = 0;
-        double div = getEmenmiesEnergy();
-
-        for (Enemy e : enemies.values()) {
-            double nrj = e.getEnergy();
-            if (nrj > 0) {
-                x += e.x * nrj;
-                y += e.y * nrj;
-            }
-        }
-        unSafePosition = new Point.Double(x / div, y / div);
-
-        if (waves.size() > 0) {
-            x = 0;
-            y = 0;
-            div = 0;
-            for (Wave w : waves) {
-                double power = w.getPower();
-                div += power;
-                Point.Double p = w.getPosition(now);
-                x += p.x * power;
-                y += p.y * power;
-            }
-
-            unSafePosition = new Point.Double(
-                    (unSafePosition.getX() * aliveCount + x / div * waves.size()) / (aliveCount + waves.size()),
-                    (unSafePosition.getY() * aliveCount + y / div * waves.size()) / (aliveCount + waves.size()));
-        }
-        safePosition = getOppositeFarPoint(unSafePosition);
-    }
-
-    private void computeSafePositionDangerMap() {
-        int dist = (int) MAX_VELOCITY * 15 / DANGER_SCALE;
+        int dist = (int) min(DANGER_WIDTH, DANGER_HEIGHT) /2;
 
         Point gp = new Point((int) getX() / DANGER_SCALE, (int) getY() / DANGER_SCALE);
         List<Point> points = TankUtils.listClosePoint(gp, dist, DANGER_WIDTH, DANGER_HEIGHT);
@@ -343,13 +334,18 @@ public class TankBase extends AdvancedRobot implements ITank {
         double danger = Double.MAX_VALUE;
         for (Point p : points) {
             double d = TankUtils.computeMoveDanger(gp, p, dangerMap);
+            double x = max(BORDER_OFFSET, min(FIELD_WIDTH - BORDER_OFFSET, p.getX() * DANGER_SCALE + DANGER_SCALE / 2));
+            double y = max(BORDER_OFFSET, min(FIELD_HEIGHT - BORDER_OFFSET, p.getY() * DANGER_SCALE + DANGER_SCALE / 2));
+            Point2D.Double position = new Point.Double(x, y);
+            for (Enemy e: enemies.values())
+                if (e.isAlive() && collisionCercleSeg(e.getPosition(), TANK_SIZE, getPosition(), position))
+                    d += 100;
             if (d < danger) {
                 danger = d;
-                double x = max(BORDER_OFFSET, min(FIELD_WIDTH - BORDER_OFFSET, p.getX() * DANGER_SCALE + DANGER_SCALE / 2));
-                double y = max(BORDER_OFFSET, min(FIELD_HEIGHT - BORDER_OFFSET, p.getY() * DANGER_SCALE + DANGER_SCALE / 2));
-                safePosition = new Point.Double(x, y);
+                safePosition = position;
             }
         }
+        //out.printf("danger=%.02f, x=%.02f, y=%.02f\n", danger, safePosition.getX(), safePosition.getY());
 
         Point sp = getMaxPoint(dangerMap);
         double x = sp.getX() * DANGER_SCALE + DANGER_SCALE / 2;
@@ -357,7 +353,7 @@ public class TankBase extends AdvancedRobot implements ITank {
         unSafePosition = new Point.Double(x, y);
     }
 
-    private double getTurn2Safe() {
+    private double getTurn() {
         if (safePosition == null)
             return 0;
 
@@ -373,7 +369,7 @@ public class TankBase extends AdvancedRobot implements ITank {
         return normalRelativeAngle(oppositeAngle(sa) - ra);
     }
 
-    private double getSafeAhead() {
+    private double getAhead() {
         if (safePosition == null || getPosition() == null)
             return 0;
 
@@ -381,18 +377,28 @@ public class TankBase extends AdvancedRobot implements ITank {
     }
 
     private void fireTargetIfPossible(double fire) {
-        if (getGunHeat() > 0 || fire == 0 || target == null || turnAimDatas.size() == 0 ||
-                !target.isAlive() || (target.getFEnergy() < 0 && getFireLog(target.getName()).size()>0))
-            return;
 
+        if (getGunHeat() > 0 || fire == 0 || target == null || turnAimDatas.size() == 0 ||
+                !target.isAlive() || (target.getFEnergy() < 0 && getFireLog(target.getName()).size()>0)) {
+            /*if (fire == 0 && getGunHeat() == 0)
+                out.println("no fire");
+            if (target == null)
+                out.println("no target");
+            if (turnAimDatas.size() == 0)
+                out.println("no aiming data");*/
+
+            return;
+        }
 
         aimingData = null;
-        for (AimingData ad: turnAimDatas)
-            if (getPosition().distance(ad.getFiringPosition()) * abs(tan(getGunTurnRemainingRadians()))
-                < FIRE_TOLERANCE) {
+        for (AimingData ad: turnAimDatas) {
+            double a = getPointAngle(getPosition(), ad.getFiringPosition());
+            if (getPosition().distance(ad.getFiringPosition()) * abs(tan(getGunHeadingRadians()-a)) < FIRE_TOLERANCE) {
                 aimingData = ad;
                 break;
             }
+        }
+
         if (aimingData == null) {
             //out.printf("Fire on %s rejected by tolerance, turn remaining=%.0f\n", target.getName(), getGunTurnRemaining());
             return;
@@ -414,14 +420,13 @@ public class TankBase extends AdvancedRobot implements ITank {
         });
     }
 
-    private double getTurn2Targert() {
+    private double getTurnGun() {
         aimingData = null;
 
         if (target == null)
             return 0;
 
         if (getGunHeat() > 0) {
-            fire = 0;
             return computeTurnGun2TargetNextPos(this, target);
         }
 
@@ -431,8 +436,8 @@ public class TankBase extends AdvancedRobot implements ITank {
             AimingData temp = gunner.aim(target);
             if (temp != null) {
                 turnAimDatas.add(temp);
-                double t = computeTurnGun2Target(this, temp.getFiringPosition());
-                if (aimingData == null || temp.hitRate() > aimingData.hitRate() && abs(t) < GUN_TURN_RATE_RADIANS)
+                double t = computeTurnGun2Target(this.getNextPosition(), temp.getFiringPosition(), getGunHeadingRadians());
+                if (aimingData == null || temp.hitRate() > aimingData.hitRate() && abs(t) < GUN_TURN_RATE_RADIANS/1.5)
                     aimingData = temp;
             }
         });
@@ -447,7 +452,7 @@ public class TankBase extends AdvancedRobot implements ITank {
 
         if (aimingData != null) {
             fire = aimingData.getFirePower();
-            return computeTurnGun2Target(this, aimingData.getFiringPosition());
+            return computeTurnGun2Target(getNextPosition(), aimingData.getNextPosition(), getGunHeadingRadians());
         }
 
         fire = 0;
@@ -511,9 +516,6 @@ public class TankBase extends AdvancedRobot implements ITank {
                 break;
             case 'e':
                 drawEnemy = !drawEnemy;
-                break;
-            case 'p':
-                drawPoint = !drawPoint;
                 break;
         }
     }
@@ -623,26 +625,23 @@ public class TankBase extends AdvancedRobot implements ITank {
         if (enemy != null) // If robot die before we scan it
             enemy.die();
         aliveCount--;
+        aliveCount--;
     }
 
     @Override
     public void onPaint(Graphics2D g2D) {
-        if (safePosition != null && drawPoint) {
-            drawFillCircle(g2D, Color.GREEN, safePosition, 10);
-            drawFillCircle(g2D, Color.RED, unSafePosition, 10);
-        }
-
         if (drawEnemy) {
+            int de = TANK_SIZE_INT * ((drawDanger) ? 2: 1);
             for (Enemy e : enemies.values())
                 if (e.isAlive()) {
                     if (e == target)
-                        drawAimCircle(g2D, Color.CYAN, e, TANK_SIZE_INT);
+                        drawAimCircle(g2D, Color.CYAN, e, de);
                     else if (e == mostLeft)
-                        drawCircle(g2D, Color.GREEN, e, TANK_SIZE_INT);
+                        drawCircle(g2D, Color.GREEN, e, de);
                     else if (e == mostRight)
-                        drawCircle(g2D, Color.RED, e, TANK_SIZE_INT);
+                        drawCircle(g2D, Color.RED, e, de);
                     else
-                        drawCircle(g2D, Color.PINK, e, TANK_SIZE_INT);
+                        drawCircle(g2D, Color.PINK, e, de);
                 }
             drawCircle(g2D, Color.green, getPosition(), TANK_SIZE_INT);
         }
@@ -666,14 +665,17 @@ public class TankBase extends AdvancedRobot implements ITank {
 
         if (drawShell) {
             for (Shell vs : virtualShells) {
-                drawFillCircle(g2D, vs.getGunner().getColor(), vs.getPosition(now), 5);
+                drawFillCircle(g2D, vs.getGunner().getColor(), vs.getPosition(now), 10);
                 /*Point2D.Double p = vs.getPosition(now + (int) (DISTANCE_MAX / vs.getVelocity()));
                 g2D.drawLine((int) vs.getX(), (int) vs.getY(), (int) p.getX(), (int) p.getY());*/
             }
         }
 
-        if (drawDanger)
+        if (drawDanger) {
             drawDangerMap(g2D);
+            drawFillCircle(g2D, Color.GREEN, safePosition, 10);
+            g2D.drawLine((int) getX(), (int) getY(), (int) safePosition.getX(), (int) safePosition.getY());
+        }
     }
 
     private void onEvent(Event e) {
@@ -694,7 +696,6 @@ public class TankBase extends AdvancedRobot implements ITank {
                 g2D.setColor(c);
                 g2D.fillRect(x * DANGER_SCALE, y * DANGER_SCALE, DANGER_SCALE, DANGER_SCALE);
             }
-
     }
 
     @Override
@@ -761,34 +762,10 @@ public class TankBase extends AdvancedRobot implements ITank {
         resetRoundStat();
     }
 
-    public Point.Double getOppositeFarPoint(Point.Double point) {
-        double a = oppositeAngle(getPointAngle(BATTLE_FIELD_CENTER, point));
-        double c = acos(FIELD_HEIGHT / FIELD_WIDTH);
-        double x, y;
-        if (a < c && a > -c) { // Right
-            x = FIELD_WIDTH - BORDER_OFFSET;
-            y = (sin(a) * (FIELD_HEIGHT - 2 * BORDER_OFFSET) + FIELD_HEIGHT) / 2;
-        } else if (a > c && a < PI - c) { // top
-            x = (cos(a) * (FIELD_WIDTH - 2 * BORDER_OFFSET) + FIELD_WIDTH) / 2;
-            y = FIELD_HEIGHT - BORDER_OFFSET;
-        } else if (a < -c && a >= -PI + c) { // bottom
-            x = (cos(a) * (FIELD_WIDTH - 2 * BORDER_OFFSET) + FIELD_WIDTH) / 2;
-            y = BORDER_OFFSET;
-        } else { // left
-            x = BORDER_OFFSET;
-            y = (sin(a) * FIELD_HEIGHT + FIELD_HEIGHT) / 2;
-        }
-        return new Point.Double(x, y);
-    }
-
     public Point.Double getNextPosition() {
         double a = getHeadingRadians();
         a += min(abs(getTurnRemaining()), getTurnRateRadians(getVelocity())) * signum(getTurnRemaining());
         return new Point.Double(getX() + getVelocity() * cos(a), getY() + getVelocity() * sin(a));
-    }
-
-    public boolean isDefenseFire() {
-        return defenseFire;
     }
 
     private void setupGunners() {
@@ -814,9 +791,21 @@ public class TankBase extends AdvancedRobot implements ITank {
 
     @Override
     public List<Shell> getFireLog(String name) {
-        return aimLog.stream().filter(aimingData -> aimingData.getTarget().getName().equals(name))
+
+        return aimLog.stream()
+                .filter(aimingData -> aimingData.getTarget().getName().equals(name))
+                .sorted(new ShellDateComparator())
                 .collect(Collectors.toList());
     }
+
+    class ShellDateComparator implements Comparator<Shell> {
+        @Override
+        public int compare(Shell s1, Shell s2) {
+            return (int) (s2.getStart() - s1.getStart());
+        }
+
+    }
+
     class WaveComparator implements Comparator<Wave> {
         Point.Double p;
         long tick;

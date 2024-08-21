@@ -106,15 +106,19 @@ public class TankUtils {
     static public Point.Double middle(Point.Double a, Point.Double b, int ac, int bc) {
         return new Point.Double((a.getX()*ac+b.getX()*bc)/(ac+bc),(a.getY()*ac+b.getY()*bc)/(ac+bc));
     }
-    static double computeTurnGun2Target(TankBase base, Point.Double target) {
-        double ga = base.getGunHeadingRadians();
-        double ta = getPointAngle(base.getPosition(), target);
-        double angle =  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
+
+    /*static double computeTurnGun2Target(TankBase base, Point.Double target) {
+        double angle =  computeTurnGun2Target(base.getPosition(), target, base.getGunHeadingRadians());
 
         if (abs(angle) < GUN_TURN_RATE_RADIANS)
             return angle;
 
         return computeTurnGun2TargetNextPos(base, target);
+    }*/
+
+    static double computeTurnGun2Target(Point.Double base, Point.Double target, double ga) {
+        double ta = getPointAngle(base, target);
+        return  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
     }
 
     static double computeTurnGun2TargetNextPos(TankBase base, Point.Double target) {
@@ -207,7 +211,7 @@ public class TankUtils {
             if (x<dangerMap.length && y <dangerMap[x].length)
                 danger += dangerMap[x][y];
         }
-        return danger/pow(d,2);
+        return danger/=pow(d,1.1);
     }
 
     static double normalDistrib(double x, double median, double deviation) {
@@ -215,44 +219,31 @@ public class TankUtils {
     }
 
 
-    static boolean collisionDroiteSeg(Point.Double A,Point.Double B,Point.Double O,Point.Double P)
+    static boolean collisionCercleSeg(Point2D.Double c, double r,Point2D.Double a,Point2D.Double b)
     {
-        double abx  = B.x - A.x;
-        double aby = B.y - A.y;
-        double apx = P.x - A.x;
-        double apy = P.y - A.y;
-        double aox = O.x - A.x;
-        double aoy = O.y - A.y;
-        if ((abx*apy - aby*apx)*(abx*aoy - aby*aox)<0)
-            return true;
-        else
-            return false;
-    }
-
-    static boolean collisionSegSeg(Point.Double A,Point.Double B,Point.Double O,Point.Double P)
-    {
-        if (collisionDroiteSeg(A,B,O,P)==false)
-            return false;
-        if (collisionDroiteSeg(O,P,A,B)==false)
-            return false;
-        return true;
-    }
-
-    static boolean collisionCercleSeg(Point.Double c, double r,Point.Double O,Point.Double P)
-    {
-        if (c.distance(O) < r || c.distance(P) < r)
+        if (c.distance(a) < r || c.distance(b) < r)
             return true;
 
-        double d = O.distance(P);
-        double angle= acos((O.x-P.x)/d)+ PI/2;
+        double max_dist = max(c.distance(a), c.distance(b));
+        double min_dist = (dot(vector(c,a),vector(b, a)) > 0 && dot(vector(c,b),vector(a, b)) > 0)
+            ? triangleArea(c, a, b) * 2 / a.distance(b)
+            : min(c.distance(a), c.distance(b));double h = triangleArea(c, a, b) * 2 / a.distance(b);
 
-        Point.Double a = new Point.Double(c.x +r*cos(angle), c.y+ r*sin(angle));
-        Point.Double b = new Point.Double(c.x +r*cos(angle+PI), c.y+ r*sin(angle+PI));
-        Point.Double e = new Point.Double(c.x +r*cos(-angle), c.y+ r*sin(-angle));
-        Point.Double f = new Point.Double(c.x +r*cos(-angle+PI), c.y+ r*sin(-angle+PI));
+        return min_dist <= r && max_dist >= r;
+    }
 
-        return collisionSegSeg(a, b, O, P) ||
-                collisionSegSeg(e, f, O, P);
+    static Point2D.Double vector(Point2D.Double a, Point2D.Double b) {
+        return new Point2D.Double(b.getX() - a.getX(), b.getY() - a.getY());
+    }
+
+    static double dot(Point2D.Double a, Point2D.Double b) {
+        return a.getX() * b.getX() + a.getY() * b.getY();
+    }
+
+    static double triangleArea(Point2D.Double a, Point2D.Double b, Point2D.Double c){
+        return Math.abs(a.getX() * (b.getY() - c.getY()) +
+                b.getX() * (c.getY() - a.getY()) +
+                c.getX() * (a.getY() - b.getY())) / 2.0;
     }
 
     public static Point.Double wallIntersection(Point.Double source, double direction) {
@@ -316,5 +307,9 @@ public class TankUtils {
 
     static public boolean pointInBattleField(Point2D.Double p) {
         return pointInBattleField(p, 0);
+    }
+
+    static public Double wallDistance(Point2D.Double p) {
+        return min(min(p.x, FIELD_WIDTH - p.x), min(p.y, FIELD_HEIGHT - p.y));
     }
 }

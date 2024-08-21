@@ -4,6 +4,7 @@ import tankbase.ITank;
 import tankbase.TankUtils;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class AimingData {
     private Gunner gunner;
     private ITank target;
     private Point.Double firingPosition;
+    private Point.Double nextPosition;
     private Double direction;
     private double firePower;
     private List<Point.Double> expectedMoves;
@@ -18,21 +20,22 @@ public class AimingData {
     private double[] kdPoint;
 
     public AimingData(Gunner gunner, ITank target, double firePower) {
-        this(gunner, target, target.getPosition(), firePower, new ArrayList<>());
+        this(gunner, target, target.getPosition(), firePower);
     }
 
     public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, double firePower) {
-        this(gunner, target, firingPosition, firePower, new ArrayList<>());
+        this(gunner, target, firingPosition, firingPosition, firePower, new ArrayList<>());
     }
 
-    public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves) {
-        this(gunner, target, firingPosition, firePower, expectedMoves, null);
+    public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, Point2D.Double nextPosition, double firePower, List<Point.Double> expectedMoves) {
+        this(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, null);
     }
 
-    public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, double firePower, List<Point.Double> expectedMoves, double[] kdPoint) {
+    public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, Point2D.Double nextPosition, double firePower, List<Point.Double> expectedMoves, double[] kdPoint) {
         this.gunner = gunner;
         this.target = target;
         this.firingPosition = firingPosition;
+        this.nextPosition = nextPosition;
         this.firePower = firePower;
         this.expectedMoves = expectedMoves;
         this.direction = TankUtils.getPointAngle(gunner.getTank().getPosition(), firingPosition);
@@ -47,6 +50,10 @@ public class AimingData {
 
     public Point.Double getFiringPosition() {
         return firingPosition;
+    }
+
+    public Point.Double getNextPosition() {
+        return nextPosition;
     }
 
     public double getFirePower() {
@@ -75,6 +82,6 @@ public class AimingData {
     public double hitRate() { return gunner.getEnemyRoundFireStat(target).getHitRate() ;}
 
     public AimingData copy() {
-        return new AimingData(gunner, target, firingPosition, firePower, expectedMoves, kdPoint);
+        return new AimingData(gunner, target, firingPosition, nextPosition,  firePower, expectedMoves, kdPoint);
     }
 }

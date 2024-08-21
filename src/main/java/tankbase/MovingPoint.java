@@ -8,6 +8,7 @@ import static java.lang.Math.sin;
 public class MovingPoint extends Point.Double {
     double velocity;
     double direction;
+
     long start;
 
     public MovingPoint( Point.Double origin, double velocity, double direction,long start)  {
@@ -31,6 +32,10 @@ public class MovingPoint extends Point.Double {
 
     public long age(long now) {
         return (now - start);
+    }
+
+    public long getStart() {
+        return start;
     }
 
     public Point.Double getPosition(long tick) {

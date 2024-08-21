@@ -66,7 +66,7 @@ task copyLib(type: Copy) {
 task runGPBase(type: Exec) {
     workingDir "$robotcode_home"
     commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/GPBaseSample.battle'
-    dependsOn 'copyGPBase'
+    dependsOn 'copyBase'
 }
 
 task runGP(type: Exec) {

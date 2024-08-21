@@ -49,8 +49,8 @@ public class Wave extends MovingPoint {
         double time = distance / velocity;
 
         circular = new Point.Double();
-        circular.x = head.x + cos(target.getHeadingRadians()) * time * min (MAX_VELOCITY, target.getVelocity()*2);
-        circular.y = head.y + sin(target.getHeadingRadians()) * time * min(MAX_VELOCITY, target.getVelocity()*2);
+        circular.x = head.x + cos(target.getHeadingRadians()) * time * target.getVelocity();
+        circular.y = head.y + sin(target.getHeadingRadians()) * time * target.getVelocity();
 
         this.arc = getVertexAngle(this, circular, head);
         middle = TankUtils.middle(head, circular);

@@ -46,4 +46,6 @@ public interface ITank {
     int getAliveCount();
 
     long getDate();
+
+
 }
