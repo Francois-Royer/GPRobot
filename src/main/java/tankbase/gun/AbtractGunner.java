@@ -50,6 +50,9 @@ public abstract class AbtractGunner implements Gunner {
     public Color getColor() { return Color.BLACK; }
 
     public double getFirePower(ITank target) {
+        if (target.getEnergy() == 0)
+            return MIN_BULLET_POWER;
+
         double power = MAX_BULLET_POWER;
         double close = 5*TANK_SIZE;
         double distance = target.getPosition().distance(tank.getPosition());
@@ -59,7 +62,7 @@ public abstract class AbtractGunner implements Gunner {
             power *= 1-distance/DISTANCE_MAX/6;
 
         // Apply a hitrate factor
-        power *= Math.pow(getEnemyRoundFireStat(target).getHitRate()+.5, 4);
+        power *= Math.pow(getEnemyRoundFireStat(target).getHitRate()+.5, 2);
 
         // Apply lastScan factor
         //power /= (1+target.getLastUpdateDelta());

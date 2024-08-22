@@ -8,6 +8,7 @@ import tankbase.kdtree.KdTree;
 import robocode.ScannedRobotEvent;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -348,6 +349,19 @@ public class Enemy extends Point.Double implements ITank {
         this.turnAimDatas = turnAimDatas;
     }
 
+    public AimingData getBestAiming(Point2D.Double from, double gunHeadingRadians) {
+       double maxhitrate=0;
+       AimingData aimingData = null;
+       for (AimingData ad: turnAimDatas) {
+           double hr = ad.getGunner().getEnemyRoundFireStat(this).getHitRate();
+           double a = getPointAngle(from, ad.getFiringPosition());
+           if ((hr > maxhitrate) && (abs(gunHeadingRadians - a) < GUN_TURN_RATE_RADIANS/1.1)) {
+               aimingData = ad;
+           }
+       }
+
+       return aimingData;
+    }
 
 }
 
