@@ -11,8 +11,9 @@ import static gprobot.RobotCodeUtil.*;
 
 public class BattleControler {
 
-    enum Status { Starting, Ready, Running }
-    private Logger log;
+    enum Status {Starting, Ready, Running}
+
+    private final Logger log;
     private Process battleRunner;
     private PrintStream stdin;
     private final int controlerId;
@@ -46,14 +47,14 @@ public class BattleControler {
         }
     }
 
-    private String[] makeRunnerCmd () {
+    private String[] makeRunnerCmd() {
         List<String> cmdList = new ArrayList();
         cmdList.add("java");
         cmdList.add("-Xmx512m");
         cmdList.add("-cp");
         cmdList.add("libs/*");
         cmdList.add("-Djava.awt.headless=true");
-        if (Runtime.version().feature()>11)
+        if (Runtime.version().feature() > 11)
             cmdList.add("-Djava.security.manager=allow");
 
         cmdList.add("--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED");
@@ -61,7 +62,7 @@ public class BattleControler {
         cmdList.add("--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED");
         cmdList.add("--add-opens=java.desktop/sun.awt=ALL-UNNAMED");
 
-        if (Runtime.version().feature()>18)
+        if (Runtime.version().feature() > 18)
             cmdList.add("-Xshare:off");
 
         // To Debug remotly
@@ -76,7 +77,7 @@ public class BattleControler {
     private void startBattleRunner() {
         try {
             battleRunner = Runtime.getRuntime().exec(makeRunnerCmd(), new String[0], workerFolder);
-            stdin  = new PrintStream(battleRunner.getOutputStream(), true);
+            stdin = new PrintStream(battleRunner.getOutputStream(), true);
             pipeStream(battleRunner.getInputStream(), System.out);
             pipeStream(battleRunner.getErrorStream(), System.err);
             status = Status.Starting;
@@ -93,14 +94,14 @@ public class BattleControler {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(is))) {
                 while ((line = in.readLine()) != null) {
                     if (line.startsWith(MSG))
-                        handleRunnerMessage(line.substring(MSG.length()+1));
+                        handleRunnerMessage(line.substring(MSG.length() + 1));
                     else if (!line.startsWith("Load") && !line.startsWith("WARNING:")) // Filter RobotCode engine loading message
-                        os.println(String.format("%03d | %s", controlerId, line));
+                        os.printf("%03d | %s%n", controlerId, line);
                 }
             } catch (IOException ioe) {
-                log.log(Level.SEVERE,"printMsg", ioe);
+                log.log(Level.SEVERE, "printMsg", ioe);
             } catch (InterruptedException ie) {
-                log.log(Level.SEVERE,"printMsg", ie);
+                log.log(Level.SEVERE, "printMsg", ie);
             }
         }).start();
     }
@@ -149,7 +150,7 @@ public class BattleControler {
         setRunning();
         stdin.println(GET_FITNESS + " " + robot);
         long duration = waitReadyStatus();
-        log.fine(robot + " fitness is " + fitness + ", batle duration " + duration );
+        log.fine(robot + " fitness is " + fitness + ", batle duration " + duration);
         return fitness;
     }
 

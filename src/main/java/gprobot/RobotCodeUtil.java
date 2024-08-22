@@ -31,13 +31,14 @@ import static java.nio.file.Files.*;
  * @author froyer
  */
 public class RobotCodeUtil {
-    private static Logger log = Logger.getLogger(RobotCodeUtil.class.getName());
+    private static final Logger log = Logger.getLogger(RobotCodeUtil.class.getName());
 
     private RobotCodeUtil() {
         // Util class
     }
 
     static boolean fsSupportSimLink = false;
+
     static {
         try {
             File symLink = new File("./symLinkTest" + UUID.randomUUID());
@@ -55,7 +56,7 @@ public class RobotCodeUtil {
     public static void compileBots(final String[] sources) throws InterruptedException {
         // Compile code
         ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-        List<List<String>> chunks = chunkList(Arrays.asList(sources), POP_SIZE/AVAILABLE_PROCESSORS/2);
+        List<List<String>> chunks = chunkList(Arrays.asList(sources), POP_SIZE / AVAILABLE_PROCESSORS / 2);
 
         for (List<String> chunk : chunks) {
             final List<String> srcs = chunk;
@@ -65,11 +66,11 @@ public class RobotCodeUtil {
                     StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
                     Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(srcs);
                     List<String> options = new ArrayList<>();
-                    options.addAll(Arrays.asList("-classpath",System.getProperty("java.class.path")));
+                    options.addAll(Arrays.asList("-classpath", System.getProperty("java.class.path")));
                     JavaCompiler.CompilationTask t = compiler.getTask(null, fileManager, null, options, null, compilationUnits);
                     t.call();
                 } catch (Exception e) {
-                    log.log(Level.SEVERE,"CompileBots", e);
+                    log.log(Level.SEVERE, "CompileBots", e);
                 }
             });
         }
@@ -109,7 +110,7 @@ public class RobotCodeUtil {
                     }
                 }
             } catch (IOException ioe) {
-                log.log(Level.SEVERE,"printMsg", ioe);
+                log.log(Level.SEVERE, "printMsg", ioe);
             }
         }).start();
     }
@@ -171,7 +172,7 @@ public class RobotCodeUtil {
         if (fsSupportSimLink) return;
 
         File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
-        cleanDirectory(runnerBotsFolder, BOT_PREFFIX +"(.*)");
+        cleanDirectory(runnerBotsFolder, BOT_PREFFIX + "(.*)");
 
         if (className != "GPBase")
             addClassRunner(runnerDir, className);
@@ -214,16 +215,16 @@ public class RobotCodeUtil {
 
     public static void cleanDirectory(File dir, String filter) {
         if (dir.isDirectory()) {
-            log.fine("Cleanning: " + dir.toString() + " with filter: " + filter);
+            log.fine("Cleanning: " + dir + " with filter: " + filter);
             Stream.of(dir.listFiles()).filter(f -> f.getName().matches(filter)).forEach(File::delete);
         }
     }
 
     public static void delete(File f) throws IOException {
         walk(f.toPath())
-            .map(Path::toFile)
-            .sorted((o1, o2) -> -o1.compareTo(o2))
-            .forEach(File::delete);
+                .map(Path::toFile)
+                .sorted((o1, o2) -> -o1.compareTo(o2))
+                .forEach(File::delete);
 
     }
 

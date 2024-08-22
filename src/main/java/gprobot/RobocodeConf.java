@@ -18,8 +18,8 @@ public class RobocodeConf {
 
     public static final String ROBO_CODE_PATH = System.getProperty("ROBOCODE_PATH",
             System.getProperty("os.name").toLowerCase().contains("win")
-                ? "c:\\robocode"
-                : System.getProperty("user.home") + File.separator + "robocode");
+                    ? "c:\\robocode"
+                    : System.getProperty("user.home") + File.separator + "robocode");
 
     // Jars
     public static final String ROBOCODE_JAR = "robocode.jar";
@@ -67,7 +67,7 @@ public class RobocodeConf {
     };
 
     static String[] skilledRobots = {
-        "voidious.Diamond"
+            "voidious.Diamond"
     };
     static String[] opponents = sampleRobots;
 }

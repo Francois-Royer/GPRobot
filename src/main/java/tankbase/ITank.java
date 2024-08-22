@@ -1,6 +1,5 @@
 package tankbase;
 
-import tankbase.gun.AimingData;
 import tankbase.gun.Shell;
 import tankbase.kdtree.KdTree;
 
@@ -35,12 +34,17 @@ public interface ITank {
     boolean isAlive();
 
     KdTree<List<Move>> getPatternKdTree();
+
     KdTree<List<Move>> getSurferKdTree();
+
     List<Move> getMoveLog();
+
     List<Shell> getFireLog(String targetName);
+
     double hit();
 
     void addFEnergy(double energy);
+
     double getFEnergy();
 
     int getAliveCount();

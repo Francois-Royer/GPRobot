@@ -25,7 +25,7 @@ public class StatServer {
     class MyHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
-            String cacheControl="public, max-age=3600";
+            String cacheControl = "public, max-age=3600";
             byte[] content;
             int status = 200;
             String path = t.getRequestURI().getPath();
@@ -42,16 +42,16 @@ public class StatServer {
                     content = new byte[is.available()];
                     int len = 0;
                     while (len < content.length)
-                        len += is.read(content,len, content.length-len);
+                        len += is.read(content, len, content.length - len);
                 } catch (Exception e) {
-                    content = ("Ressource "+ path + "not found").getBytes();
+                    content = ("Ressource " + path + "not found").getBytes();
                     status = 404;
                 }
             }
             t.getResponseHeaders().set("Cache-Control", cacheControl);
             t.sendResponseHeaders(status, content.length);
 
-            try(OutputStream os = t.getResponseBody()) {
+            try (OutputStream os = t.getResponseBody()) {
                 os.write(content);
             }
         }

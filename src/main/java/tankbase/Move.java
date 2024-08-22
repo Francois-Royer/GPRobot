@@ -1,10 +1,11 @@
 package tankbase;
 
 public class Move {
-    private double[] patternKdPoint; // Point for kdtree
-    private double[] surferKdPoint; // Point for kdtree
-    private double turn, velocity;
-    private long duration;
+    private final double[] patternKdPoint; // Point for kdtree
+    private final double[] surferKdPoint; // Point for kdtree
+    private final double turn;
+    private final double velocity;
+    private final long duration;
 
     public Move(double[] patternKdPoint, double[] surferKdPoint, double turn, double velocity, long duration) {
         this.patternKdPoint = patternKdPoint;
@@ -21,6 +22,7 @@ public class Move {
     public double[] getSurferKdPoint() {
         return surferKdPoint;
     }
+
     public double getTurn() {
         return turn;
     }

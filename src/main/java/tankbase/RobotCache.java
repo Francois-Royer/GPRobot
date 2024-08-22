@@ -63,5 +63,7 @@ public class RobotCache {
         return others;
     }
 
-    public long getDate() { return date; }
+    public long getDate() {
+        return date;
+    }
 }

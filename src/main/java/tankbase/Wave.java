@@ -1,17 +1,17 @@
 package tankbase;
 
 import tankbase.gun.AimingData;
-import tankbase.gun.CircularGunner;
-
-import static tankbase.TankBase.*;
-import static java.lang.Math.*;
-import static robocode.Rules.*;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
 
-import static tankbase.TankUtils.*;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static robocode.Rules.MAX_BULLET_POWER;
+import static robocode.Rules.getBulletSpeed;
 import static robocode.util.Utils.normalAbsoluteAngle;
+import static tankbase.TankBase.*;
+import static tankbase.TankUtils.*;
 
 public class Wave extends MovingPoint {
     ITank source;
@@ -30,8 +30,9 @@ public class Wave extends MovingPoint {
     boolean kdangle = false;
 
     public Wave(AimingData ad, long start) {
-        this(ad.getTarget(), ad.getFirePower(), start,  ad.getGunner().getTank());
+        this(ad.getTarget(), ad.getFirePower(), start, ad.getGunner().getTank());
     }
+
     public Wave(ITank target, double power, long start, ITank source, int headCount, int circularCount) {
         this(target, power, start, source);
         middle = middle(head, circular, headCount, circularCount);
@@ -84,6 +85,7 @@ public class Wave extends MovingPoint {
         }
         return danger;
     }
+
     public ITank getSource() {
         return source;
     }

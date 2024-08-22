@@ -6,11 +6,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static tankbase.TankBase.*;
 import static java.lang.Math.*;
-import static robocode.Rules.*;
+import static robocode.Rules.MAX_VELOCITY;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
+import static tankbase.TankBase.FIELD_HEIGHT;
+import static tankbase.TankBase.FIELD_WIDTH;
 
 public class TankUtils {
 
@@ -27,7 +28,7 @@ public class TankUtils {
         double ab = a.distance(b);
         double sa = a.distance(s);
         double sb = b.distance(s);
-        return acos( (pow(sa, 2) + pow(sb, 2) - pow(ab, 2))/2/sa/sb);
+        return acos((pow(sa, 2) + pow(sb, 2) - pow(ab, 2)) / 2 / sa / sb);
     }
 
     // -PI -> PI
@@ -45,8 +46,8 @@ public class TankUtils {
     }
 
     public static double range(double v, double minv, double maxv, double minr, double maxr) {
-        if (minv==maxv) return minr;
-        return (maxr> minr)
+        if (minv == maxv) return minr;
+        return (maxr > minr)
                 ? (v - minv) / (maxv - minv) * (maxr - minr) + minr
                 : (maxv - v) / (maxv - minv) * (minr - maxr) + maxr;
     }
@@ -76,15 +77,15 @@ public class TankUtils {
         int waveArc = (int) (w.arc * 180 / PI);
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
-        int s=d-5;
-        int e=d+5;
-        g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc/2, waveArc);
-        g2D.drawLine((int)(w.x + s*cos(w.direction)), (int)(w.y + s*sin(w.direction)),
-                (int)(w.x + e*cos(w.direction)), (int)(w.y + e*sin(w.direction)));
-        g2D.drawLine((int)(w.x + s*cos(w.direction+w.arc/2)), (int)(w.y + s*sin(w.direction+w.arc/2)),
-                (int)(w.x + e*cos(w.direction+w.arc/2)), (int)(w.y + e*sin(w.direction+w.arc/2)));
-        g2D.drawLine((int)(w.x + s*cos(w.direction-w.arc/2)), (int)(w.y + s*sin(w.direction-w.arc/2)),
-                (int)(w.x + e*cos(w.direction-w.arc/2)), (int)(w.y + e*sin(w.direction-w.arc/2)));
+        int s = d - 5;
+        int e = d + 5;
+        g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc / 2, waveArc);
+        g2D.drawLine((int) (w.x + s * cos(w.direction)), (int) (w.y + s * sin(w.direction)),
+                (int) (w.x + e * cos(w.direction)), (int) (w.y + e * sin(w.direction)));
+        g2D.drawLine((int) (w.x + s * cos(w.direction + w.arc / 2)), (int) (w.y + s * sin(w.direction + w.arc / 2)),
+                (int) (w.x + e * cos(w.direction + w.arc / 2)), (int) (w.y + e * sin(w.direction + w.arc / 2)));
+        g2D.drawLine((int) (w.x + s * cos(w.direction - w.arc / 2)), (int) (w.y + s * sin(w.direction - w.arc / 2)),
+                (int) (w.x + e * cos(w.direction - w.arc / 2)), (int) (w.y + e * sin(w.direction - w.arc / 2)));
     }
 
     public static int degree(double radians) {
@@ -96,15 +97,15 @@ public class TankUtils {
     }
 
     static public double maximumEscapeAngle(double vb) {
-        return asin(MAX_VELOCITY/vb);
+        return asin(MAX_VELOCITY / vb);
     }
 
     static public Point.Double middle(Point.Double a, Point.Double b) {
-        return middle(a,b, 1,1);
+        return middle(a, b, 1, 1);
     }
 
     static public Point.Double middle(Point.Double a, Point.Double b, int ac, int bc) {
-        return new Point.Double((a.getX()*ac+b.getX()*bc)/(ac+bc),(a.getY()*ac+b.getY()*bc)/(ac+bc));
+        return new Point.Double((a.getX() * ac + b.getX() * bc) / (ac + bc), (a.getY() * ac + b.getY() * bc) / (ac + bc));
     }
 
     /*static double computeTurnGun2Target(TankBase base, Point.Double target) {
@@ -118,25 +119,25 @@ public class TankUtils {
 
     static double computeTurnGun2Target(Point.Double base, Point.Double target, double ga) {
         double ta = getPointAngle(base, target);
-        return  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
+        return (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
     }
 
     static double computeTurnGun2TargetNextPos(TankBase base, Point.Double target) {
         double ga = base.getGunHeadingRadians();
         double ta = getPointAngle(base.getNextPosition(), target);
 
-        return  (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
+        return (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
     }
 
     static public double AvoidNan(double value, double def) {
         return Double.isNaN(value) ? def : value;
     }
 
-    static Point getMinPoint(double a[][]) {
+    static Point getMinPoint(double[][] a) {
         double min = Double.MAX_VALUE;
-        Point mp = new Point(0,0);
-        for (int x=0; x<a.length; x++)
-            for (int y=0; y<a[x].length; y++) {
+        Point mp = new Point(0, 0);
+        for (int x = 0; x < a.length; x++)
+            for (int y = 0; y < a[x].length; y++) {
                 if (a[x][y] < min) {
                     min = a[x][y];
                     mp = new Point(x, y);
@@ -144,11 +145,12 @@ public class TankUtils {
             }
         return mp;
     }
-    static Point getMaxPoint(double a[][]) {
+
+    static Point getMaxPoint(double[][] a) {
         double max = 0;
-        Point mp = new Point(0,0);
-        for (int x=0; x<a.length; x++)
-            for (int y=0; y<a[x].length; y++) {
+        Point mp = new Point(0, 0);
+        for (int x = 0; x < a.length; x++)
+            for (int y = 0; y < a[x].length; y++) {
                 if (a[x][y] > max) {
                     max = a[x][y];
                     mp = new Point(x, y);
@@ -157,14 +159,14 @@ public class TankUtils {
         return mp;
     }
 
-    static Point getMinPointClose(double a[][], int h, int v, int d) {
+    static Point getMinPointClose(double[][] a, int h, int v, int d) {
         double min = Double.MAX_VALUE;
         Point pc = new Point(h, v);
-        Point mp = new Point(0,0);
-        for (int x=0; x<a.length; x++)
-            for (int y=0; y<a[x].length; y++) {
+        Point mp = new Point(0, 0);
+        for (int x = 0; x < a.length; x++)
+            for (int y = 0; y < a[x].length; y++) {
                 Point pt = new Point(x, y);
-                if (a[x][y] < min && pt.distance(pc)<d) {
+                if (a[x][y] < min && pt.distance(pc) < d) {
                     min = a[x][y];
                     mp = new Point(x, y);
                 }
@@ -174,21 +176,22 @@ public class TankUtils {
 
     static List<Point> listClosePoint(Point pc, double d, int maxX, int maxY) {
         List<Point> closePoints = new ArrayList<>();
-        maxX = (int) min(maxX, pc.x+d+1);
-        maxY = (int) min(maxY, pc.y+d+1);
-        for (int x=(int) max(0, pc.x-d-1); x<maxX; x++)
-            for (int y=(int) max(0, pc.y-d-1); y<maxY; y++) {
+        maxX = (int) min(maxX, pc.x + d + 1);
+        maxY = (int) min(maxY, pc.y + d + 1);
+        for (int x = (int) max(0, pc.x - d - 1); x < maxX; x++)
+            for (int y = (int) max(0, pc.y - d - 1); y < maxY; y++) {
                 Point pt = new Point(x, y);
-                if (pt.distance(pc)<d) {
+                if (pt.distance(pc) < d) {
                     closePoints.add(pt);
                 }
             }
         return closePoints;
     }
+
     static List<Point> listCirclePoint(Point pc, double d, int maxX, int maxY) {
         List<Point> points = new ArrayList<>();
         int num = (int) (d * PI * 2.4);
-        Point p = new Point(-1,-1);
+        Point p = new Point(-1, -1);
         for (int i = 0; i < num; i++) {
             double a = i * 2 * PI / num;
             int x = (int) (pc.getX() + d * cos(a));
@@ -201,33 +204,33 @@ public class TankUtils {
         return points;
     }
 
-    static double computeMoveDanger(Point from, Point to, double dangerMap[][]) {
-        int d = (int)Math.ceil(from.distance(to));
+    static double computeMoveDanger(Point from, Point to, double[][] dangerMap) {
+        int d = (int) Math.ceil(from.distance(to));
         if (d == 0) return Double.MAX_VALUE;
-        double danger=0;
-        for (int p=0; p<=d; p++) {
-            int x=from.x + p*(to.x-from.x)/d;
-            int y=from.y + p*(to.y-from.y)/d;
-            if (x<dangerMap.length && y <dangerMap[x].length)
+        double danger = 0;
+        for (int p = 0; p <= d; p++) {
+            int x = from.x + p * (to.x - from.x) / d;
+            int y = from.y + p * (to.y - from.y) / d;
+            if (x < dangerMap.length && y < dangerMap[x].length)
                 danger += dangerMap[x][y];
         }
-        return danger/=pow(d,1.1);
+        return danger /= pow(d, 1.1);
     }
 
     static double normalDistrib(double x, double median, double deviation) {
-        return (deviation>0) ? 1/(deviation*sqrt(2*PI))*exp(-.5*pow((x-median)/deviation, 2)) : 1;
+        return (deviation > 0) ? 1 / (deviation * sqrt(2 * PI)) * exp(-.5 * pow((x - median) / deviation, 2)) : 1;
     }
 
 
-    static boolean collisionCercleSeg(Point2D.Double c, double r,Point2D.Double a,Point2D.Double b)
-    {
+    static boolean collisionCercleSeg(Point2D.Double c, double r, Point2D.Double a, Point2D.Double b) {
         if (c.distance(a) < r || c.distance(b) < r)
             return true;
 
         double max_dist = max(c.distance(a), c.distance(b));
-        double min_dist = (dot(vector(c,a),vector(b, a)) > 0 && dot(vector(c,b),vector(a, b)) > 0)
-            ? triangleArea(c, a, b) * 2 / a.distance(b)
-            : min(c.distance(a), c.distance(b));double h = triangleArea(c, a, b) * 2 / a.distance(b);
+        double min_dist = (dot(vector(c, a), vector(b, a)) > 0 && dot(vector(c, b), vector(a, b)) > 0)
+                ? triangleArea(c, a, b) * 2 / a.distance(b)
+                : min(c.distance(a), c.distance(b));
+        double h = triangleArea(c, a, b) * 2 / a.distance(b);
 
         return min_dist <= r && max_dist >= r;
     }
@@ -240,15 +243,15 @@ public class TankUtils {
         return a.getX() * b.getX() + a.getY() * b.getY();
     }
 
-    static double triangleArea(Point2D.Double a, Point2D.Double b, Point2D.Double c){
+    static double triangleArea(Point2D.Double a, Point2D.Double b, Point2D.Double c) {
         return Math.abs(a.getX() * (b.getY() - c.getY()) +
                 b.getX() * (c.getY() - a.getY()) +
                 c.getX() * (a.getY() - b.getY())) / 2.0;
     }
 
     public static Point.Double wallIntersection(Point.Double source, double direction) {
-        if (direction == PI/2) return new Point.Double(source.getX(), FIELD_HEIGHT);
-        if (direction == -PI/2) return new Point.Double(source.getX(), 0);
+        if (direction == PI / 2) return new Point.Double(source.getX(), FIELD_HEIGHT);
+        if (direction == -PI / 2) return new Point.Double(source.getX(), 0);
         if (direction == 0) return new Point.Double(FIELD_WIDTH, source.getY());
         if (direction == PI) return new Point.Double(0, source.getY());
 
@@ -261,8 +264,8 @@ public class TankUtils {
             }
             double y = source.getY() - source.getX() * tan(direction);
             if (y <= FIELD_HEIGHT) return new Point.Double(0, y);
-            double x = source.getX() + (FIELD_HEIGHT -source.getY()) / tan(direction);
-            return new Point.Double(x,  FIELD_HEIGHT);
+            double x = source.getX() + (FIELD_HEIGHT - source.getY()) / tan(direction);
+            return new Point.Double(x, FIELD_HEIGHT);
         }
 
         if (direction > -PI / 2) {
@@ -275,10 +278,10 @@ public class TankUtils {
         double y = source.getY() - source.getX() * tan(direction);
         if (y >= 0) return new Point.Double(0, y);
         double x = source.getX() - source.getY() / tan(direction);
-        return new Point.Double(x,  0);
+        return new Point.Double(x, 0);
     }
 
-    public static <T> T[] concatArray(T[] first, T[] ... rest){
+    public static <T> T[] concatArray(T[] first, T[]... rest) {
         int totalLength = first.length;
         for (T[] array : rest) totalLength += array.length;
         T[] result = Arrays.copyOf(first, totalLength);
@@ -289,7 +292,8 @@ public class TankUtils {
         }
         return result;
     }
-    public static double[] concatArray(double[] first, double[] ... rest){
+
+    public static double[] concatArray(double[] first, double[]... rest) {
         int totalLength = first.length;
         for (double[] array : rest) totalLength += array.length;
         double[] result = Arrays.copyOf(first, totalLength);

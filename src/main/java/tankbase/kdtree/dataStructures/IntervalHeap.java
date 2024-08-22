@@ -33,8 +33,8 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
 
         // Insert new value at the end
         size++;
-        data[size-1] = value;
-        keys[size-1] = key;
+        data[size - 1] = value;
+        keys[size - 1] = key;
         siftInsertedValueUp();
     }
 
@@ -151,7 +151,7 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
      * - leftchild:  2u + 2
      * - rightchild: 2u + 4
      * - parent:     (x/2-1)&~1
-     *
+     * <p>
      * Max-side (u % 2 == 1):
      * - leftchild:  2u + 1
      * - rightchild: 2u + 3
@@ -159,24 +159,22 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
      */
 
     private void siftInsertedValueUp() {
-        int u = size-1;
+        int u = size - 1;
         if (u == 0) {
             // Do nothing if it's the only element!
-        }
-        else if (u == 1) {
+        } else if (u == 1) {
             // If it is the second element, just sort it with it's pair
-            if  (keys[u] < keys[u-1]) { // If less than it's pair
-                swap(u, u-1); // Swap with it's pair
+            if (keys[u] < keys[u - 1]) { // If less than it's pair
+                swap(u, u - 1); // Swap with it's pair
             }
-        }
-        else if (u % 2 == 1) {
+        } else if (u % 2 == 1) {
             // Already paired. Ensure pair is ordered right
-            int p = (u/2-1)|1; // The larger value of the parent pair
-            if  (keys[u] < keys[u-1]) { // If less than it's pair
-                u = swap(u, u-1); // Swap with it's pair
-                if (keys[u] < keys[p-1]) { // If smaller than smaller parent pair
+            int p = (u / 2 - 1) | 1; // The larger value of the parent pair
+            if (keys[u] < keys[u - 1]) { // If less than it's pair
+                u = swap(u, u - 1); // Swap with it's pair
+                if (keys[u] < keys[p - 1]) { // If smaller than smaller parent pair
                     // Swap into min-heap side
-                    u = swap(u, p-1);
+                    u = swap(u, p - 1);
                     siftUpMin(u);
                 }
             } else {
@@ -188,14 +186,14 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
             }
         } else {
             // Inserted in the lower-value slot without a partner
-            int p = (u/2-1)|1; // The larger value of the parent pair
+            int p = (u / 2 - 1) | 1; // The larger value of the parent pair
             if (keys[u] > keys[p]) { // If larger that larger parent pair
                 // Swap into max-heap side
                 u = swap(u, p);
                 siftUpMax(u);
-            } else if (keys[u] < keys[p-1]) { // If smaller than smaller parent pair
+            } else if (keys[u] < keys[p - 1]) { // If smaller than smaller parent pair
                 // Swap into min-heap side
-                u = swap(u, p-1);
+                u = swap(u, p - 1);
                 siftUpMin(u);
             }
         }
@@ -203,14 +201,14 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
 
     private void siftUpMin(int c) {
         // Min-side parent: (x/2-1)&~1
-        for (int p = (c/2-1)&~1; p >= 0 && keys[c] < keys[p]; c = p, p = (c/2-1)&~1) {
+        for (int p = (c / 2 - 1) & ~1; p >= 0 && keys[c] < keys[p]; c = p, p = (c / 2 - 1) & ~1) {
             swap(c, p);
         }
     }
 
     private void siftUpMax(int c) {
         // Max-side parent: (x/2-1)|1
-        for (int p = (c/2-1)|1; p >= 0 && keys[c] > keys[p]; c = p, p = (c/2-1)|1) {
+        for (int p = (c / 2 - 1) | 1; p >= 0 && keys[c] > keys[p]; c = p, p = (c / 2 - 1) | 1) {
             swap(c, p);
         }
     }
@@ -223,8 +221,8 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
             if (keys[c] < keys[p]) {
                 swap(p, c);
                 // Swap with pair if necessary
-                if (c+1 < size && keys[c+1] < keys[c]) {
-                    swap(c, c+1);
+                if (c + 1 < size && keys[c + 1] < keys[c]) {
+                    swap(c, c + 1);
                 }
             } else {
                 break;
@@ -244,7 +242,7 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
                 // If there is only room for a right child lower pair
                 if (keys[c + 1] > keys[c]) {
                     if (keys[c + 1] > keys[p]) {
-                       swap(p, c + 1);
+                        swap(p, c + 1);
                     }
                     break;
                 }
@@ -257,8 +255,8 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
             if (keys[c] > keys[p]) {
                 swap(p, c);
                 // Swap with pair if necessary
-                if (keys[c-1] > keys[c]) {
-                    swap(c, c-1);
+                if (keys[c - 1] > keys[c]) {
+                    swap(c, c - 1);
                 }
             } else {
                 break;
@@ -283,7 +281,7 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
         while (i < size()) {
             int x = 0;
             str.append("\t");
-            while ((i+x) < size() && x < p) {
+            while ((i + x) < size() && x < p) {
                 str.append(twoPlaces.format(keys[i + x])).append(", ");
                 x++;
             }
@@ -296,13 +294,13 @@ public class IntervalHeap<T> implements MinHeap<T>, MaxHeap<T> {
 
     private boolean validateHeap() {
         // Validate left-right
-        for (int i = 0; i < size-1; i+= 2) {
-            if (keys[i] > keys[i+1]) return false;
+        for (int i = 0; i < size - 1; i += 2) {
+            if (keys[i] > keys[i + 1]) return false;
         }
         // Validate within parent interval
         for (int i = 2; i < size; i++) {
-            double maxParent = keys[(i/2-1)|1];
-            double minParent = keys[(i/2-1)&~1];
+            double maxParent = keys[(i / 2 - 1) | 1];
+            double minParent = keys[(i / 2 - 1) & ~1];
             if (keys[i] > maxParent || keys[i] < minParent) return false;
         }
         return true;

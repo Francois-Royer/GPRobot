@@ -32,8 +32,8 @@ class KdNode<T> {
         this.singlePoint = true;
 
         // Init leaf elements
-        this.points = new double[bucketCapacity+1][];
-        this.data = new Object[bucketCapacity+1];
+        this.points = new double[bucketCapacity + 1][];
+        this.data = new Object[bucketCapacity + 1];
     }
 
     /* -------- SIMPLE GETTERS -------- */
@@ -55,8 +55,7 @@ class KdNode<T> {
             cursor.size++;
             if (point[cursor.splitDimension] > cursor.splitValue) {
                 cursor = cursor.right;
-            }
-            else {
+            } else {
                 cursor = cursor.left;
             }
         }
@@ -106,12 +105,10 @@ class KdNode<T> {
                 }
                 minBound[i] = Double.NaN;
                 maxBound[i] = Double.NaN;
-            }
-            else if (minBound[i] > point[i]) {
+            } else if (minBound[i] > point[i]) {
                 minBound[i] = point[i];
                 singlePoint = false;
-            }
-            else if (maxBound[i] < point[i]) {
+            } else if (maxBound[i] < point[i]) {
                 maxBound[i] = point[i];
                 singlePoint = false;
             }
@@ -119,8 +116,8 @@ class KdNode<T> {
     }
 
     private void increaseLeafCapacity() {
-        points = Arrays.copyOf(points, points.length*2);
-        data = Arrays.copyOf(data, data.length*2);
+        points = Arrays.copyOf(points, points.length * 2);
+        data = Arrays.copyOf(data, data.length * 2);
     }
 
     private boolean calculateSplit() {
@@ -146,8 +143,7 @@ class KdNode<T> {
         // Never split on infinity or NaN
         if (splitValue == Double.POSITIVE_INFINITY) {
             splitValue = Double.MAX_VALUE;
-        }
-        else if (splitValue == Double.NEGATIVE_INFINITY) {
+        } else if (splitValue == Double.NEGATIVE_INFINITY) {
             splitValue = -Double.MAX_VALUE;
         }
 
@@ -171,8 +167,7 @@ class KdNode<T> {
             Object oldData = data[i];
             if (oldLocation[splitDimension] > splitValue) {
                 right.addLeafPoint(oldLocation, (T) oldData);
-            }
-            else {
+            } else {
                 left.addLeafPoint(oldLocation, (T) oldData);
             }
         }

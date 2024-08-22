@@ -3,7 +3,7 @@ package tankbase.kdtree.dataStructures;
 import java.util.Arrays;
 
 /**
- * An implementation of an implicit binary heap. Min-heap and max-heap both supported 
+ * An implementation of an implicit binary heap. Min-heap and max-heap both supported
  */
 public abstract class BinaryHeap<T> {
     protected static final int defaultCapacity = 64;
@@ -47,7 +47,7 @@ public abstract class BinaryHeap<T> {
         data[size] = null;
         siftDown(0);
     }
-    
+
     protected void replaceTip(double key, T value) {
         if (size == 0) {
             throw new IllegalStateException();
@@ -76,7 +76,7 @@ public abstract class BinaryHeap<T> {
     }
 
     private void siftUp(int c) {
-        for (int p = (c - 1) / 2; c != 0 && direction*keys[c] > direction*keys[p]; c = p, p = (c - 1) / 2) {
+        for (int p = (c - 1) / 2; c != 0 && direction * keys[c] > direction * keys[p]; c = p, p = (c - 1) / 2) {
             Object pData = data[p];
             double pDist = keys[p];
             data[p] = data[c];
@@ -88,10 +88,10 @@ public abstract class BinaryHeap<T> {
 
     private void siftDown(int p) {
         for (int c = p * 2 + 1; c < size; p = c, c = p * 2 + 1) {
-            if (c + 1 < size && direction*keys[c] < direction*keys[c + 1]) {
+            if (c + 1 < size && direction * keys[c] < direction * keys[c + 1]) {
                 c++;
             }
-            if (direction*keys[p] < direction*keys[c]) {
+            if (direction * keys[p] < direction * keys[c]) {
                 // Swap the points
                 Object pData = data[p];
                 double pDist = keys[p];
@@ -117,38 +117,49 @@ public abstract class BinaryHeap<T> {
         public Max() {
             super(defaultCapacity, 1);
         }
+
         public Max(int capacity) {
             super(capacity, 1);
         }
+
         public void removeMax() {
             removeTip();
         }
+
         public void replaceMax(double key, T value) {
             replaceTip(key, value);
         }
+
         public T getMax() {
             return getTip();
         }
+
         public double getMaxKey() {
             return getTipKey();
         }
     }
+
     public static final class Min<T> extends BinaryHeap<T> implements MinHeap<T> {
         public Min() {
             super(defaultCapacity, -1);
         }
+
         public Min(int capacity) {
             super(capacity, -1);
         }
+
         public void removeMin() {
             removeTip();
         }
+
         public void replaceMin(double key, T value) {
             replaceTip(key, value);
         }
+
         public T getMin() {
             return getTip();
         }
+
         public double getMinKey() {
             return getTipKey();
         }

@@ -235,9 +235,7 @@ public class ExpressionNode implements Serializable {
         ExpressionNode clone = new ExpressionNode(this.depth, this.arity, this.isTerminal);
         clone.expression = new String[expression.length];
 
-        for (int i = 0; i < expression.length; i++) {
-            clone.expression[i] = this.expression[i];
-        }
+        System.arraycopy(this.expression, 0, clone.expression, 0, expression.length);
 
         if (isTerminal) {
             clone.child = null;
@@ -256,9 +254,7 @@ public class ExpressionNode implements Serializable {
         this.isTerminal = newNode.isTerminal;
 
         this.expression = new String[newNode.expression.length];
-        for (int i = 0; i < this.expression.length; i++) {
-            this.expression[i] = newNode.expression[i];
-        }
+        System.arraycopy(newNode.expression, 0, this.expression, 0, this.expression.length);
 
         if (newNode.isTerminal) {
             this.child = null;

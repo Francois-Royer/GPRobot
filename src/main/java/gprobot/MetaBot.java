@@ -24,11 +24,11 @@ public class MetaBot implements Serializable {
     final static int HIT_ROBOT_CHROMOS = 5;
     final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;
     final static double
-        PROB_CROSS_ROOT = 0, //0.3,
-        PROB_CROSS_TERMINAL = 0.1,
-        PROB_JUMP_GENOMES = 0.05,
-        PROB_MUTATE_ROOT = 0.01,
-        PROB_MUTATE_TERMINAL = 0.15;
+            PROB_CROSS_ROOT = 0, //0.3,
+            PROB_CROSS_TERMINAL = 0.1,
+            PROB_JUMP_GENOMES = 0.05,
+            PROB_MUTATE_ROOT = 0.01,
+            PROB_MUTATE_TERMINAL = 0.15;
 
     //Class Fields //////////////////////////////////////////////////////////
     transient String[] phenome;
@@ -38,11 +38,12 @@ public class MetaBot implements Serializable {
     int memberGen = 0, memberID = 0, nodeCount;
     double fitness;
 
-    ExpressionNode genome[] = new ExpressionNode[NUM_CHROMOS];
+    ExpressionNode[] genome = new ExpressionNode[NUM_CHROMOS];
 
     // Class Methods /////////////////////////////////////////////////////////
     public MetaBot() {
     }
+
     public MetaBot(int gen, int botID) {
         memberGen = gen;
         memberID = botID;
@@ -112,10 +113,10 @@ public class MetaBot implements Serializable {
         if (NUM_CHROMOS > 1)
             while (xChromo2 == xChromo1)
                 xChromo2 = (xChromo1 < SCAN_CHROMOS)
-                    ? random.nextInt(SCAN_CHROMOS)
-                    : ((xChromo1 < SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS)
-                    ? random.nextInt(HIT_BY_BULLET_CHROMOS) + SCAN_CHROMOS
-                    : random.nextInt(HIT_ROBOT_CHROMOS) + SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS);
+                        ? random.nextInt(SCAN_CHROMOS)
+                        : ((xChromo1 < SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS)
+                        ? random.nextInt(HIT_BY_BULLET_CHROMOS) + SCAN_CHROMOS
+                        : random.nextInt(HIT_ROBOT_CHROMOS) + SCAN_CHROMOS + HIT_BY_BULLET_CHROMOS);
 
         if (random.nextDouble() < PROB_CROSS_ROOT) {    // swap entire chromosome
             if (random.nextDouble() < PROB_JUMP_GENOMES) {    // do not use the same chromosome
@@ -124,8 +125,8 @@ public class MetaBot implements Serializable {
                 child.genome[xChromo1].replaceWith(p2.genome[xChromo1]);
         } else {    // use subtrees
             // determine if subtrees will be terminals or functions
-            boolean useTerminal1 = (random.nextDouble() < PROB_CROSS_TERMINAL) ? true : false;
-            boolean useTerminal2 = (random.nextDouble() < PROB_CROSS_TERMINAL) ? true : false;
+            boolean useTerminal1 = random.nextDouble() < PROB_CROSS_TERMINAL;
+            boolean useTerminal2 = random.nextDouble() < PROB_CROSS_TERMINAL;
 
             // select random subtrees of p2
             // cross-over the subtrees

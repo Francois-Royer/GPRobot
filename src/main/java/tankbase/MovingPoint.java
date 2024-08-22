@@ -11,7 +11,7 @@ public class MovingPoint extends Point.Double {
 
     long start;
 
-    public MovingPoint( Point.Double origin, double velocity, double direction,long start)  {
+    public MovingPoint(Point.Double origin, double velocity, double direction, long start) {
         super(origin.getX(), origin.getY());
         this.velocity = velocity;
         this.direction = direction;

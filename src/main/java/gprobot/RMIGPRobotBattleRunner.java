@@ -8,5 +8,6 @@ import java.rmi.RemoteException;
  */
 public interface RMIGPRobotBattleRunner extends Remote {
     void setOpponentsName(String[] names) throws RemoteException;
+
     double getRobotFitness(String robot) throws RemoteException;
 }

@@ -34,7 +34,7 @@ public class KdTree<T> extends KdNode<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected static <T> void nearestNeighborSearchStep (
+    protected static <T> void nearestNeighborSearchStep(
             MinHeap<KdNode<T>> pendingPaths, MaxHeap<T> evaluatedPoints, int desiredPoints,
             DistanceFunction distanceFunction, double[] searchPoint) {
         // If there are pending paths possibly closer than the nearest evaluated point, check it out
@@ -47,8 +47,7 @@ public class KdTree<T> extends KdNode<T> {
             if (searchPoint[cursor.splitDimension] > cursor.splitValue) {
                 pathNotTaken = cursor.left;
                 cursor = cursor.right;
-            }
-            else {
+            } else {
                 pathNotTaken = cursor.right;
                 cursor = cursor.left;
             }

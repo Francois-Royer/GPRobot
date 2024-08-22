@@ -24,8 +24,7 @@ public class SquareEuclideanDistanceFunction implements DistanceFunction {
             double diff = 0;
             if (point[i] > max[i]) {
                 diff = (point[i] - max[i]);
-            }
-            else if (point[i] < min[i]) {
+            } else if (point[i] < min[i]) {
                 diff = (point[i] - min[i]);
             }
             d += diff * diff;

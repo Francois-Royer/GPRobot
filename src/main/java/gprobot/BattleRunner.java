@@ -24,9 +24,9 @@ import java.util.stream.Stream;
 import static gprobot.RobocodeConf.*;
 import static gprobot.RobotCodeUtil.updateRunner;
 
-public class BattleRunner{
+public class BattleRunner {
     static Logger log = Logger.getLogger(BattleRunner.class.getName());
-     RobocodeEngine engine;
+    RobocodeEngine engine;
     BattlefieldSpecification battlefield;
     int runnerId;
     String runnerPath;
@@ -37,7 +37,7 @@ public class BattleRunner{
             int runnerId = Integer.parseInt(args[0]);
             String runnerPath = args[1];
             BattleRunner runner = new BattleRunner(runnerId, runnerPath);
-            System.out.println(MSG +  " " + READY);
+            System.out.println(MSG + " " + READY);
             runner.startCmdReader();
         } catch (Exception ex) {
             log.log(Level.SEVERE, "main", ex);
@@ -84,8 +84,8 @@ public class BattleRunner{
         return getRobotFitness(robot, opponents);
     }
 
-    public double getRobotFitness(String robot, String[] opponentsRobots)  {
-        String robotClass = TARGET_PACKAGE + "."+ robot;
+    public double getRobotFitness(String robot, String[] opponentsRobots) {
+        String robotClass = TARGET_PACKAGE + "." + robot;
         BattleObserver battleObserver = new BattleObserver(robot);
         engine.addBattleListener(battleObserver);
 
@@ -98,14 +98,14 @@ public class BattleRunner{
 
         if (opponentsRobots.length > 1 && ONE2ONE)
             fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots).mapToDouble(opponent ->
-                getRobotFitness(robot, new String[]{opponent})
-            ).sum())/2/opponents.length;
+                    getRobotFitness(robot, new String[]{opponent})
+            ).sum()) / 2 / opponents.length;
 
         return fitnessScore;
     }
 
     private double computeFitness(String robot, BattleObserver battleObserver) {
-        BattleResults []results = battleObserver.getResults();
+        BattleResults[] results = battleObserver.getResults();
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName()))
                 .findFirst();
 
@@ -114,7 +114,7 @@ public class BattleRunner{
         if (totalScore == 0)
             return 0;
 
-        return (double) botScore/(totalScore)*100;
+        return (double) botScore / (totalScore) * 100;
     }
 
     public void startCmdReader() {
@@ -142,7 +142,8 @@ class BattleObserver extends BattleAdaptor {
     private BattleResults[] results;
     private long roundDuration = 0;
     private double remainEnergy = 0;
-    public  BattleObserver(String robotName) {
+
+    public BattleObserver(String robotName) {
         this.robotName = TARGET_PACKAGE + "." + robotName;
     }
 
@@ -172,6 +173,8 @@ class BattleObserver extends BattleAdaptor {
         return roundDuration;
     }
 
-    public double getRemainEnergy() { return remainEnergy; }
+    public double getRemainEnergy() {
+        return remainEnergy;
+    }
 
 }

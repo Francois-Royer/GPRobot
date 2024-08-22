@@ -7,9 +7,6 @@ import tankbase.kdtree.KdTree;
 import java.awt.*;
 import java.util.List;
 
-import static tankbase.TankUtils.pointInBattleField;
-import static java.lang.Math.abs;
-
 public class PatternGunner extends AbstractKdTreeGunner {
 
     public PatternGunner(ITank tank) {
@@ -27,6 +24,8 @@ public class PatternGunner extends AbstractKdTreeGunner {
     }
 
     @Override
-    public Color getColor() { return Color.RED; }
+    public Color getColor() {
+        return Color.RED;
+    }
 
 }

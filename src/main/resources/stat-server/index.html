@@ -2,7 +2,7 @@
 <head>
     <head>
         <title>Genetic Programming Robocade Statistics</title>
-<!--        <meta http-equiv="refresh" content="60" />-->
+        <!--        <meta http-equiv="refresh" content="60" />-->
     </head>
     <script type="text/javascript" src="https://dygraphs.com/2.2.1/dist/dygraph.min.js"></script>
     <script type="text/javascript" src="https://dygraphs.com/2.2.1/dist/extras/smooth-plotter.js"></script>
@@ -10,7 +10,10 @@
     <link rel="stylesheet" type="text/css" href="dygraph.css">
 </head>
 <body>
-<style>.dygraph-legend { text-align: right; background: none; }</style>
+<style>.dygraph-legend {
+    text-align: right;
+    background: none;
+}</style>
 <div class="container" style="width: 100%;">
     <div id="graphdiv" class="chart" style="width:800px; height:400px; float: left;"></div>
     <div id="graphdiv2" class="chart" style="width:800px; height:400px; margin-left: 802px;"></div>
@@ -26,11 +29,13 @@
     <input type=checkbox id="3" checked onClick="change2(this)">
     <label for="3"> Best Node</label>
 </p></Span><span>
-<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01" value="0.33"></p>
+<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01"
+                                           value="0.33"></p>
 </span>
 <script type="text/javascript">
     var g;
     var g2;
+
     function drawPlot() {
         g = new Dygraph(
             document.getElementById("graphdiv"),
@@ -40,7 +45,8 @@
                 ylabel: 'Fitness',
                 plotter: smoothPlotter,
                 strokeWidth: 2,
-                visibility: [true, true, false, false, false]}
+                visibility: [true, true, false, false, false]
+            }
         );
 
         g2 = new Dygraph(
@@ -51,9 +57,11 @@
                 ylabel: 'Nodes',
                 plotter: smoothPlotter,
                 strokeWidth: 2,
-                visibility: [false, false, true, true, false]}
+                visibility: [false, false, true, true, false]
+            }
         );
     }
+
     drawPlot();
 
     function change(el) {
@@ -70,7 +78,7 @@
     }
 
     var smoothRangeEl = document.getElementById('smoothing-amount');
-    smoothRangeEl.addEventListener('input', function() {
+    smoothRangeEl.addEventListener('input', function () {
         var param = parseFloat(smoothRangeEl.value);
         smoothPlotter.smoothing = param;
         drawPlot()
@@ -81,7 +89,9 @@
             type: "GET",
             url: "run_data.txt",
             dataType: "text",
-            success: function(data) {processData(data);}
+            success: function (data) {
+                processData(data);
+            }
         });
     }
 
@@ -90,13 +100,13 @@
         var headers = allTextLines[0].split(',');
         var lines = [];
 
-        for (var i=1; i<allTextLines.length; i++) {
+        for (var i = 1; i < allTextLines.length; i++) {
             var data = allTextLines[i].split(',');
             if (data.length == headers.length) {
 
                 var tarr = [];
-                for (var j=0; j<headers.length; j++) {
-                    tarr.push(headers[j]+":"+data[j]);
+                for (var j = 0; j < headers.length; j++) {
+                    tarr.push(headers[j] + ":" + data[j]);
                 }
                 lines.push(tarr);
             }
@@ -104,7 +114,7 @@
         setData(lines)
     }
 
-    var intervalId = setInterval(drawPlot, 5*1000);
+    var intervalId = setInterval(drawPlot, 5 * 1000);
 
 </script>
 </body>

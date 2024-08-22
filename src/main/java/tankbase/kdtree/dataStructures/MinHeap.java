@@ -4,10 +4,15 @@ package tankbase.kdtree.dataStructures;
  *
  */
 public interface MinHeap<T> {
-    public int size();
-    public void offer(double key, T value);
-    public void replaceMin(double key, T value);
-    public void removeMin();
-    public T getMin();
-    public double getMinKey();
+    int size();
+
+    void offer(double key, T value);
+
+    void replaceMin(double key, T value);
+
+    void removeMin();
+
+    T getMin();
+
+    double getMinKey();
 }

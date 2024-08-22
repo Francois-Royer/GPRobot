@@ -11,10 +11,10 @@ import java.util.Iterator;
  *
  */
 public class NearestNeighborIterator<T> implements Iterator<T>, Iterable<T> {
-    private DistanceFunction distanceFunction;
-    private double[] searchPoint;
-    private MinHeap<KdNode<T>> pendingPaths;
-    private IntervalHeap<T> evaluatedPoints;
+    private final DistanceFunction distanceFunction;
+    private final double[] searchPoint;
+    private final MinHeap<KdNode<T>> pendingPaths;
+    private final IntervalHeap<T> evaluatedPoints;
     private int pointsRemaining;
     private double lastDistanceReturned;
 

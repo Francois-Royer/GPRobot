@@ -1,8 +1,8 @@
 package tankbase;
 
 public class Tunable {
-    private double min;
-    private double max;
+    private final double min;
+    private final double max;
     private double value;
 
     public Tunable(double value) {
@@ -24,6 +24,7 @@ public class Tunable {
     public double getValue() {
         return value;
     }
+
     public void setValue(double value) {
         this.value = checkMinMax(value);
     }

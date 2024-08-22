@@ -284,7 +284,7 @@ public abstract class KdTree<T> {
     /**
      * Enumeration representing the status of a node during the running
      */
-    private static enum Status {
+    private enum Status {
         NONE, LEFTVISITED, RIGHTVISITED, ALLVISITED
     }
 
@@ -399,7 +399,6 @@ public abstract class KdTree<T> {
 
     /**
      * Calculates the farthest 'count' points to 'location'.
-     *
      */
     @SuppressWarnings("unchecked")
     public List<Entry<T>> farthestNeighbor(double[] location, int count, boolean sequentialSorting) {

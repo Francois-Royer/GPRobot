@@ -9,15 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AimingData {
-    private Gunner gunner;
-    private ITank target;
+    private final Gunner gunner;
+    private final ITank target;
     private Point.Double firingPosition;
-    private Point.Double nextPosition;
+    private final Point.Double nextPosition;
     private Double direction;
-    private double firePower;
-    private List<Point.Double> expectedMoves;
+    private final double firePower;
+    private final List<Point.Double> expectedMoves;
 
-    private double[] kdPoint;
+    private final double[] kdPoint;
 
     public AimingData(Gunner gunner, ITank target, double firePower) {
         this(gunner, target, target.getPosition(), firePower);
@@ -42,7 +42,9 @@ public class AimingData {
         this.kdPoint = kdPoint;
     }
 
-    public Gunner getGunner() { return gunner; }
+    public Gunner getGunner() {
+        return gunner;
+    }
 
     public ITank getTarget() {
         return target;
@@ -65,7 +67,9 @@ public class AimingData {
     }
 
 
-    public Double getDirection() { return direction; }
+    public Double getDirection() {
+        return direction;
+    }
 
     public void setDirection(Double direction) {
         this.direction = direction;
@@ -79,9 +83,11 @@ public class AimingData {
         return kdPoint;
     }
 
-    public double hitRate() { return gunner.getEnemyRoundFireStat(target).getHitRate() ;}
+    public double hitRate() {
+        return gunner.getEnemyRoundFireStat(target).getHitRate();
+    }
 
     public AimingData copy() {
-        return new AimingData(gunner, target, firingPosition, nextPosition,  firePower, expectedMoves, kdPoint);
+        return new AimingData(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, kdPoint);
     }
 }

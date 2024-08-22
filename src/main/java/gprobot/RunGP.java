@@ -52,7 +52,7 @@ public class RunGP {
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length >= 2)  {
+        if (args.length >= 2) {
             RUNNERS_COUNT = Integer.parseInt(args[0]);
             ONE2ONE = Boolean.parseBoolean(args[1]);
         }
@@ -112,9 +112,9 @@ public class RunGP {
                 console.printf("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %d%n",
                         avgFitness, avgNodeCount);
                 console.printf("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
-                        bestSoFar.getBotName(),bestSoFar.fitness, pool[0].fitness,bestSoFar.nodeCount);
+                        bestSoFar.getBotName(), bestSoFar.fitness, pool[0].fitness, bestSoFar.nodeCount);
                 console.printf("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
-                        bestLastGen.getBotName(),bestLastGen.fitness, pool[1].fitness,bestLastGen.nodeCount);
+                        bestLastGen.getBotName(), bestLastGen.fitness, pool[1].fitness, bestLastGen.nodeCount);
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -143,8 +143,8 @@ public class RunGP {
                 Date finished = new Date(end + eta);
                 console.println("-------Time stat ---------- ");
                 console.println("last gen=" + sDuration(genTime) +
-                    ", avg=" + sDuration(avgTime) +
-                    ", eta= " + sDuration(eta));
+                        ", avg=" + sDuration(avgTime) +
+                        ", eta= " + sDuration(eta));
                 console.println("Date Finished: " + finished);
 
             }
@@ -278,9 +278,9 @@ public class RunGP {
         }
         runnerDirs.mkdir();
         battleControlers = new BattleControler[RUNNERS_COUNT];
-        for (int i=0; i < RUNNERS_COUNT; i++)
+        for (int i = 0; i < RUNNERS_COUNT; i++)
             battleControlers[i] = new BattleControler(i);
-        for (int i=0; i < RUNNERS_COUNT; i++)
+        for (int i = 0; i < RUNNERS_COUNT; i++)
             battleControlers[i].setOpponentsName(opponents);
     }
 
@@ -301,16 +301,16 @@ public class RunGP {
 
     public void storeRunData(int round, double avgFit, double bestFit, double avgNode, int bestNode, String bestBotName) {
         // store each variable in its own file (for graphs)
-        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName+"\n");
+        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName + "\n");
     }
 
     public void saveCtx() {
-        File tmpFile = new File(CTX_FILE+ ".tmp");
+        File tmpFile = new File(CTX_FILE + ".tmp");
 
         try (Output out = new Output(new DeflaterOutputStream(new FileOutputStream(tmpFile)))) {
             out.writeInt(genCount);
-            kryo.writeObject(out,bestSoFar);
-            kryo.writeObject(out,pool);
+            kryo.writeObject(out, bestSoFar);
+            kryo.writeObject(out, pool);
         } catch (IOException e) {
             Logger.getLogger("GPRobot").log(Level.SEVERE, "Unable to save context for restart", e);
         }
@@ -349,14 +349,14 @@ public class RunGP {
 
     public void cleanRunData() throws IOException {
         Stream.of(
-            new File(TARGET_FOLDER)
-                .listFiles((d, name) -> name.startsWith(BOT_PREFFIX)))
-            .forEach(File::delete);
+                        new File(TARGET_FOLDER)
+                                .listFiles((d, name) -> name.startsWith(BOT_PREFFIX)))
+                .forEach(File::delete);
 
         Stream.of(
-            new File(".")
-                .listFiles((d,name) ->  name.matches("run_data.*.txt")))
-            .forEach(File::delete);
+                        new File(".")
+                                .listFiles((d, name) -> name.matches("run_data.*.txt")))
+                .forEach(File::delete);
 
         appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness, Average nodes,Best nodes,Best name\n");
     }
