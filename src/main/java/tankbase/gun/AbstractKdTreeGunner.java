@@ -102,17 +102,17 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
         return new Point.Double[]{prevPoint, firePoint};
     }
 
-    static public double[] patternWeights = {10,10,10,10,10,10};
+    static public double[] patternWeights = {10,10,5,5,1,1};
 
     static public double[] getPatternPoint(ITank target) {
         return new double[] {
                 target.getVelocity() / MAX_VELOCITY,
-                target.getAccel() / DECELERATION,
-                target.getTurnRate() / MAX_TURN_RATE_RADIANS,
                 target.getHeadingRadians() / PI,
                 target.getPosition().distance(TankUtils.wallIntersection(target.getPosition(),
                         target.getMovingDirection()))/max(FIELD_WIDTH,FIELD_HEIGHT),
-                wallDistance(target.getPosition())/min(FIELD_WIDTH/2,FIELD_HEIGHT/2)
+                wallDistance(target.getPosition())/min(FIELD_WIDTH/2,FIELD_HEIGHT/2),
+                target.getAccel() / DECELERATION,
+                target.getTurnRate() / MAX_TURN_RATE_RADIANS,
         };
     }
 
