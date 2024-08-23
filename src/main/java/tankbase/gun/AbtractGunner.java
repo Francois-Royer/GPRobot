@@ -63,7 +63,7 @@ public abstract class AbtractGunner implements Gunner {
             power *= 1 - distance / DISTANCE_MAX / 6;
 
         // Apply a hitrate factor
-        power *= Math.pow(getEnemyRoundFireStat(target).getHitRate() + .5, 2);
+        power *= Math.pow(getEnemyRoundFireStat(target).getHitRate() + .5, 6);
 
         // Apply lastScan factor
         //power /= (1+target.getLastUpdateDelta());

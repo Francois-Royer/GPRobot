@@ -1,7 +1,9 @@
 package tankbase.gun;
 
 import tankbase.ITank;
+import tankbase.Move;
 import tankbase.TankUtils;
+import tankbase.kdtree.KdTree;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -17,7 +19,7 @@ public class AimingData {
     private final double firePower;
     private final List<Point.Double> expectedMoves;
 
-    private final double[] kdPoint;
+    private final KdTree.Entry<List<Move>> kdEntry;
 
     public AimingData(Gunner gunner, ITank target, double firePower) {
         this(gunner, target, target.getPosition(), firePower);
@@ -31,7 +33,7 @@ public class AimingData {
         this(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, null);
     }
 
-    public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, Point2D.Double nextPosition, double firePower, List<Point.Double> expectedMoves, double[] kdPoint) {
+    public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, Point2D.Double nextPosition, double firePower, List<Point.Double> expectedMoves, KdTree.Entry<List<Move>> kdEntry) {
         this.gunner = gunner;
         this.target = target;
         this.firingPosition = firingPosition;
@@ -39,7 +41,7 @@ public class AimingData {
         this.firePower = firePower;
         this.expectedMoves = expectedMoves;
         this.direction = TankUtils.getPointAngle(gunner.getTank().getPosition(), firingPosition);
-        this.kdPoint = kdPoint;
+        this.kdEntry = kdEntry;
     }
 
     public Gunner getGunner() {
@@ -79,8 +81,8 @@ public class AimingData {
         this.firingPosition = firingPosition;
     }
 
-    public double[] getKdPoint() {
-        return kdPoint;
+    public KdTree.Entry<List<Move>> getKdEntry() {
+        return kdEntry;
     }
 
     public double hitRate() {
@@ -88,6 +90,6 @@ public class AimingData {
     }
 
     public AimingData copy() {
-        return new AimingData(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, kdPoint);
+        return new AimingData(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, kdEntry);
     }
 }

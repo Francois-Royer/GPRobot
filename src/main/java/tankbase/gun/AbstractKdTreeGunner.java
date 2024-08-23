@@ -3,6 +3,7 @@ package tankbase.gun;
 import robocode.Rules;
 import tankbase.ITank;
 import tankbase.Move;
+import tankbase.TankBase;
 import tankbase.TankUtils;
 import tankbase.kdtree.KdTree;
 
@@ -34,7 +35,7 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
                 List<Move> movesLog = kdEntry.value;
                 firingPosition = getFiringPosition(target, firePower, movesLog, expectedMoves);
                 if (firingPosition != null)
-                    return new AimingData(this, target, firingPosition[0], firingPosition[1], firePower, expectedMoves);
+                    return new AimingData(this, target, firingPosition[0], firingPosition[1], firePower, expectedMoves, kdEntry);
             }
             firePower -= .1;
         }
@@ -101,17 +102,16 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
         return new Point.Double[]{prevPoint, firePoint};
     }
 
-    static public double[] patternWeights = {10, 10, 5, 5, 1, 1};
+static public double[] patternWeights = {10, 10, 10, 10, 10, 10};
 
     static public double[] getPatternPoint(ITank target) {
         return new double[]{
                 target.getVelocity() / MAX_VELOCITY,
                 target.getHeadingRadians() / PI,
-                target.getPosition().distance(TankUtils.wallIntersection(target.getPosition(),
-                        target.getMovingDirection())) / max(FIELD_WIDTH, FIELD_HEIGHT),
+                cornerDistance(target.getPosition()),
                 wallDistance(target.getPosition()) / min(FIELD_WIDTH / 2, FIELD_HEIGHT / 2),
-                target.getAccel() / DECELERATION,
                 target.getTurnRate() / MAX_TURN_RATE_RADIANS,
+                target.getAccel() / DECELERATION,
         };
     }
 
@@ -121,8 +121,7 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
     static public double[] getSurferPoint(ITank target, ITank source) {
         List<Shell> aimLog = source.getFireLog(target.getName());
         double[] surferPoint = {target.getPosition().distance(source.getPosition()) / DISTANCE_MAX,
-                normalRelativeAngle(target.getHeadingRadians() -
-                        TankUtils.getPointAngle(source.getPosition(), target.getPosition())) / PI,
+                normalRelativeAngle(target.getHeadingRadians() - getPointAngle(source.getPosition(), target.getPosition())) / PI,
                 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         for (int i = 0; i < aimLog.size() && i * 3 + 4 < surferPoint.length; i++) {

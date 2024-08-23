@@ -268,12 +268,12 @@ public class TankBase extends AdvancedRobot implements ITank {
     }
 
     private void selectTarget() {
-        Enemy newTarget = null;
+        Enemy newTarget = prevTarget;
         double minDistance = Double.POSITIVE_INFINITY;
+
         for (Enemy e : enemies.values()) {
-            if (e == prevTarget) continue;
             if (!e.isAlive()) continue;
-            if (e.getTurnAimDatas().isEmpty() && newTarget == null) continue;
+            if (e.getTurnAimDatas().isEmpty() && newTarget != null) continue;
             double distance = getPosition().distance(e);
             if (distance > minDistance) continue;
             // new target should be 2/3 closer than previous to avoid target switch to often
@@ -284,6 +284,8 @@ public class TankBase extends AdvancedRobot implements ITank {
             newTarget = e;
             minDistance = distance;
         }
+        //out.printf("prev=%s, new=%s\n", prevTarget!= null ? prevTarget.getName(): "null",
+                //newTarget!= null ? newTarget.getName():"null");
 
         if (newTarget != null)
             target = newTarget;
@@ -292,7 +294,16 @@ public class TankBase extends AdvancedRobot implements ITank {
             if (target.getEnergy() == 0)
                 aimingData = headOnGunner.aim(target);
             else
-                aimingData = target.getBestAiming(getPosition(), getGunHeadingRadians());
+                aimingData = target.getBestAiming(getNextPosition(), getGunHeadingRadians());
+
+            /*if (aimingData != null)
+                out.printf("aiming: %s->%s at x=%f y=%f \n",
+                        aimingData.getGunner().getName(), aimingData.getTarget().getName(),
+                        aimingData.getFiringPosition().getX(),
+                        aimingData.getFiringPosition().getY());
+            else
+                out.println("no aiming data");
+            */
         }
     }
 

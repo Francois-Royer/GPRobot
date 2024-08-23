@@ -386,11 +386,11 @@ public abstract class KdTree<T> {
         if (sequentialSorting) {
             while (resultHeap.values > 0) {
                 resultHeap.removeLargest();
-                results.add(new Entry<T>(resultHeap.removedDist, (T) resultHeap.removedData));
+                results.add(0,new Entry<T>(resultHeap.removedDist, (T) resultHeap.removedData));
             }
         } else {
             for (int i = 0; i < resultHeap.values; i++) {
-                results.add(new Entry<T>(resultHeap.distance[i], (T) resultHeap.data[i]));
+                results.add(0, new Entry<T>(resultHeap.distance[i], (T) resultHeap.data[i]));
             }
         }
 

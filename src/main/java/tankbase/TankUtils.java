@@ -316,4 +316,8 @@ public class TankUtils {
     static public Double wallDistance(Point2D.Double p) {
         return min(min(p.x, FIELD_WIDTH - p.x), min(p.y, FIELD_HEIGHT - p.y));
     }
+    static public Double cornerDistance(Point2D.Double p) {
+        return min(min(p.distance(0,0), p.distance(FIELD_WIDTH,0)),
+                min(p.distance(0,FIELD_HEIGHT), p.distance(FIELD_WIDTH,FIELD_HEIGHT)));
+    }
 }

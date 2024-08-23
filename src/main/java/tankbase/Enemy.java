@@ -367,13 +367,12 @@ public class Enemy extends Point.Double implements ITank {
         for (AimingData ad : turnAimDatas) {
             double hr = ad.getGunner().getEnemyRoundFireStat(this).getHitRate();
             double a = getPointAngle(from, ad.getFiringPosition());
-            if ((hr > maxhitrate) && (abs(gunHeadingRadians - a) < GUN_TURN_RATE_RADIANS / 1.1)) {
+            if ((hr > maxhitrate)) {//&& (abs(gunHeadingRadians - a) < GUN_TURN_RATE_RADIANS / 1.1)) {
                 aimingData = ad;
+                maxhitrate = hr;
             }
         }
-
         return aimingData;
     }
-
 }
 
