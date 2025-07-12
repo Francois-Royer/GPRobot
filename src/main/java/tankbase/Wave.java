@@ -5,7 +5,9 @@ import tankbase.gun.AimingData;
 import java.awt.*;
 import java.awt.geom.Point2D;
 
+import static java.lang.Math.PI;
 import static java.lang.Math.cos;
+import static java.lang.Math.max;
 import static java.lang.Math.sin;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.getBulletSpeed;
@@ -53,10 +55,9 @@ public class Wave extends MovingPoint {
         circular.x = head.x + cos(target.getHeadingRadians()) * time * target.getVelocity();
         circular.y = head.y + sin(target.getHeadingRadians()) * time * target.getVelocity();
 
-        this.arc = getVertexAngle(this, circular, head);
+        this.arc = max(getVertexAngle(this, circular, head), PI/8);
         middle = TankUtils.middle(head, circular);
-        direction = getPointAngle(this, middle)
-        ;
+        direction = getPointAngle(this, middle);
         median = normalAbsoluteAngle(direction);
         deviation = arc / 3;
         normalMedian = normalDistrib(median, median, deviation);
@@ -78,10 +79,10 @@ public class Wave extends MovingPoint {
         double angle = getVertexAngle(this, waveNow, p);
 
         d = p.distance(waveNow) / DANGER_SCALE;
-        double danger = getPower() / MAX_BULLET_POWER;
-        if (d >= MAX_DANGER_RADIUS) {
+        double danger = getPower() / MAX_BULLET_POWER*2;
+        if (d >= 0) { //MAX_DANGER_RADIUS) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
-            danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, 2);
+            danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, .5);
         }
         return danger;
     }

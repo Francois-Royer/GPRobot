@@ -3,34 +3,29 @@ package tankbase.gun;
 public class FireStat {
     long fireCount;
     long hitCount;
-    long hbbCount;
+    double dommage;
+    double cost;
 
     public FireStat() {
-        fireCount = hitCount = hbbCount = 0;
+        cost = dommage = fireCount = hitCount = 0;
     }
 
-    public void fire() {
-        fireCount++;
+    public void fire(Double power) {
+        fireCount++; cost += power;
     }
 
-    public void unFire() {
+    public void unFire( Double power) {
         fireCount--;
+        cost -= power;
     }
 
-    public void hitByBullet() {
-        hbbCount++;
-    }
-
-    public void hit() {
+    public void hit(Double dommage) {
+        this.dommage+=dommage;
         hitCount++;
     }
 
     public double getHitRate() {
-        return fireCount == 0 ? 0 : (double) hitCount / (fireCount);
-    }
-
-    public double getHitByBulletRate() {
-        return fireCount == 0 ? 0 : (double) hbbCount / fireCount;
+        return fireCount > 0 ? (double) getHitCount() / getFireCount() : 0;
     }
 
     public long getHitCount() {
@@ -40,4 +35,6 @@ public class FireStat {
     public long getFireCount() {
         return fireCount;
     }
+
+    public double getDommageCostRatio() { return cost >0 ? dommage/cost : 0; }
 }

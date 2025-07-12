@@ -47,7 +47,7 @@ public abstract class AbtractGunner implements Gunner {
 
     @Override
     public Color getColor() {
-        return Color.BLACK;
+        return Color.PINK;
     }
 
     public double getFirePower(ITank target) {
@@ -66,7 +66,7 @@ public abstract class AbtractGunner implements Gunner {
         power *= Math.pow(getEnemyRoundFireStat(target).getHitRate() + .5, 6);
 
         // Apply lastScan factor
-        //power /= (1+target.getLastUpdateDelta());
+        power /= 1+(target.getDate()-target.getLastScan());
 
         // Apply energy factor
         power *= tank.getEnergy() / 100;
@@ -78,7 +78,7 @@ public abstract class AbtractGunner implements Gunner {
         power = min(MAX_BULLET_POWER, max(MIN_BULLET_POWER, power));
 
         // enemy with 0 energy should be shoot asap for kill bonus and avoid it regain energy
-        if (target.getFEnergy() <= 0)
+        if (target.getEnergy() <= 0)
             power = MIN_BULLET_POWER;
 
         return power;

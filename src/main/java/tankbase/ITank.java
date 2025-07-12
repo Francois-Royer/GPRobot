@@ -51,5 +51,9 @@ public interface ITank {
 
     long getDate();
 
+    long getLastStop();
 
+    long getLastChangeDirection();
+
+    long getLastScan();
 }

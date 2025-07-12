@@ -35,7 +35,7 @@ public class CircularGunner extends AbtractGunner {
 
         if (firingPosition == null) return null;
 
-        return new AimingData(this, target, firingPosition[0], firingPosition[0], firePower, predMoves);
+        return new AimingData(this, target, firingPosition[0], firingPosition[1], firePower, predMoves);
     }
 
     @Override

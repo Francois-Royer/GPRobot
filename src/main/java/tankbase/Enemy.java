@@ -36,7 +36,10 @@ public class Enemy extends Point.Double implements ITank {
     private double vMin = 0;
     private double prevHeadingRadians;
     private double prevVelocity;
+    private double prevTurRate;
     private long lastScan;
+    private long lastStop;
+    private long lastChangeDirection;
     private Boolean alive = false;
     private boolean isDecelerate = false;
     private final List<Move> moveLog = new LinkedList<Move>();
@@ -64,7 +67,7 @@ public class Enemy extends Point.Double implements ITank {
 
     public void update(ScannedRobotEvent sre, TankBase tankBase, ArrayList<Wave> waves) {
         this.tankBase = tankBase;
-        long now = tankBase.now;
+        long now = sre.getTime();
         double sreNRG = sre.getEnergy();
         double distance = sre.getDistance();
 
@@ -80,6 +83,11 @@ public class Enemy extends Point.Double implements ITank {
 
             turnRate = turn / (now - lastScan);
             this.turnRate = checkMinMax(this.turnRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
+            if (velocity == 0 || signum(prevVelocity) != signum(velocity))
+                lastStop = now;
+            if (turnRate ==0 || signum(prevTurn) != signum(turnRate))
+                lastChangeDirection = now;
+
             isDecelerate = abs(velocity) < abs(prevVelocity);
             accel = velocity - prevVelocity / (now - lastScan);
             vMax = max(vMax, velocity);
@@ -107,6 +115,7 @@ public class Enemy extends Point.Double implements ITank {
         lastScan = now;
         lastUpdate = now;
         prevVelocity = velocity;
+        prevTurRate = turnRate;
         prevHeadingRadians = headingRadians;
     }
 
@@ -250,6 +259,16 @@ public class Enemy extends Point.Double implements ITank {
     @Override
     public long getDate() {
         return tankBase.getDate();
+    }
+
+    @Override
+    public long getLastStop() {
+        return lastStop;
+    }
+
+    @Override
+    public long getLastChangeDirection() {
+        return lastChangeDirection;
     }
 
     public int getHitMe() {

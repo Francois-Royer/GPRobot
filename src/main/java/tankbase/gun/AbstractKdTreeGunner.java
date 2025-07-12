@@ -14,6 +14,7 @@ import java.util.List;
 import static java.lang.Math.*;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalRelativeAngle;
+import static tankbase.Enemy.MAX_GUN_HEAT;
 import static tankbase.TankBase.*;
 import static tankbase.TankUtils.*;
 
@@ -102,32 +103,35 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
         return new Point.Double[]{prevPoint, firePoint};
     }
 
-static public double[] patternWeights = {10, 10, 10, 10, 10, 10};
+static public double[] patternWeights = {10, 10, 10, 10, 10, 10, 10};
 
     static public double[] getPatternPoint(ITank target) {
-        return new double[]{
+        return new double[] {
                 target.getVelocity() / MAX_VELOCITY,
-                target.getHeadingRadians() / PI,
-                cornerDistance(target.getPosition()),
-                wallDistance(target.getPosition()) / min(FIELD_WIDTH / 2, FIELD_HEIGHT / 2),
+                target.getHeadingRadians()/PI/2,
+                target.getPosition().distance(wallIntersection(target.getPosition(), target.getMovingDirection())) / DISTANCE_MAX,
                 target.getTurnRate() / MAX_TURN_RATE_RADIANS,
                 target.getAccel() / DECELERATION,
+                max(target.getDate()-target.getLastStop(), 100)/100,
+                max(target.getDate()-target.getLastChangeDirection(), 100)/100
         };
     }
 
-    static public double[] _surferWeights = {10, 10, 10, 10, 5, 5, 5, 3, 3, 3, 1, 1, 1};
+    static public double[] _surferWeights = {10, 10 , 10, 10, 10, 5, 5, 3, 3, 1, 1};
     static public double[] surferWeights = concatArray(patternWeights, _surferWeights);
 
     static public double[] getSurferPoint(ITank target, ITank source) {
-        List<Shell> aimLog = source.getFireLog(target.getName());
-        double[] surferPoint = {target.getPosition().distance(source.getPosition()) / DISTANCE_MAX,
+        double[] surferPoint = {
+                target.getPosition().distance(source.getPosition()) / DISTANCE_MAX,
                 normalRelativeAngle(target.getHeadingRadians() - getPointAngle(source.getPosition(), target.getPosition())) / PI,
-                0, 0, 0, 0, 0, 0, 0, 0, 0};
+                source.getGunHeat()/ MAX_GUN_HEAT,
+                0, 0, 0, 0, 0, 0, 0, 0
+        };
 
-        for (int i = 0; i < aimLog.size() && i * 3 + 4 < surferPoint.length; i++) {
-            surferPoint[i * 3 + 2] = aimLog.get(i).getAimingData().getFirePower() / MAX_BULLET_POWER;
-            surferPoint[i * 3 + 3] = aimLog.get(i).age(source.getDate()) / DISTANCE_MAX * Rules.getBulletSpeed(aimLog.get(i).getAimingData().getFirePower());
-            surferPoint[i * 3 + 4] = source.getPosition().distance(target.getPosition());
+        List<Shell> aimLog = source.getFireLog(target.getName());
+        for (int i = 0; i < aimLog.size() && i * 2 + 4 < surferPoint.length; i++) {
+            surferPoint[i * 2 + 3] = aimLog.get(i).getAimingData().getFirePower() / MAX_BULLET_POWER;
+            surferPoint[i * 2 + 4] = aimLog.get(i).age(source.getDate()) / DISTANCE_MAX * Rules.getBulletSpeed(aimLog.get(i).getAimingData().getFirePower());
         }
 
         return concatArray(getPatternPoint(target), surferPoint);
