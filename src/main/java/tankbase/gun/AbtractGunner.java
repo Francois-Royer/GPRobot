@@ -60,7 +60,7 @@ public abstract class AbtractGunner implements Gunner {
 
         // Apply distance factor
         if (distance > close)
-            power *= 1 - distance / DISTANCE_MAX / 6;
+            power *= Math.pow(1 - (distance-close) / DISTANCE_MAX, 2);
 
         // Apply a hitrate factor
         power *= Math.pow(getEnemyRoundFireStat(target).getHitRate() + .5, 6);
@@ -69,7 +69,7 @@ public abstract class AbtractGunner implements Gunner {
         power /= 1+(target.getDate()-target.getLastScan());
 
         // Apply energy factor
-        power *= tank.getEnergy() / 100;
+        //power *= tank.getEnergy() / 100;
 
         // shot for remaining energie
         power = min(power, getBulletPowerForDamage(target.getFEnergy() + 1));

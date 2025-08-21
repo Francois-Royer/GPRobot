@@ -45,6 +45,7 @@ public class Enemy extends Point.Double implements ITank {
     private final List<Move> moveLog = new LinkedList<Move>();
     private TankBase tankBase;
     private int hitMe = 0;
+    private double damageMe = 0;
     private double energy;
     private KdTree.WeightedManhattan<List<Move>> patternKdTree = null;
     private KdTree.WeightedManhattan<List<Move>> surferKdTree = null;
@@ -279,6 +280,14 @@ public class Enemy extends Point.Double implements ITank {
         hitMe++;
     }
 
+    public double getDamageMe() {
+        return damageMe;
+    }
+    public void damageMe(double damage) {
+        damageMe += damage;
+        hitMe();
+    }
+
     public long getLastUpdateDelta() {
         return lastUpdate - lastScan;
     }
@@ -325,11 +334,21 @@ public class Enemy extends Point.Double implements ITank {
         return min(getWallDistanceX(), getWallDistanceY());
     }
 
-    public double getDanger(int x, int y, int maxHitMe) {
+    public double getDanger(int x, int y, double maxDamageMe) {
         double d = sqrt(pow(x - getX() / DANGER_SCALE, 2) + pow(y - getY() / DANGER_SCALE, 2));
         if (d > MAX_DANGER_RADIUS) {
+            boolean shadowed = getEnemys()
+                    .filter(Enemy::isAlive)
+                    .filter(e -> e != this)
+                    .map(e -> collisionCercleSeg(e.getPosition(), TANK_SIZE, new Double(x*DANGER_SCALE, y*DANGER_SCALE), this))
+                    .reduce((a, b) -> a||b)
+                    .orElse(false);
+
+            if (shadowed)
+                return 0;
+
             double danger = Math.pow((DANGER_DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DANGER_DISTANCE_MAX, 8);
-            return danger * (hitMe + 1) / (maxHitMe + 1);
+            return danger * (getDamageMe() + .001) / (maxDamageMe + .001);
         }
         return 1;
     }

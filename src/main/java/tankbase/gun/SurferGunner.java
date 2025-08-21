@@ -25,6 +25,6 @@ public class SurferGunner extends AbstractKdTreeGunner {
 
     @Override
     public Color getColor() {
-        return Color.BLUE;
+        return Color.YELLOW;
     }
 }

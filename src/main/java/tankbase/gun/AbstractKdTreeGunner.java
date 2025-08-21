@@ -103,21 +103,21 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
         return new Point.Double[]{prevPoint, firePoint};
     }
 
-static public double[] patternWeights = {10, 10, 10, 10, 10, 10, 10};
+static public double[] patternWeights = {10, 10, 10, 20, 20, 30, 30};
 
     static public double[] getPatternPoint(ITank target) {
         return new double[] {
                 target.getVelocity() / MAX_VELOCITY,
-                target.getHeadingRadians()/PI/2,
+                target.getHeadingRadians()%(PI/2),
                 target.getPosition().distance(wallIntersection(target.getPosition(), target.getMovingDirection())) / DISTANCE_MAX,
                 target.getTurnRate() / MAX_TURN_RATE_RADIANS,
                 target.getAccel() / DECELERATION,
-                max(target.getDate()-target.getLastStop(), 100)/100,
-                max(target.getDate()-target.getLastChangeDirection(), 100)/100
+                min(target.getDate()-target.getLastStop(), 100)/100,
+                min(target.getDate()-target.getLastChangeDirection(), 100)/100
         };
     }
 
-    static public double[] _surferWeights = {10, 10 , 10, 10, 10, 5, 5, 3, 3, 1, 1};
+    static public double[] _surferWeights = {10, 20, 100, 100, 100, 50, 50, 30, 30, 10, 10};
     static public double[] surferWeights = concatArray(patternWeights, _surferWeights);
 
     static public double[] getSurferPoint(ITank target, ITank source) {

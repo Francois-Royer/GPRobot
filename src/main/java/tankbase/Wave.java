@@ -4,6 +4,7 @@ import tankbase.gun.AimingData;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.util.Optional;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.cos;
@@ -76,14 +77,30 @@ public class Wave extends MovingPoint {
         if (d > r)
             return 0;
 
+        boolean shadowed = getEnemys()
+                                   .filter(Enemy::isAlive)
+                                   .map(e -> collisionCercleSeg(e.getPosition(), TANK_SIZE, p, this))
+                                   .reduce((a, b) -> a||b)
+                                   .orElse(false);
+
+        if (shadowed)
+            return 0;
+
         double angle = getVertexAngle(this, waveNow, p);
 
         d = p.distance(waveNow) / DANGER_SCALE;
-        double danger = getPower() / MAX_BULLET_POWER*2;
+        double danger = getPower() / MAX_BULLET_POWER;
         if (d >= 0) { //MAX_DANGER_RADIUS) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
             danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, .5);
         }
+
+
+        //if (angle > arc + deviation || angle < arc - deviation)
+            //danger = 0;
+
+
+
         return danger;
     }
 

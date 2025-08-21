@@ -25,7 +25,7 @@ public class FireStat {
     }
 
     public double getHitRate() {
-        return fireCount > 0 ? (double) getHitCount() / getFireCount() : 0;
+        return fireCount > 0 ? (double) getHitCount() / getFireCount() : 1;
     }
 
     public long getHitCount() {
