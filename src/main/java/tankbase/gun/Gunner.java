@@ -17,5 +17,7 @@ public interface Gunner {
 
     Color getColor();
 
-    ITank getTank();
+    ITank getGunner();
+
+    void setGunner(ITank gunner);
 }

@@ -6,6 +6,11 @@ import tankbase.MovingPoint;
 
 public class Shell extends MovingPoint {
     private final AimingData aimingData;
+
+    public double getDommage() {
+        return dommage;
+    }
+
     private final double dommage;
 
     public Shell(Double origin, AimingData aimingData, long start) {

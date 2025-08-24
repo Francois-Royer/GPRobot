@@ -4,23 +4,32 @@ import tankbase.gun.AimingData;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.util.Optional;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.cos;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.Math.sin;
+import static java.lang.Math.toDegrees;
 import static robocode.Rules.MAX_BULLET_POWER;
+import static robocode.Rules.getBulletDamage;
 import static robocode.Rules.getBulletSpeed;
 import static robocode.util.Utils.normalAbsoluteAngle;
-import static tankbase.TankBase.*;
-import static tankbase.TankUtils.*;
+import static tankbase.AbstractTankBase.DANGER_SCALE;
+import static tankbase.AbstractTankBase.DISTANCE_MAX;
+import static tankbase.AbstractTankBase.TANK_SIZE;
+import static tankbase.AbstractTankBase.getEnemys;
+import static tankbase.TankUtils.collisionCercleSeg;
+import static tankbase.TankUtils.getPointAngle;
+import static tankbase.TankUtils.getVertexAngle;
+import static tankbase.TankUtils.middle;
+import static tankbase.TankUtils.normalDistrib;
 
 public class Wave extends MovingPoint {
     ITank source;
     ITank target;
 
-    TankBase robotBase;
+    AbstractTankBase robotBase;
 
     double arc;
     Point.Double head;
@@ -30,10 +39,9 @@ public class Wave extends MovingPoint {
     double median;
     double normalMedian;
     double deviation;
-    boolean kdangle = false;
 
     public Wave(AimingData ad, long start) {
-        this(ad.getTarget(), ad.getFirePower(), start, ad.getGunner().getTank());
+        this(ad.getTarget(), ad.getFirePower(), start, ad.getGunner().getGunner());
     }
 
     public Wave(ITank target, double power, long start, ITank source, int headCount, int circularCount) {
@@ -43,20 +51,20 @@ public class Wave extends MovingPoint {
     }
 
     public Wave(ITank target, double power, long start, ITank source) {
-        super(source.getPosition(), getBulletSpeed(power), 0, start);
+        super(source.getState().getPosition(), getBulletSpeed(power), 0, start);
 
         this.source = source;
         this.target = target;
 
-        head = target.getPosition();
+        head = target.getState().getPosition();
         double distance = distance(head);
         double time = distance / velocity;
 
         circular = new Point.Double();
-        circular.x = head.x + cos(target.getHeadingRadians()) * time * target.getVelocity();
-        circular.y = head.y + sin(target.getHeadingRadians()) * time * target.getVelocity();
+        circular.x = head.x + cos(target.getState().getHeadingRadians()) * time * target.getState().getVelocity();
+        circular.y = head.y + sin(target.getState().getHeadingRadians()) * time * target.getState().getVelocity();
 
-        this.arc = max(getVertexAngle(this, circular, head), PI/8);
+        this.arc = min(max(getVertexAngle(this, circular, head), PI/12), PI/4);
         middle = TankUtils.middle(head, circular);
         direction = getPointAngle(this, middle);
         median = normalAbsoluteAngle(direction);
@@ -79,7 +87,8 @@ public class Wave extends MovingPoint {
 
         boolean shadowed = getEnemys()
                                    .filter(Enemy::isAlive)
-                                   .map(e -> collisionCercleSeg(e.getPosition(), TANK_SIZE, p, this))
+                                   .filter(e -> e != source)
+                                   .map(e -> collisionCercleSeg(e.getState().getPosition(), TANK_SIZE, p, waveNow))
                                    .reduce((a, b) -> a||b)
                                    .orElse(false);
 
@@ -88,24 +97,26 @@ public class Wave extends MovingPoint {
 
         double angle = getVertexAngle(this, waveNow, p);
 
-        d = p.distance(waveNow) / DANGER_SCALE;
-        double danger = getPower() / MAX_BULLET_POWER;
+        double danger = getBulletDamage(getPower()) / getBulletDamage(MAX_BULLET_POWER);
+        d = p.distance(waveNow);
         if (d >= 0) { //MAX_DANGER_RADIUS) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
-            danger *= Math.pow((DANGER_DISTANCE_MAX - d) / DANGER_DISTANCE_MAX, .5);
+            danger *= Math.pow((DISTANCE_MAX - d) / DISTANCE_MAX, .5);
         }
-
 
         //if (angle > arc + deviation || angle < arc - deviation)
             //danger = 0;
-
-
 
         return danger;
     }
 
     public ITank getSource() {
         return source;
+    }
+
+    public String toString() {
+        return String.format("Wave{target=%s, source=%s, p=%.1f, d=%.0f°, a=%.1f}", target.getName(), source.getName(), getPower(),
+                             toDegrees(direction), toDegrees(arc));
     }
 }
 

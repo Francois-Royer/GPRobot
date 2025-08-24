@@ -1,17 +1,17 @@
 package tankbase.gun;
 
 import tankbase.ITank;
-import tankbase.TankUtils;
+import tankbase.TankState;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.Math.*;
-import static robocode.Rules.*;
-import static tankbase.TankBase.TANK_SIZE;
-import static tankbase.TankUtils.checkMinMax;
-import static tankbase.TankUtils.clonePoint;
+import static java.lang.Math.abs;
+import static robocode.Rules.MAX_VELOCITY;
+import static robocode.Rules.MIN_BULLET_POWER;
+import static robocode.Rules.getBulletSpeed;
+import static tankbase.AbstractTankBase.sysout;
 
 public class CircularGunner extends AbtractGunner {
 
@@ -21,15 +21,18 @@ public class CircularGunner extends AbtractGunner {
 
     @Override
     public AimingData aim(ITank target) {
-        if (target.getVelocity() == 0 && (target.getAccel() == 0 || target.getAccel() == -8))
+        if (target.getState().getVelocity() == 0 && (target.getState().getAcceleration() == 0 ||
+                target.getState().getAcceleration() == -MAX_VELOCITY))
             return null;
 
         double firePower = getFirePower(target);
 
         List<Point.Double> predMoves = new ArrayList<>();
         Point.Double[] firingPosition = null;
-        while (firePower >= MIN_BULLET_POWER && firingPosition == null) {
+        while (firePower >= MIN_BULLET_POWER ) {
             firingPosition = forwardMovementPrediction(target, predMoves, firePower);
+            if (firingPosition != null)
+                break;
             firePower -= .1;
         }
 
@@ -44,47 +47,36 @@ public class CircularGunner extends AbtractGunner {
     }
 
     private Point.Double[] forwardMovementPrediction(ITank target, List<Point.Double> predMoves, double firePower) {
-        Point.Double from = getTank().getPosition();
+        Point.Double from = getGunner().getState().getPosition();
         double bulletSpeed = getBulletSpeed(firePower);
-        Point.Double firePoint = target.getPosition();
-        Point.Double prevPoint = target.getPosition();
+        TankState targetState = target.getState();
+        Point.Double prevPoint = targetState.getPosition() ;
         long prevTime = 0;
         long prevDelta = Long.MAX_VALUE;
 
         for (int i = 0; i < 10; i++) {
-            long time = (long) (from.distance(firePoint) / bulletSpeed);
+            long time = (long) (from.distance(targetState.getPosition()) / bulletSpeed);
 
             if (prevTime == time || abs(time - prevTime) > prevDelta)
                 break;
 
+            targetState = target.getState();
             prevDelta = abs(time - prevTime);
             prevTime = time;
-            firePoint = clonePoint(target.getPosition());
-            double direction = target.getHeadingRadians();
-            double v = target.getVelocity();
-
             predMoves.clear();
 
             for (long t = 0; t < time + 1; t++) {
-                double accel = target.getAccel();
-                v = checkMinMax(v + accel, max(target.getVMin(), -MAX_VELOCITY), min(target.getVMax(), MAX_VELOCITY));
+                prevPoint = targetState.getPosition();
+                targetState = targetState.extrapolateNextState();
 
-                direction += min(abs(target.getTurnRate()), getTurnRateRadians(v)) * signum(target.getTurnRate());
-
-                if (t == time)
-                    prevPoint = clonePoint(firePoint);
-
-                firePoint.x += v * cos(direction);
-                firePoint.y += v * sin(direction);
-
-
-                if (!TankUtils.pointInBattleField(firePoint, TANK_SIZE / 2.1))
+                if (targetState == null)
                     return null;
 
-                predMoves.add(clonePoint(firePoint));
+                predMoves.add(targetState.getPosition());
             }
+            predMoves.remove(targetState.getPosition());
         }
 
-        return new Point.Double[]{prevPoint, firePoint};
+        return new Point.Double[]{prevPoint, targetState.getPosition()};
     }
 }

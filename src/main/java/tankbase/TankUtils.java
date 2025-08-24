@@ -6,12 +6,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.asin;
+import static java.lang.Math.cos;
+import static java.lang.Math.exp;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.tan;
 import static robocode.Rules.MAX_VELOCITY;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
-import static tankbase.TankBase.FIELD_HEIGHT;
-import static tankbase.TankBase.FIELD_WIDTH;
+import static tankbase.AbstractTankBase.FIELD_HEIGHT;
+import static tankbase.AbstractTankBase.FIELD_WIDTH;
 
 public class TankUtils {
 
@@ -52,42 +63,6 @@ public class TankUtils {
                 : (maxv - v) / (maxv - minv) * (minr - maxr) + maxr;
     }
 
-    public static void drawFillCircle(Graphics2D g, Color c, Point.Double p, int d) {
-        g.setColor(c);
-        g.fillArc((int) p.x - d / 2, (int) p.y - d / 2, d, d, 0, 360);
-    }
-
-    public static void drawCircle(Graphics2D g, Color c, Point.Double p, int d) {
-        g.setColor(c);
-        g.drawArc((int) p.x - d / 2, (int) p.y - d / 2, d, d, 0, 360);
-    }
-
-    public static void drawAimCircle(Graphics2D g, Color c, Point.Double p, int d) {
-        int div = 5;
-        g.setColor(c);
-        g.drawArc((int) p.x - d / 2, (int) p.y - d / 2, d, d, 0, 360);
-        g.drawLine((int) p.x + d / 2, (int) p.y, (int) p.x - d / div, (int) p.y);
-        g.drawLine((int) p.x - d / 2, (int) p.y, (int) p.x + d / div, (int) p.y);
-        g.drawLine((int) p.x, (int) p.y - d / 2, (int) p.x, (int) p.y - d / div);
-        g.drawLine((int) p.x, (int) p.y + d / 2, (int) p.x, (int) p.y + d / div);
-    }
-
-    public static void drawWave(Graphics2D g2D, Color c, Wave w, long tick) {
-        g2D.setColor(c);
-        int waveArc = (int) (w.arc * 180 / PI);
-        int d = (int) w.getDistance(tick);
-        int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
-        int s = d - 5;
-        int e = d + 5;
-        g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc / 2, waveArc);
-        g2D.drawLine((int) (w.x + s * cos(w.direction)), (int) (w.y + s * sin(w.direction)),
-                (int) (w.x + e * cos(w.direction)), (int) (w.y + e * sin(w.direction)));
-        g2D.drawLine((int) (w.x + s * cos(w.direction + w.arc / 2)), (int) (w.y + s * sin(w.direction + w.arc / 2)),
-                (int) (w.x + e * cos(w.direction + w.arc / 2)), (int) (w.y + e * sin(w.direction + w.arc / 2)));
-        g2D.drawLine((int) (w.x + s * cos(w.direction - w.arc / 2)), (int) (w.y + s * sin(w.direction - w.arc / 2)),
-                (int) (w.x + e * cos(w.direction - w.arc / 2)), (int) (w.y + e * sin(w.direction - w.arc / 2)));
-    }
-
     public static int degree(double radians) {
         return (int) (normalAbsoluteAngle(radians) * 180 / PI);
     }
@@ -122,7 +97,7 @@ public class TankUtils {
         return (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
     }
 
-    static double computeTurnGun2TargetNextPos(TankBase base, Point.Double target) {
+    static double computeTurnGun2TargetNextPos(AbstractTankBase base, Point.Double target) {
         double ga = base.getGunHeadingRadians();
         double ta = getPointAngle(base.getNextPosition(), target);
 
@@ -235,15 +210,15 @@ public class TankUtils {
         return min_dist <= r && max_dist >= r;
     }
 
-    static Point2D.Double vector(Point2D.Double a, Point2D.Double b) {
+    static Point2D.Double vector(Point2D.Double a, java.awt.geom.Point2D.Double b) {
         return new Point2D.Double(b.getX() - a.getX(), b.getY() - a.getY());
     }
 
-    static double dot(Point2D.Double a, Point2D.Double b) {
+    static double dot(Point2D.Double a, java.awt.geom.Point2D.Double b) {
         return a.getX() * b.getX() + a.getY() * b.getY();
     }
 
-    static double triangleArea(Point2D.Double a, Point2D.Double b, Point2D.Double c) {
+    static double triangleArea(Point2D.Double a, java.awt.geom.Point2D.Double b, java.awt.geom.Point2D.Double c) {
         return Math.abs(a.getX() * (b.getY() - c.getY()) +
                 b.getX() * (c.getY() - a.getY()) +
                 c.getX() * (a.getY() - b.getY())) / 2.0;

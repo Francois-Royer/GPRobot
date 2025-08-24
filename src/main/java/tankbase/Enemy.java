@@ -2,240 +2,167 @@ package tankbase;
 
 import robocode.Rules;
 import robocode.ScannedRobotEvent;
-import tankbase.gun.AbstractKdTreeGunner;
 import tankbase.gun.AimingData;
 import tankbase.gun.Shell;
-import tankbase.kdtree.KdTree;
+import tankbase.gun.kdFormula.KDFormula;
+import tankbase.gun.kdFormula.Pattern;
+import tankbase.gun.kdFormula.Surfer;
 
-import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static java.lang.Math.*;
-import static robocode.Rules.*;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.signum;
+import static java.lang.Math.sqrt;
+import static robocode.Rules.MAX_BULLET_POWER;
+import static robocode.Rules.MIN_BULLET_POWER;
 import static robocode.util.Utils.normalAbsoluteAngle;
-import static robocode.util.Utils.normalRelativeAngle;
-import static tankbase.TankBase.*;
-import static tankbase.TankUtils.*;
+import static tankbase.AbstractTankBase.DANGER_SCALE;
+import static tankbase.AbstractTankBase.DISTANCE_MAX;
+import static tankbase.AbstractTankBase.FIELD_HEIGHT;
+import static tankbase.AbstractTankBase.FIELD_WIDTH;
+import static tankbase.AbstractTankBase.GUN_COOLING_RATE;
+import static tankbase.AbstractTankBase.MAX_DANGER_RADIUS;
+import static tankbase.AbstractTankBase.TANK_SIZE;
+import static tankbase.AbstractTankBase.getEnemys;
+import static tankbase.AbstractTankBase.sysout;
+import static tankbase.TankUtils.collisionCercleSeg;
+import static tankbase.TankUtils.getPointAngle;
+import static tankbase.TankUtils.wallIntersection;
 
 
-public class Enemy extends Point.Double implements ITank {
-    private static final int KDTREE_MAX_SIZE = 1000;
+public class Enemy implements ITank {
     public static final int MAX_GUN_HEAT = 3;
+
     private final String name;
-    private double velocity;
-    private double headingRadians; // enemy direction
-    private double accel = 0;
-    private double turn;
-    private double turnRate = 0;
-    private double fEnergy;
-    private long lastUpdate; // Updated every turn
-    private double vMax = 0;
-    private double vMin = 0;
-    private double prevHeadingRadians;
-    private double prevVelocity;
-    private double prevTurRate;
+
+    private TankState tankState;
+    private TankState prevTankState;
+    private AbstractTankBase tankBase;
+    private Pattern pattern;
+    private Surfer surfer;
+    private List<AimingData> turnAimDatas = new ArrayList<>();
+
     private long lastScan;
     private long lastStop;
     private long lastChangeDirection;
+    private long lastVelocityChange;
     private Boolean alive = false;
-    private boolean isDecelerate = false;
     private final List<Move> moveLog = new LinkedList<Move>();
-    private TankBase tankBase;
     private int hitMe = 0;
     private double damageMe = 0;
-    private double energy;
-    private KdTree.WeightedManhattan<List<Move>> patternKdTree = null;
-    private KdTree.WeightedManhattan<List<Move>> surferKdTree = null;
-
-    private List<AimingData> turnAimDatas = new ArrayList<>();
-    double gunHeat = MAX_GUN_HEAT;
-    double angle;
+    private double fEnergy;
 
     int fireHead = 1;
     int fireCircular = 0;
 
-    public Enemy(ScannedRobotEvent sre, String name, TankBase tankBase, ArrayList<Wave> waves) {
+    public Enemy(ScannedRobotEvent sre, String name, AbstractTankBase tankBase, ArrayList<Wave> waves) {
         this.name = name;
+        tankState = null;
+        alive = false;
+        pattern = new Pattern(this);
+        surfer = new Surfer(this, tankBase);
         update(sre, tankBase, waves);
-        patternKdTree = new KdTree.WeightedManhattan<>(AbstractKdTreeGunner.getPatternPoint(this).length, KDTREE_MAX_SIZE);
-        patternKdTree.setWeights(AbstractKdTreeGunner.patternWeights);
-        surferKdTree = new KdTree.WeightedManhattan<>(AbstractKdTreeGunner.getSurferPoint(this, tankBase).length, KDTREE_MAX_SIZE);
-        surferKdTree.setWeights(AbstractKdTreeGunner.surferWeights);
     }
 
-    public void update(ScannedRobotEvent sre, TankBase tankBase, ArrayList<Wave> waves) {
+    public void update(ScannedRobotEvent sre, AbstractTankBase tankBase, ArrayList<Wave> waves) {
+        //sysout.printf("Updating enemy %s, alive %b\n", sre.getName(), alive);
         this.tankBase = tankBase;
-        long now = sre.getTime();
-        double sreNRG = sre.getEnergy();
-        double distance = sre.getDistance();
-
-        velocity = sre.getVelocity();
-        gunHeat = max(0, gunHeat - GUN_COOLING_RATE * (now - lastUpdate));
-        headingRadians = trigoAngle(sre.getHeadingRadians());
-        angle = normalAbsoluteAngle(tankBase.getHeadingRadians() - sre.getBearingRadians());
+        if (alive && !tankState.extrepolated)
+            prevTankState = tankState;
+        tankState = new TankState(sre, prevTankState, tankBase.getState());
+        lastScan = tankBase.getTime();
 
         if (alive) {
-            checkEnemyFire(tankBase, now, sreNRG, waves);
-            double prevTurn = turn;
-            turn = normalRelativeAngle(headingRadians - prevHeadingRadians);
+            checkEnemyFire(waves);
+            if (tankState.getVelocity() == 0 || signum(prevTankState.getVelocity()) != signum(tankState.getVelocity()))
+                lastStop = tankState.getTime();
 
-            turnRate = turn / (now - lastScan);
-            this.turnRate = checkMinMax(this.turnRate, -MAX_TURN_RATE_RADIANS, MAX_TURN_RATE_RADIANS);
-            if (velocity == 0 || signum(prevVelocity) != signum(velocity))
-                lastStop = now;
-            if (turnRate ==0 || signum(prevTurn) != signum(turnRate))
-                lastChangeDirection = now;
+            if (tankState.getTurnRate() == 0 || signum(prevTankState.getTurnRate()) != signum(tankState.getTurnRate()))
+                lastChangeDirection = tankState.getTime();
 
-            isDecelerate = abs(velocity) < abs(prevVelocity);
-            accel = velocity - prevVelocity / (now - lastScan);
-            vMax = max(vMax, velocity);
-            vMin = min(vMin, velocity);
+            lastVelocityChange = (tankState.getAcceleration() == 0) ? 0 : (lastVelocityChange == 0 ? tankState.getTime() : lastVelocityChange);
 
-            moveLog.add(new Move(AbstractKdTreeGunner.getPatternPoint(this),
-                    AbstractKdTreeGunner.getSurferPoint(this, tankBase),
-                    turn, velocity, now - lastScan));
+            if (prevTankState != null) {
+                long deltaTime = tankState.getTime() - prevTankState.getTime();
+                double distance = tankState.getPosition().distance(prevTankState.getPosition());
+                double turn = tankState.getHeadingRadians() - prevTankState.getHeadingRadians();
+                moveLog.add(new Move(pattern.getPoint(), surfer.getPoint(), turn, distance*signum(tankState.getVelocity()), deltaTime));
+            }
 
             if (moveLog.size() > tankBase.aimingMoveLogSize) {
                 List<Move> log = new ArrayList<>(moveLog.subList(moveLog.size() - tankBase.aimingMoveLogSize, moveLog.size()));
                 Move m = log.get(0);
-                patternKdTree.addPoint(m.getPatternKdPoint(), log);
-                surferKdTree.addPoint(m.getSurferKdPoint(), log);
+                pattern.addPoint(m.getPatternKdPoint(), log);
+                surfer.addPoint(m.getSurferKdPoint(), log);
                 moveLog.remove(0);
             }
         } else
-            fEnergy = energy;
+            fEnergy = tankState.getEnergy();
 
-        x = tankBase.getPosition().getX() + distance * cos(angle);
-        y = tankBase.getPosition().getY() + distance * sin(angle);
+        //sysout.printf("Enemy %s updated: %s\n", name, tankState);
 
         alive = true;
-        setEnergy(sreNRG, true);
-        lastScan = now;
-        lastUpdate = now;
-        prevVelocity = velocity;
-        prevTurRate = turnRate;
-        prevHeadingRadians = headingRadians;
-    }
-
-    private double accelerate() {
-        if (velocity == 0)
-            return ACCELERATION * signum(-prevVelocity);
-        double vsign = signum(velocity);
-        if (isDecelerate) {
-            if (abs(velocity) < DECELERATION)
-                return 0;
-            return velocity - DECELERATION * signum(velocity);
-        }
-        return checkMinMax(velocity + ACCELERATION * signum(velocity), vMin, vMax);
     }
 
     public void move(long iteration) {
-        for (long i = 0; i < iteration; i++) {
-            velocity = accelerate();
-            headingRadians += min(abs(turnRate), getTurnRateRadians(velocity)) * signum(turnRate);
-            try {
-                double h = ensureXInBatleField(x + velocity * cos(headingRadians));
-                double v = ensureYInBatleField(y + velocity * sin(headingRadians));
-                x = h;
-                y = v;
-            } catch (Exception ex) {
-                // HitWall
-            }
-        }
+        if (prevTankState == null && !tankState.extrepolated)
+            prevTankState = tankState;
 
-        lastUpdate += iteration;
-        gunHeat -= GUN_COOLING_RATE * iteration;
-        if (gunHeat < 0) gunHeat = 0;
+        for (long i = 0; i < iteration; i++) {
+            TankState newState = tankState.extrapolateNextState();
+            if (newState != null) tankState = newState;
+        }
     }
 
     public void die() {
-        gunHeat = MAX_GUN_HEAT;
-        energy = fEnergy = turnRate = velocity = prevVelocity = 0;
-        lastUpdate = lastScan = 0;
         alive = false;
+        prevTankState = tankState = null;
     }
 
-    private void checkEnemyFire(TankBase tankBase, long now, double sreNRG, ArrayList<Wave> waves) {
-        double drop = min(energy - sreNRG, MAX_BULLET_POWER);
-        if (drop < MIN_BULLET_POWER)// || gunHeat>0)
+    private void checkEnemyFire(ArrayList<Wave> waves) {
+        if (prevTankState == null)
             return;
 
-        gunHeat = Rules.getGunHeat(drop);
-        waves.add(new Wave(tankBase, drop, lastScan, this, fireHead, fireCircular));
+        double drop = prevTankState.getEnergy() - tankState.getEnergy();
+        if (drop < 0 || drop < MIN_BULLET_POWER || drop > MAX_BULLET_POWER || tankState.getGunHeat()>0)
+            return;
+
+        tankState.setGunHeat(Rules.getGunHeat(drop));
+        long waveStart = prevTankState.getTime() + (long) (prevTankState.getGunHeat()/GUN_COOLING_RATE);
+        Wave w = new Wave(tankBase, drop, waveStart, this, fireHead, fireCircular);
+        waves.add(w);
     }
 
     // Getters
+    @Override
+    public TankState getState() {
+        return tankState;
+    }
+
     @Override
     public String getName() {
         return name;
     }
 
-    @Override
-    public double getVelocity() {
-        return velocity;
-    }
-
-    @Override
-    public double getHeadingRadians() {
-        return headingRadians;
-    }
-
-    @Override
-    public double getEnergy() {
-        return energy;
-    }
-
-    @Override
-    public double getVMax() {
-        return vMax;
-    }
-
-    @Override
-    public double getVMin() {
-        return vMin;
-    }
-
-    public void setEnergy(double energy) {
-        setEnergy(energy, false);
-    }
-
     public void setEnergy(double energy, boolean updateFenergy) {
         if (updateFenergy) {
-            double delta = this.energy - energy;
+            double delta = tankState.getEnergy() - energy;
             fEnergy -= delta;
         }
-        this.energy = energy;
-    }
-
-    public double getAngle() {
-        return angle;
-    }
-
-    @Override
-    public double getTurnRate() {
-        return turnRate;
-    }
-
-    @Override
-    public double getAccel() {
-        return accel;
-    }
-
-    @Override
-    public Point.Double getPosition() {
-        return new Point.Double(getX(), getY());
-    }
-
-    public long getLastUpdate() {
-        return lastUpdate;
+        tankState.setEnergy(energy);
     }
 
     public long getLastScan() {
         return lastScan;
 
+    }
+
+    public double getAngle() {
+        return normalAbsoluteAngle(getPointAngle(tankBase.getState().getPosition(), tankState.getPosition()));
     }
 
     @Override
@@ -253,16 +180,6 @@ public class Enemy extends Point.Double implements ITank {
     }
 
     @Override
-    public int getAliveCount() {
-        return tankBase.getAliveCount();
-    }
-
-    @Override
-    public long getDate() {
-        return tankBase.getDate();
-    }
-
-    @Override
     public long getLastStop() {
         return lastStop;
     }
@@ -270,6 +187,11 @@ public class Enemy extends Point.Double implements ITank {
     @Override
     public long getLastChangeDirection() {
         return lastChangeDirection;
+    }
+
+    @Override
+    public long getLastVelocityChange() {
+        return lastVelocityChange;
     }
 
     public int getHitMe() {
@@ -289,18 +211,17 @@ public class Enemy extends Point.Double implements ITank {
     }
 
     public long getLastUpdateDelta() {
-        return lastUpdate - lastScan;
+        return tankState.getTime() - lastScan;
     }
 
-    public KdTree<List<Move>> getPatternKdTree() {
-        return patternKdTree;
+    public KDFormula getPatternFormula() {
+        return pattern;
     }
 
-    public KdTree<List<Move>> getSurferKdTree() {
-        return surferKdTree;
+    public KDFormula getSurferFormula() {
+        return surfer;
     }
-
-    public TankBase getGpBase() {
+    public AbstractTankBase getGpBase() {
         return tankBase;
     }
 
@@ -309,25 +230,20 @@ public class Enemy extends Point.Double implements ITank {
         return moveLog;
     }
 
-    @Override
-    public double hit() {
-        return 0;
-    }
-
     public double getWallDistance() {
         return sqrt(pow(getWallDistanceX(), 2) + pow(getWallDistanceY(), 2));
     }
 
     public double getForwardWallDistance() {
-        return distance(wallIntersection(this, getMovingDirection()));
+        return tankBase.getPosition().distance(wallIntersection(tankState.getPosition(), tankState.getMovingDirection()));
     }
 
     public double getWallDistanceX() {
-        return min(x, FIELD_WIDTH - x);
+        return min(tankState.getX(), FIELD_WIDTH - tankState.getX());
     }
 
     public double getWallDistanceY() {
-        return min(y, FIELD_HEIGHT - y);
+        return min(tankState.getY(), FIELD_HEIGHT - tankState.getY());
     }
 
     public double getClosestWallDistance() {
@@ -335,46 +251,34 @@ public class Enemy extends Point.Double implements ITank {
     }
 
     public double getDanger(int x, int y, double maxDamageMe) {
-        double d = sqrt(pow(x - getX() / DANGER_SCALE, 2) + pow(y - getY() / DANGER_SCALE, 2));
+        Point2D.Double p = new Point2D.Double(x, y);
+        Point2D.Double pos = getState().getPosition();
+        double d = pos.distance(x*DANGER_SCALE, y*DANGER_SCALE);
         if (d > MAX_DANGER_RADIUS) {
             boolean shadowed = getEnemys()
                     .filter(Enemy::isAlive)
                     .filter(e -> e != this)
-                    .map(e -> collisionCercleSeg(e.getPosition(), TANK_SIZE, new Double(x*DANGER_SCALE, y*DANGER_SCALE), this))
+                    .map(e -> collisionCercleSeg(e.tankState.getPosition(), TANK_SIZE,
+                                                 new Point2D.Double(x*DANGER_SCALE, y*DANGER_SCALE), pos))
                     .reduce((a, b) -> a||b)
                     .orElse(false);
 
             if (shadowed)
                 return 0;
 
-            double danger = Math.pow((DANGER_DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DANGER_DISTANCE_MAX, 8);
+            double danger = Math.pow((DISTANCE_MAX - d+ MAX_DANGER_RADIUS) / DISTANCE_MAX, 8);
             return danger * (getDamageMe() + .001) / (maxDamageMe + .001);
         }
         return 1;
-    }
-
-    public double getMovingDirection() {
-        return normalRelativeAngle(headingRadians + ((velocity >= 0) ? 0 : PI));
-    }
-
-    @Override
-    public double getGunHeat() {
-        return gunHeat;
-    }
-
-    @Override
-    public boolean isDecelerate() {
-        return isDecelerate;
     }
 
     public List<Shell> getFireLog(String target) {
         return new ArrayList<>();
     }
 
-    int FIRE_STAT_COUNT_MAX = 5;
+    int FIRE_STAT_COUNT_MAX = 3;
 
     public void fireHead() {
-        //tankBase.out.printf("%s hit head, %d %d\n", name, fireHead, fireCircular);
         fireHead++;
         if (fireHead + fireCircular > FIRE_STAT_COUNT_MAX) {
             if (fireHead > FIRE_STAT_COUNT_MAX) fireHead--;
@@ -383,7 +287,6 @@ public class Enemy extends Point.Double implements ITank {
     }
 
     public void fireCircular() {
-        //tankBase.out.printf("%s hit circular, %d %d\n", name, fireHead, fireCircular);
         fireCircular++;
         if (fireHead + fireCircular > FIRE_STAT_COUNT_MAX) {
             if (fireCircular > FIRE_STAT_COUNT_MAX) fireCircular--;
@@ -405,7 +308,7 @@ public class Enemy extends Point.Double implements ITank {
         for (AimingData ad : turnAimDatas) {
             double hr = ad.getGunner().getEnemyRoundFireStat(this).getHitRate();
             double a = getPointAngle(from, ad.getFiringPosition());
-            if ((hr > maxhitrate)) {//&& (abs(gunHeadingRadians - a) < GUN_TURN_RATE_RADIANS / 1.1)) {
+            if ((hr > maxhitrate) || aimingData == null) {//&& (abs(gunHeadingRadians - a) < GUN_TURN_RATE_RADIANS / 1.1)) {
                 aimingData = ad;
                 maxhitrate = hr;
             }
@@ -413,4 +316,3 @@ public class Enemy extends Point.Double implements ITank {
         return aimingData;
     }
 }
-

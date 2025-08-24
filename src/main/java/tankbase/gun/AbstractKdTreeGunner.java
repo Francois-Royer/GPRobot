@@ -1,9 +1,7 @@
 package tankbase.gun;
 
-import robocode.Rules;
 import tankbase.ITank;
 import tankbase.Move;
-import tankbase.TankBase;
 import tankbase.TankUtils;
 import tankbase.kdtree.KdTree;
 
@@ -11,12 +9,13 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.Math.*;
-import static robocode.Rules.*;
-import static robocode.util.Utils.normalRelativeAngle;
-import static tankbase.Enemy.MAX_GUN_HEAT;
-import static tankbase.TankBase.*;
-import static tankbase.TankUtils.*;
+import static java.lang.Math.abs;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static robocode.Rules.MIN_BULLET_POWER;
+import static robocode.Rules.getBulletSpeed;
+import static tankbase.AbstractTankBase.TANK_SIZE;
+import static tankbase.TankUtils.clonePoint;
 
 abstract public class AbstractKdTreeGunner extends AbtractGunner {
 
@@ -50,9 +49,9 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
     }
 
     private Point.Double[] getFiringPosition(ITank target, double firePower, List<Move> movesLog, List<Point.Double> predMoves) {
-        Point.Double from = getTank().getPosition();
+        Point.Double from = getGunner().getState().getPosition();
         double bulletSpeed = getBulletSpeed(firePower);
-        Point.Double firePoint = clonePoint(target.getPosition());
+        Point.Double firePoint = clonePoint(target.getState().getPosition());
         Point.Double prevPoint = null;
         long prevTime = 0;
         long prevDelta = Long.MAX_VALUE;
@@ -65,20 +64,20 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
             prevDelta = abs(time - prevTime);
             prevTime = time;
 
-            firePoint = clonePoint(target.getPosition());
+            firePoint = target.getState().getPosition();
             predMoves.clear();
             long moveDuration = 0;
-            int step = 1;
-            double dir = target.getHeadingRadians();
+            int step = 0;
+            double dir = target.getState().getHeadingRadians();
 
             while (moveDuration < time + 1 && step < movesLog.size()) {
                 Move m = movesLog.get(step++);
                 long overtime = moveDuration - time;
-                double dist = m.getVelocity() * m.getDuration();
+                double dist = m.getDistance();
                 dir += m.getTurn();
 
                 if (overtime > 0) {
-                    dist -= m.getVelocity() * overtime;
+                    dist -= m.getDistance() * overtime;
                     dir -= m.getTurn() * overtime / m.getDuration();
                 }
 
@@ -102,39 +101,4 @@ abstract public class AbstractKdTreeGunner extends AbtractGunner {
 
         return new Point.Double[]{prevPoint, firePoint};
     }
-
-static public double[] patternWeights = {10, 10, 10, 20, 20, 30, 30};
-
-    static public double[] getPatternPoint(ITank target) {
-        return new double[] {
-                target.getVelocity() / MAX_VELOCITY,
-                target.getHeadingRadians()%(PI/2),
-                target.getPosition().distance(wallIntersection(target.getPosition(), target.getMovingDirection())) / DISTANCE_MAX,
-                target.getTurnRate() / MAX_TURN_RATE_RADIANS,
-                target.getAccel() / DECELERATION,
-                min(target.getDate()-target.getLastStop(), 100)/100,
-                min(target.getDate()-target.getLastChangeDirection(), 100)/100
-        };
-    }
-
-    static public double[] _surferWeights = {10, 20, 100, 100, 100, 50, 50, 30, 30, 10, 10};
-    static public double[] surferWeights = concatArray(patternWeights, _surferWeights);
-
-    static public double[] getSurferPoint(ITank target, ITank source) {
-        double[] surferPoint = {
-                target.getPosition().distance(source.getPosition()) / DISTANCE_MAX,
-                normalRelativeAngle(target.getHeadingRadians() - getPointAngle(source.getPosition(), target.getPosition())) / PI,
-                source.getGunHeat()/ MAX_GUN_HEAT,
-                0, 0, 0, 0, 0, 0, 0, 0
-        };
-
-        List<Shell> aimLog = source.getFireLog(target.getName());
-        for (int i = 0; i < aimLog.size() && i * 2 + 4 < surferPoint.length; i++) {
-            surferPoint[i * 2 + 3] = aimLog.get(i).getAimingData().getFirePower() / MAX_BULLET_POWER;
-            surferPoint[i * 2 + 4] = aimLog.get(i).age(source.getDate()) / DISTANCE_MAX * Rules.getBulletSpeed(aimLog.get(i).getAimingData().getFirePower());
-        }
-
-        return concatArray(getPatternPoint(target), surferPoint);
-    }
-
 }

@@ -1,5 +1,7 @@
 package tankbase.gun;
 
+import robocode.Rules;
+
 public class FireStat {
     long fireCount;
     long hitCount;
@@ -10,18 +12,16 @@ public class FireStat {
         cost = dommage = fireCount = hitCount = 0;
     }
 
-    public void fire(Double power) {
-        fireCount++; cost += power;
-    }
-
-    public void unFire( Double power) {
-        fireCount--;
-        cost -= power;
-    }
-
-    public void hit(Double dommage) {
-        this.dommage+=dommage;
+    public void hit(Double power) {
+        cost += power;
+        fireCount++;
         hitCount++;
+        dommage+= Rules.getBulletDamage(power);
+    }
+
+    public void miss(Double power) {
+        cost += power;
+        fireCount++;
     }
 
     public double getHitRate() {

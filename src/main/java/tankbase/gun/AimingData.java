@@ -22,7 +22,7 @@ public class AimingData {
     private final KdTree.Entry<List<Move>> kdEntry;
 
     public AimingData(Gunner gunner, ITank target, double firePower) {
-        this(gunner, target, target.getPosition(), firePower);
+        this(gunner, target, target.getState().getPosition(), firePower);
     }
 
     public AimingData(Gunner gunner, ITank target, Point.Double firingPosition, double firePower) {
@@ -40,7 +40,7 @@ public class AimingData {
         this.nextPosition = nextPosition;
         this.firePower = firePower;
         this.expectedMoves = expectedMoves;
-        this.direction = TankUtils.getPointAngle(gunner.getTank().getPosition(), firingPosition);
+        this.direction = TankUtils.getPointAngle(gunner.getGunner().getState().getPosition(), firingPosition);
         this.kdEntry = kdEntry;
     }
 
@@ -91,5 +91,10 @@ public class AimingData {
 
     public AimingData copy() {
         return new AimingData(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, kdEntry);
+    }
+
+    public String toString() {
+        return String.format("AimingData[target=%s, firePower=%.2f, direction=%.2f, firing to=(%.2f, %.2f) from(%.2f, %.2f)]",
+                target.getName(), firePower, Math.toDegrees(direction), firingPosition.x, firingPosition.y, gunner.getGunner().getState().getPosition().x, gunner.getGunner().getState().getPosition().y);
     }
 }
