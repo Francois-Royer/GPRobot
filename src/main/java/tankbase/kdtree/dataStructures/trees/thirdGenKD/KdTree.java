@@ -16,23 +16,6 @@ public class KdTree<T> extends KdNode<T> {
         super(dimensions, bucketCapacity);
     }
 
-    public NearestNeighborIterator<T> getNearestNeighborIterator(double[] searchPoint, int maxPointsReturned, DistanceFunction distanceFunction) {
-        return new NearestNeighborIterator<T>(this, searchPoint, maxPointsReturned, distanceFunction);
-    }
-
-    public MaxHeap<T> findNearestNeighbors(double[] searchPoint, int maxPointsReturned, DistanceFunction distanceFunction) {
-        BinaryHeap.Min<KdNode<T>> pendingPaths = new BinaryHeap.Min<KdNode<T>>();
-        BinaryHeap.Max<T> evaluatedPoints = new BinaryHeap.Max<T>();
-        int pointsRemaining = Math.min(maxPointsReturned, size());
-        pendingPaths.offer(0, this);
-
-        while (pendingPaths.size() > 0 && (evaluatedPoints.size() < pointsRemaining || (pendingPaths.getMinKey() < evaluatedPoints.getMaxKey()))) {
-            nearestNeighborSearchStep(pendingPaths, evaluatedPoints, pointsRemaining, distanceFunction, searchPoint);
-        }
-
-        return evaluatedPoints;
-    }
-
     @SuppressWarnings("unchecked")
     protected static <T> void nearestNeighborSearchStep(
             MinHeap<KdNode<T>> pendingPaths, MaxHeap<T> evaluatedPoints, int desiredPoints,
@@ -87,5 +70,23 @@ public class KdTree<T> extends KdNode<T> {
                 }
             }
         }
+    }
+
+    public NearestNeighborIterator<T> getNearestNeighborIterator(double[] searchPoint, int maxPointsReturned,
+                                                                 DistanceFunction distanceFunction) {
+        return new NearestNeighborIterator<T>(this, searchPoint, maxPointsReturned, distanceFunction);
+    }
+
+    public MaxHeap<T> findNearestNeighbors(double[] searchPoint, int maxPointsReturned, DistanceFunction distanceFunction) {
+        BinaryHeap.Min<KdNode<T>> pendingPaths = new BinaryHeap.Min<KdNode<T>>();
+        BinaryHeap.Max<T> evaluatedPoints = new BinaryHeap.Max<T>();
+        int pointsRemaining = Math.min(maxPointsReturned, size());
+        pendingPaths.offer(0, this);
+
+        while (pendingPaths.size() > 0 && (evaluatedPoints.size() < pointsRemaining || (pendingPaths.getMinKey() < evaluatedPoints.getMaxKey()))) {
+            nearestNeighborSearchStep(pendingPaths, evaluatedPoints, pointsRemaining, distanceFunction, searchPoint);
+        }
+
+        return evaluatedPoints;
     }
 }

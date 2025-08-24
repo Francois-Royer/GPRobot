@@ -14,11 +14,11 @@ public class SurferGunner extends AbstractKdTreeGunner {
     }
 
     @Override
-    public AimingData aim(ITank target) {
-        if (target.getPatternKdTree() == null) return null;
+    public Aiming aim(ITank target) {
+        if (target.getSurferFormula() == null) return null;
 
-        double[] kdPoint = getSurferPoint(target, getTank());
-        List<KdTree.Entry<List<Move>>> el = target.getSurferKdTree().nearestNeighbor(kdPoint, 10, true);
+        double[] kdPoint = target.getSurferFormula().getPoint(target.getState());
+        List<KdTree.Entry<List<Move>>> el = target.getSurferFormula().getKdTree().nearestNeighbor(kdPoint, 10, true);
 
         return getKdTreeAimingData(target, el);
     }

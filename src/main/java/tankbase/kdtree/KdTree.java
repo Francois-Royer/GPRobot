@@ -282,26 +282,6 @@ public abstract class KdTree<T> {
     }
 
     /**
-     * Enumeration representing the status of a node during the running
-     */
-    private enum Status {
-        NONE, LEFTVISITED, RIGHTVISITED, ALLVISITED
-    }
-
-    /**
-     * Stores a distance and value to output
-     */
-    public static class Entry<T> {
-        public final double distance;
-        public final T value;
-
-        private Entry(double distance, T value) {
-            this.distance = distance;
-            this.value = value;
-        }
-    }
-
-    /**
      * Calculates the nearest 'count' points to 'location'
      */
     @SuppressWarnings("unchecked")
@@ -372,7 +352,7 @@ public abstract class KdTree<T> {
             if (cursor.status == Status.ALLVISITED) {
                 if (nextCursor.locationCount == 0
                         || (!nextCursor.singularity && pointRegionDist(location, nextCursor.minLimit,
-                        nextCursor.maxLimit) > range)) {
+                                                                       nextCursor.maxLimit) > range)) {
                     continue;
                 }
             }
@@ -386,7 +366,7 @@ public abstract class KdTree<T> {
         if (sequentialSorting) {
             while (resultHeap.values > 0) {
                 resultHeap.removeLargest();
-                results.add(0,new Entry<T>(resultHeap.removedDist, (T) resultHeap.removedData));
+                results.add(0, new Entry<T>(resultHeap.removedDist, (T) resultHeap.removedData));
             }
         } else {
             for (int i = 0; i < resultHeap.values; i++) {
@@ -475,7 +455,7 @@ public abstract class KdTree<T> {
                 if (nextCursor.locationCount == 0
                         || (!nextCursor.singularity &&
                         pointRegionMaxDist(location, nextCursor.minLimit,
-                                nextCursor.maxLimit) < range)) {
+                                           nextCursor.maxLimit) < range)) {
                     continue;
                 }
             }
@@ -512,24 +492,27 @@ public abstract class KdTree<T> {
     }
 
     /**
-     * Internal class for child nodes
+     * Enumeration representing the status of a node during the running
      */
-    private class ChildNode extends KdTree<T> {
-        private ChildNode(KdTree<T> parent, boolean right) {
-            super(parent, right);
+    private enum Status {
+        NONE, LEFTVISITED, RIGHTVISITED, ALLVISITED
+    }
+
+    /**
+     * Stores a distance and value to output
+     */
+    public static class Entry<T> {
+        public final double distance;
+        public final T value;
+
+        private Entry(double distance, T value) {
+            this.distance = distance;
+            this.value = value;
         }
 
-        // Distance measurements are always called from the root node
-        protected double pointDist(double[] p1, double[] p2) {
-            throw new IllegalStateException();
-        }
-
-        protected double pointRegionDist(double[] point, double[] min, double[] max) {
-            throw new IllegalStateException();
-        }
-
-        protected double pointRegionMaxDist(double[] point, double[] min, double[] max) {
-            throw new IllegalStateException();
+        @Override
+        public String toString() {
+            return String.format("distance=%f", distance);
         }
     }
 
@@ -590,7 +573,7 @@ public abstract class KdTree<T> {
 
             for (int i = 0; i < point.length; i++) {
                 double diff = Math.max(Math.abs(point[i] - min[i]),
-                        Math.abs(max[i] - point[i])) * weights[i];
+                                       Math.abs(max[i] - point[i])) * weights[i];
 
                 if (!Double.isNaN(diff)) {
                     d += diff * diff;
@@ -755,9 +738,9 @@ public abstract class KdTree<T> {
         protected final Object[] data;
         protected final double[] distance;
         protected final int size;
-        protected int values;
         public Object removedData;
         public double removedDist;
+        protected int values;
 
         public ResultHeap(int size) {
             this.data = new Object[size];
@@ -889,6 +872,28 @@ public abstract class KdTree<T> {
                     break;
                 }
             }
+        }
+    }
+
+    /**
+     * Internal class for child nodes
+     */
+    private class ChildNode extends KdTree<T> {
+        private ChildNode(KdTree<T> parent, boolean right) {
+            super(parent, right);
+        }
+
+        // Distance measurements are always called from the root node
+        protected double pointDist(double[] p1, double[] p2) {
+            throw new IllegalStateException();
+        }
+
+        protected double pointRegionDist(double[] point, double[] min, double[] max) {
+            throw new IllegalStateException();
+        }
+
+        protected double pointRegionMaxDist(double[] point, double[] min, double[] max) {
+            throw new IllegalStateException();
         }
     }
 }

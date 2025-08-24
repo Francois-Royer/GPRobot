@@ -14,11 +14,11 @@ public class PatternGunner extends AbstractKdTreeGunner {
     }
 
     @Override
-    public AimingData aim(ITank target) {
-        if (target.getPatternKdTree() == null) return null;
+    public Aiming aim(ITank target) {
+        if (target.getPatternFormula() == null) return null;
 
-        double[] kdPoint = getPatternPoint(target);
-        List<KdTree.Entry<List<Move>>> el = target.getPatternKdTree().nearestNeighbor(kdPoint, 10, true);
+        double[] kdPoint = target.getPatternFormula().getPoint(target.getState());
+        List<KdTree.Entry<List<Move>>> el = target.getPatternFormula().getKdTree().nearestNeighbor(kdPoint, 10, true);
 
         return getKdTreeAimingData(target, el);
     }

@@ -8,7 +8,7 @@ public class HeadOnGunner extends AbtractGunner {
     }
 
     @Override
-    public AimingData aim(ITank target) {
-        return new AimingData(this, target, getFirePower(target));
+    public Aiming aim(ITank target) {
+        return new Aiming(this, target, getFirePower(target));
     }
 }

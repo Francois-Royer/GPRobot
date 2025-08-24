@@ -1,11 +1,28 @@
 package gprobot;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 
-import static gprobot.RobocodeConf.*;
+import static gprobot.RobocodeConf.BOT_PREFFIX;
+import static gprobot.RobocodeConf.TARGET_PACKAGE;
+import static gprobot.RobocodeConf.random;
 
 public class MetaBot implements Serializable {
 
+    final static int SCAN_CHROMOS = 2;
+    final static int HIT_BY_BULLET_CHROMOS = 4;
+    final static int HIT_ROBOT_CHROMOS = 5;
+    final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;
+    final static double
+            PROB_CROSS_ROOT = 0, //0.3,
+            PROB_CROSS_TERMINAL = 0.1,
+            PROB_JUMP_GENOMES = 0.05,
+            PROB_MUTATE_ROOT = 0.01,
+            PROB_MUTATE_TERMINAL = 0.15;
+    private static final long serialVersionUID = 5625044536646095912L;
     static String robotTemplate;
 
     static {
@@ -17,18 +34,6 @@ public class MetaBot implements Serializable {
             e.printStackTrace();
         }
     }
-
-    private static final long serialVersionUID = 5625044536646095912L;
-    final static int SCAN_CHROMOS = 2;
-    final static int HIT_BY_BULLET_CHROMOS = 4;
-    final static int HIT_ROBOT_CHROMOS = 5;
-    final static int NUM_CHROMOS = SCAN_CHROMOS;// + HIT_BY_BULLET_CHROMOS; //+ HIT_ROBOT_CHROMOS;
-    final static double
-            PROB_CROSS_ROOT = 0, //0.3,
-            PROB_CROSS_TERMINAL = 0.1,
-            PROB_JUMP_GENOMES = 0.05,
-            PROB_MUTATE_ROOT = 0.01,
-            PROB_MUTATE_TERMINAL = 0.15;
 
     //Class Fields //////////////////////////////////////////////////////////
     transient String[] phenome;

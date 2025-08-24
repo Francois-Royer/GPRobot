@@ -9,7 +9,11 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,20 +28,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static gprobot.RobocodeConf.*;
-import static java.nio.file.Files.*;
+import static gprobot.RobocodeConf.AVAILABLE_PROCESSORS;
+import static gprobot.RobocodeConf.BOT_PREFFIX;
+import static gprobot.RobocodeConf.POP_SIZE;
+import static gprobot.RobocodeConf.ROBOTS_FOLDER;
+import static gprobot.RobocodeConf.TARGET_PACKAGE;
+import static java.nio.file.Files.copy;
+import static java.nio.file.Files.createDirectory;
+import static java.nio.file.Files.createSymbolicLink;
+import static java.nio.file.Files.walk;
 
 /**
  * @author froyer
  */
 public class RobotCodeUtil {
     private static final Logger log = Logger.getLogger(RobotCodeUtil.class.getName());
-
-    private RobotCodeUtil() {
-        // Util class
-    }
-
     static boolean fsSupportSimLink = false;
+    static Process[] runnerProcess;
 
     static {
         try {
@@ -53,9 +60,14 @@ public class RobotCodeUtil {
         }
     }
 
+    private RobotCodeUtil() {
+        // Util class
+    }
+
     public static void compileBots(final String[] sources) throws InterruptedException {
         // Compile code
-        ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS,
+                                                                 new LinkedBlockingQueue<Runnable>());
         List<List<String>> chunks = chunkList(Arrays.asList(sources), POP_SIZE / AVAILABLE_PROCESSORS / 2);
 
         for (List<String> chunk : chunks) {
@@ -192,8 +204,6 @@ public class RobotCodeUtil {
     public static File getRunnerDir(int runnerId) {
         return new File(getRunnersDir().getAbsoluteFile(), Integer.toString(runnerId));
     }
-
-    static Process[] runnerProcess;
 
     public static String sDuration(long duration) {
         return Duration.ofMillis(duration).toString().substring(2);

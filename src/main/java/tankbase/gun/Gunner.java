@@ -7,7 +7,7 @@ import java.awt.*;
 public interface Gunner {
     String getName();
 
-    AimingData aim(ITank target);
+    Aiming aim(ITank target);
 
     double getFirePower(ITank target);
 
@@ -17,5 +17,7 @@ public interface Gunner {
 
     Color getColor();
 
-    ITank getTank();
+    ITank getGunner();
+
+    void setGunner(ITank gunner);
 }

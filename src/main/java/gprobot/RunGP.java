@@ -8,7 +8,12 @@ import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
 import robocode.control.RobotSpecification;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
@@ -22,8 +27,26 @@ import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import static gprobot.RobocodeConf.*;
-import static gprobot.RobotCodeUtil.*;
+import static gprobot.RobocodeConf.BATTLEFIELD;
+import static gprobot.RobocodeConf.BOT_PREFFIX;
+import static gprobot.RobocodeConf.CTX_FILE;
+import static gprobot.RobocodeConf.MAX_GENS;
+import static gprobot.RobocodeConf.ONE2ONE;
+import static gprobot.RobocodeConf.POP_SIZE;
+import static gprobot.RobocodeConf.PROB_CROSSOVER;
+import static gprobot.RobocodeConf.PROB_MUTATION;
+import static gprobot.RobocodeConf.ROBO_CODE_PATH;
+import static gprobot.RobocodeConf.ROUNDS;
+import static gprobot.RobocodeConf.RUNNERS_COUNT;
+import static gprobot.RobocodeConf.TARGET_FOLDER;
+import static gprobot.RobocodeConf.TOURNY_SIZE;
+import static gprobot.RobocodeConf.opponents;
+import static gprobot.RobocodeConf.random;
+import static gprobot.RobotCodeUtil.compileBots;
+import static gprobot.RobotCodeUtil.delete;
+import static gprobot.RobotCodeUtil.getRobotName;
+import static gprobot.RobotCodeUtil.getRunnersDir;
+import static gprobot.RobotCodeUtil.sDuration;
 
 /**
  * This class represents the main genetic algorithm.
@@ -38,16 +61,12 @@ public class RunGP {
     static PrintStream console = System.out;
 
     final private double[] fitnesses = new double[POP_SIZE];
-
+    Kryo kryo;
     private MetaBot[] pool = new MetaBot[POP_SIZE];
     private MetaBot[] newPool = new MetaBot[POP_SIZE];
     private MetaBot bestSoFar = new MetaBot(-1, 0);
     private MetaBot bestLastGen = new MetaBot(-1, 0);
-
     private int genCount = 0;
-
-    Kryo kryo;
-
     private BattleControler[] battleControlers;
 
     public static void main(String[] args) throws IOException {
@@ -110,11 +129,11 @@ public class RunGP {
                 if (pool[best].fitness > bestSoFar.fitness) bestSoFar = pool[best];
 
                 console.printf("\nAvg. Fitness:\t%2.02f\t Avg # of nodes: %d%n",
-                        avgFitness, avgNodeCount);
+                               avgFitness, avgNodeCount);
                 console.printf("Best so far:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
-                        bestSoFar.getBotName(), bestSoFar.fitness, pool[0].fitness, bestSoFar.nodeCount);
+                               bestSoFar.getBotName(), bestSoFar.fitness, pool[0].fitness, bestSoFar.nodeCount);
                 console.printf("Best in round:\t%s - %2.02f (%2.02f)\t# nodes %d%n",
-                        bestLastGen.getBotName(), bestLastGen.fitness, pool[1].fitness, bestLastGen.nodeCount);
+                               bestLastGen.getBotName(), bestLastGen.fitness, pool[1].fitness, bestLastGen.nodeCount);
 
                 // delete Generation files except best one
                 RobotCodeUtil.clearBots(genCount, POP_SIZE, bestLastGen.memberID);
@@ -143,8 +162,8 @@ public class RunGP {
                 Date finished = new Date(end + eta);
                 console.println("-------Time stat ---------- ");
                 console.println("last gen=" + sDuration(genTime) +
-                        ", avg=" + sDuration(avgTime) +
-                        ", eta= " + sDuration(eta));
+                                        ", avg=" + sDuration(avgTime) +
+                                        ", eta= " + sDuration(eta));
                 console.println("Date Finished: " + finished);
 
             }
@@ -247,7 +266,8 @@ public class RunGP {
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
-                                Logger.getLogger(RunGP.class.getName()).log(Level.SEVERE, "Exception in runner " + runnerId + " restarting it", e);
+                                Logger.getLogger(RunGP.class.getName())
+                                      .log(Level.SEVERE, "Exception in runner " + runnerId + " restarting it", e);
                                 // Runner may have crash, put back the robot in queue and restart runner
                                 queue.addFirst(robotID);
 
@@ -301,7 +321,8 @@ public class RunGP {
 
     public void storeRunData(int round, double avgFit, double bestFit, double avgNode, int bestNode, String bestBotName) {
         // store each variable in its own file (for graphs)
-        appendStringToFile("run_data.txt", round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName + "\n");
+        appendStringToFile("run_data.txt",
+                           round + "," + avgFit + "," + bestFit + "," + avgNode + "," + bestNode + "," + bestBotName + "\n");
     }
 
     public void saveCtx() {
@@ -349,14 +370,14 @@ public class RunGP {
 
     public void cleanRunData() throws IOException {
         Stream.of(
-                        new File(TARGET_FOLDER)
-                                .listFiles((d, name) -> name.startsWith(BOT_PREFFIX)))
-                .forEach(File::delete);
+                      new File(TARGET_FOLDER)
+                              .listFiles((d, name) -> name.startsWith(BOT_PREFFIX)))
+              .forEach(File::delete);
 
         Stream.of(
-                        new File(".")
-                                .listFiles((d, name) -> name.matches("run_data.*.txt")))
-                .forEach(File::delete);
+                      new File(".")
+                              .listFiles((d, name) -> name.matches("run_data.*.txt")))
+              .forEach(File::delete);
 
         appendStringToFile("run_data.txt", "Generation,Average fitness,Best fitness, Average nodes,Best nodes,Best name\n");
     }

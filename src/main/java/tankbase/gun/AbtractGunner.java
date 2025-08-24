@@ -8,22 +8,20 @@ import java.util.Map;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.Math.pow;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.MIN_BULLET_POWER;
-import static tankbase.TankBase.DISTANCE_MAX;
-import static tankbase.TankBase.TANK_SIZE;
+import static tankbase.AbstractTankBase.DISTANCE_MAX;
+import static tankbase.Constant.TANK_SIZE;
 
 public abstract class AbtractGunner implements Gunner {
-    private final ITank tank;
     private final String name = this.getClass().getSimpleName();
     Map<String, FireStat> fireRoundStats = new HashMap<>();
+    private ITank gunner;
 
-    public AbtractGunner(ITank tank) {
-        this.tank = tank;
+    protected AbtractGunner(ITank gunner) {
+        this.gunner = gunner;
     }
-
-    @Override
-    public abstract AimingData aim(ITank target);
 
     @Override
     public String getName() {
@@ -32,12 +30,7 @@ public abstract class AbtractGunner implements Gunner {
 
     @Override
     public FireStat getEnemyRoundFireStat(ITank target) {
-        FireStat fireStat = fireRoundStats.get(target.getName());
-
-        if (fireStat == null)
-            fireRoundStats.put(target.getName(), fireStat = new FireStat());
-
-        return fireStat;
+        return fireRoundStats.computeIfAbsent(target.getName(), k -> new FireStat());
     }
 
     @Override
@@ -51,25 +44,22 @@ public abstract class AbtractGunner implements Gunner {
     }
 
     public double getFirePower(ITank target) {
-        if (target.getEnergy() == 0)
+        if (target.getState().getEnergy() == 0)
             return MIN_BULLET_POWER;
 
         double power = MAX_BULLET_POWER;
         double close = 5 * TANK_SIZE;
-        double distance = target.getPosition().distance(tank.getPosition());
+        double distance = target.getState().getPosition().distance(gunner.getState().getPosition());
 
         // Apply distance factor
         if (distance > close)
-            power *= Math.pow(1 - (distance-close) / DISTANCE_MAX, 2);
+            power *= pow(1 - (distance - close) / DISTANCE_MAX, 2);
 
         // Apply a hitrate factor
-        power *= Math.pow(getEnemyRoundFireStat(target).getHitRate() + .5, 6);
+        power *= pow(getEnemyRoundFireStat(target).getHitRate() + .5, 4);
 
         // Apply lastScan factor
-        power /= 1+(target.getDate()-target.getLastScan());
-
-        // Apply energy factor
-        //power *= tank.getEnergy() / 100;
+        power /= 1 + (target.getState().getTime() - target.getLastScan()) / 5.0;
 
         // shot for remaining energie
         power = min(power, getBulletPowerForDamage(target.getFEnergy() + 1));
@@ -78,7 +68,7 @@ public abstract class AbtractGunner implements Gunner {
         power = min(MAX_BULLET_POWER, max(MIN_BULLET_POWER, power));
 
         // enemy with 0 energy should be shoot asap for kill bonus and avoid it regain energy
-        if (target.getEnergy() <= 0)
+        if (target.getState().getEnergy() <= 0)
             power = MIN_BULLET_POWER;
 
         return power;
@@ -91,7 +81,12 @@ public abstract class AbtractGunner implements Gunner {
     }
 
     @Override
-    public ITank getTank() {
-        return tank;
+    public ITank getGunner() {
+        return gunner;
+    }
+
+    @Override
+    public void setGunner(ITank gunner) {
+        this.gunner = gunner;
     }
 }

@@ -1,8 +1,6 @@
 package sample;
 
-public class %s extends
-
-GPBase {
+public class %s extends GPBase {
 
     @Override
     public void doGP () {
