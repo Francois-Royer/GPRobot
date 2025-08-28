@@ -76,12 +76,12 @@ public class TankUtils {
         return new Point2D.Double((a.getX() * ac + b.getX() * bc) / (ac + bc), (a.getY() * ac + b.getY() * bc) / (ac + bc));
     }
 
-    static double computeTurnGun2Target(Point2D.Double base, Point2D.Double target, double ga) {
+    public static double computeTurnGun2Target(Point2D.Double base, Point2D.Double target, double ga) {
         double ta = getPointAngle(base, target);
         return (abs(ta - ga) <= PI) ? ta - ga : ga - ta;
     }
 
-    static double computeTurnGun2TargetNextPos(AbstractTankBase base, Point2D.Double target) {
+    public static double computeTurnGun2TargetNextPos(AbstractTankBase base, Point2D.Double target) {
         double ga = base.getGunHeadingRadians();
         double ta = getPointAngle(base.getNextPosition(), target);
 
@@ -92,7 +92,7 @@ public class TankUtils {
         return Double.isNaN(value) ? def : value;
     }
 
-    static List<Point> listClosePoint(Point pc, double d, int maxX, int maxY) {
+    public static List<Point> listClosePoint(Point pc, double d, int maxX, int maxY) {
         List<Point> closePoints = new ArrayList<>();
         int xX = (int) min(maxX, pc.x + d + 1);
         int xY = (int) min(maxY, pc.y + d + 1);
@@ -106,12 +106,12 @@ public class TankUtils {
         return closePoints;
     }
 
-    static double normalDistrib(double x, double median, double deviation) {
+    public static double normalDistrib(double x, double median, double deviation) {
         return (deviation > 0) ? 1 / (deviation * sqrt(2 * PI)) * exp(-.5 * pow((x - median) / deviation, 2)) : 1;
     }
 
 
-    static boolean collisionCircleSegment(Point2D.Double c, double r, Point2D.Double a, Point2D.Double b) {
+    public static boolean collisionCircleSegment(Point2D.Double c, double r, Point2D.Double a, Point2D.Double b) {
         if (c.distance(a) < r || c.distance(b) < r)
             return true;
 
@@ -123,15 +123,15 @@ public class TankUtils {
         return min_dist <= r && max_dist >= r;
     }
 
-    static Point2D.Double vector(Point2D.Double a, java.awt.geom.Point2D.Double b) {
+    public static Point2D.Double vector(Point2D.Double a, java.awt.geom.Point2D.Double b) {
         return new Point2D.Double(b.getX() - a.getX(), b.getY() - a.getY());
     }
 
-    static double dot(Point2D.Double a, java.awt.geom.Point2D.Double b) {
+    public static double dot(Point2D.Double a, java.awt.geom.Point2D.Double b) {
         return a.getX() * b.getX() + a.getY() * b.getY();
     }
 
-    static double triangleArea(Point2D.Double a, java.awt.geom.Point2D.Double b, java.awt.geom.Point2D.Double c) {
+    public static double triangleArea(Point2D.Double a, java.awt.geom.Point2D.Double b, java.awt.geom.Point2D.Double c) {
         return Math.abs(a.getX() * (b.getY() - c.getY()) +
                                 b.getX() * (c.getY() - a.getY()) +
                                 c.getX() * (a.getY() - b.getY())) / 2.0;
@@ -169,11 +169,16 @@ public class TankUtils {
         return new Point2D.Double(x, 0);
     }
 
+    @SafeVarargs
     public static <T> T[] concatArray(T[] first, T[]... rest) {
+        if (rest == null)
+            return Arrays.copyOf(first, first.length);
+
         int totalLength = first.length;
         for (T[] array : rest) totalLength += array.length;
         T[] result = Arrays.copyOf(first, totalLength);
         int offset = first.length;
+
         for (T[] array : rest) {
             System.arraycopy(array, 0, result, offset, array.length);
             offset += array.length;

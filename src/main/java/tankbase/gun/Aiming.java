@@ -21,7 +21,7 @@ public class Aiming {
     private Double direction;
 
     public Aiming(Gunner gunner, ITank target, double firePower) {
-        this(gunner, target, target.getState().getPosition(), firePower);
+        this(gunner, target, target.getState(), firePower);
     }
 
     public Aiming(Gunner gunner, ITank target, Point2D.Double firingPosition, double firePower) {
@@ -41,7 +41,7 @@ public class Aiming {
         this.nextPosition = nextPosition;
         this.firePower = firePower;
         this.expectedMoves = expectedMoves;
-        this.direction = TankUtils.getPointAngle(gunner.getGunner().getState().getPosition(), firingPosition);
+        this.direction = TankUtils.getPointAngle(gunner.getGunner().getState(), firingPosition);
         this.kdEntry = kdEntry;
     }
 
@@ -98,7 +98,7 @@ public class Aiming {
     public String toString() {
         return String.format("Aiming[target=%s, firePower=%.2f, direction=%.2f, firing to=(%.2f, %.2f) from(%.2f, %.2f)]",
                              target.getName(), firePower, Math.toDegrees(direction), firingPosition.x, firingPosition.y,
-                             gunner.getGunner().getState().getPosition().x, gunner.getGunner().getState().getPosition().y);
+                             gunner.getGunner().getState().x, gunner.getGunner().getState().y);
     }
 
     @Override

@@ -12,8 +12,8 @@ import static java.lang.Math.PI;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
-import static tankbase.Enemy.MAX_GUN_HEAT;
-import static tankbase.FireLog.getFireLog;
+import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
+import static tankbase.gun.log.FireLog.getFireLog;
 import static tankbase.TankUtils.concatArray;
 import static tankbase.TankUtils.getPointAngle;
 
@@ -32,9 +32,8 @@ public class Surfer extends Pattern {
     @Override
     public double[] getPoint(TankState state) {
         double[] surferPoint = {
-                state.getPosition().distance(gunner.getState().getPosition()) / DISTANCE_MAX,
-                normalRelativeAngle(state.getHeadingRadians() - getPointAngle(gunner.getState().getPosition(),
-                                                                                          state.getPosition())) / PI,
+                state.distance(gunner.getState()) / DISTANCE_MAX,
+                normalRelativeAngle(state.getHeadingRadians() - getPointAngle(gunner.getState(), state)) / PI,
                 gunner.getState().getGunHeat() / MAX_GUN_HEAT,
                 0, 0
         };

@@ -1,4 +1,4 @@
-package tankbase;
+package tankbase.gun.log;
 
 import tankbase.gun.Fire;
 

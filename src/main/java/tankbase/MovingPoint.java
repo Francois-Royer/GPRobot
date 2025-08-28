@@ -6,8 +6,8 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
 public class MovingPoint extends Point2D.Double {
-    double velocity;
-    double direction;
+    protected double velocity;
+    protected double direction;
 
     long start;
 

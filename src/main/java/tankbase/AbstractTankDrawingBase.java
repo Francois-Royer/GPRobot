@@ -1,5 +1,6 @@
 package tankbase;
 
+import tankbase.enemy.Enemy;
 import tankbase.gun.Fire;
 
 import java.awt.*;
@@ -12,18 +13,19 @@ import static java.lang.Math.toDegrees;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.Constant.TANK_SIZE_INT;
+import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.TankUtils.range;
-import static tankbase.VirtualFireLog.getVirtualFireLog;
+import static tankbase.gun.log.VirtualFireLog.getVirtualFireLog;
 import static tankbase.WaveLog.getWaves;
 
 public abstract class AbstractTankDrawingBase extends AbstractTankBase implements ITank {
 
     boolean drawAiming = true;
     boolean drawAimPoint = false;
-    boolean drawDanger = false;
+    boolean drawDanger = true;
     boolean drawEnemy = true;
     boolean drawFire = false;
-    boolean drawWave = false;
+    boolean drawWave = true;
 
     public static void drawFillCircle(Graphics2D g, Color c, Point2D.Double p, int d) {
         g.setColor(c);
@@ -46,7 +48,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     public static void drawWave(Graphics2D g2D, Color c, Wave w, long tick) {
         g2D.setColor(c);
-        int waveArc = (int) (toDegrees(w.arc));
+        int waveArc = (int) (toDegrees(w.getArc()));
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
         int s = d - 5;
@@ -54,10 +56,10 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc / 2, waveArc);
         g2D.drawLine((int) (w.x /*+ s * cos(w.direction)*/), (int) (w.y /*+ s * sin(w.direction)*/),
                      (int) (w.x + e * cos(w.direction)), (int) (w.y + e * sin(w.direction)));
-        g2D.drawLine((int) (w.x + s * cos(w.direction + w.arc / 2)), (int) (w.y + s * sin(w.direction + w.arc / 2)),
-                     (int) (w.x + e * cos(w.direction + w.arc / 2)), (int) (w.y + e * sin(w.direction + w.arc / 2)));
-        g2D.drawLine((int) (w.x + s * cos(w.direction - w.arc / 2)), (int) (w.y + s * sin(w.direction - w.arc / 2)),
-                     (int) (w.x + e * cos(w.direction - w.arc / 2)), (int) (w.y + e * sin(w.direction - w.arc / 2)));
+        g2D.drawLine((int) (w.x + s * cos(w.direction + w.getArc() / 2)), (int) (w.y + s * sin(w.direction + w.getArc() / 2)),
+                     (int) (w.x + e * cos(w.direction + w.getArc() / 2)), (int) (w.y + e * sin(w.direction + w.getArc() / 2)));
+        g2D.drawLine((int) (w.x + s * cos(w.direction - w.getArc() / 2)), (int) (w.y + s * sin(w.direction - w.getArc() / 2)),
+                     (int) (w.x + e * cos(w.direction - w.getArc() / 2)), (int) (w.y + e * sin(w.direction - w.getArc() / 2)));
     }
 
     @Override
@@ -99,19 +101,17 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     private void paintEnemies(Graphics2D g2D) {
         int de = TANK_SIZE_INT;
-        getEnemys().forEach(e -> {
-            if (e.isAlive()) {
-                if (e == target)
-                    drawAimCircle(g2D, Color.CYAN, e.getState().getPosition(), de);
-                else if (e == mostLeft)
-                    drawCircle(g2D, Color.GREEN, e.getState().getPosition(), de);
-                else if (e == mostRight)
-                    drawCircle(g2D, Color.YELLOW, e.getState().getPosition(), de);
-                else
-                    drawCircle(g2D, Color.PINK, e.getState().getPosition(), de);
-            }
+        filterEnemies(Enemy::isAlive).forEach(e -> {
+            if (e == target)
+                drawAimCircle(g2D, Color.CYAN, e.getState(), de);
+            else if (e == mostLeft)
+                drawCircle(g2D, Color.GREEN, e.getState(), de);
+            else if (e == mostRight)
+                drawCircle(g2D, Color.YELLOW, e.getState(), de);
+            else
+                drawCircle(g2D, Color.PINK, e.getState(), de);
         });
-        drawCircle(g2D, Color.green, getPosition(), TANK_SIZE_INT);
+        drawCircle(g2D, Color.MAGENTA, getState(), TANK_SIZE_INT);
     }
 
     private void paintAiming(Graphics2D g2D) {
@@ -140,9 +140,9 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     private void paintDanger(Graphics2D g2D) {
         drawDangerMap(g2D);
-        if (safePosition != null) {
-            drawFillCircle(g2D, Color.GREEN, safePosition, 10);
-            g2D.drawLine((int) getX(), (int) getY(), (int) safePosition.getX(), (int) safePosition.getY());
+        if (destination != null) {
+            drawFillCircle(g2D, Color.GREEN, destination, 10);
+            g2D.drawLine((int) getX(), (int) getY(), (int) destination.getX(), (int) destination.getY());
         }
     }
 

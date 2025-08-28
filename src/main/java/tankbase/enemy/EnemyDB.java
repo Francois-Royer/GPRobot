@@ -1,0 +1,64 @@
+package tankbase.enemy;
+
+import java.awt.geom.Point2D;
+import java.util.*;
+import java.util.function.Predicate;
+
+public class EnemyDB {
+    private static Map<String, Enemy> enemies = new HashMap<>();
+
+    public static Collection<Enemy> listEnemies() {
+        return Collections.unmodifiableCollection(enemies.values());
+    }
+
+    public static List<Enemy> filterEnemies(Predicate<Enemy> filter) {
+        return enemies.values().stream().filter(filter).toList();
+    }
+
+    public static List<Enemy> filterAndSortEnemies(Predicate<Enemy> filter, Comparator<Enemy> comparator) {
+        return enemies.values().stream().filter(filter).sorted(comparator).toList();
+    }
+
+    public static Enemy getEnemy(String name) {
+        return enemies.get(name);
+    }
+
+    public static Enemy getCloseAliveEnemy(Point2D.Double point) {
+        Comparator<Enemy> comp = new CloseEnemy(point);
+
+        return enemies.values().stream()
+                .filter(Enemy::isAlive)
+                .filter(Enemy::isScanned)
+                .sorted(comp)
+                .findFirst().orElse(
+                        enemies.values().stream()
+                                .filter(Enemy::isAlive)
+                                .sorted(comp)
+                                .findFirst().orElse(null)
+                );
+    }
+
+    public static Enemy addEnemy(Enemy enemy) {
+        return enemies.put(enemy.getName(), enemy);
+    }
+
+
+    static class CloseEnemy implements Comparator<Enemy> {
+        private final Point2D.Double point;
+        public CloseEnemy(Point2D.Double point) {
+            this.point = point;
+        }
+
+        @Override
+        public int compare(Enemy e1, Enemy e2) {
+            if (e1.getState() == null)
+                return 1;
+            if (e2.getState() == null)
+                return -1;
+            return Double.compare(point.distance(e1.getState()),
+                    point.distance(e2.getState()));
+        }
+    }
+
+    private EnemyDB() {};
+}

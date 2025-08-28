@@ -1,5 +1,6 @@
-package tankbase;
+package tankbase.gun.log;
 
+import tankbase.ITank;
 import tankbase.gun.Aiming;
 import tankbase.gun.Fire;
 
@@ -27,10 +28,10 @@ public class VirtualFireLog {
 
             boolean remove = true;
             if (target.isAlive()) {
-                if (fire.distance(p) < fire.distance(target.getState().getPosition())+ TANK_SIZE / 2) {
+                if (fire.distance(p) < fire.distance(target.getState())+ TANK_SIZE / 2) {
                     Point2D.Double o = fire.getPosition(now + 1);
 
-                    remove = collisionCircleSegment(target.getState().getPosition(), TANK_SIZE / 2, o, p);
+                    remove = collisionCircleSegment(target.getState(), TANK_SIZE / 2, o, p);
                     if (remove)
                         fire.getGunner().getEnemyRoundFireStat(aiming.getTarget()).hit(fire.getAimingData().getFirePower());
                 } else

@@ -1,5 +1,7 @@
 package tankbase;
 
+import tankbase.enemy.Enemy;
+
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.Collection;
@@ -9,8 +11,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
-import static tankbase.AbstractTankBase.FIELD_HEIGHT;
-import static tankbase.AbstractTankBase.FIELD_WIDTH;
+import static tankbase.AbstractTankBase.*;
 import static tankbase.Constant.BORDER_OFFSET;
 import static tankbase.Constant.MAX_DANGER_ZONE;
 import static tankbase.TankUtils.collisionCircleSegment;
@@ -71,7 +72,7 @@ public class FieldMap {
 
     public static Point2D.Double computeSafePosition(TankState state, Collection<Enemy> enemies) {
         int dist = 8;
-        Point2D.Double safePosition = state.getPosition();
+        Point2D.Double safePosition = state;
         Point gp = new Point((int) (state.getX() / scale), (int) (state.getY() / scale));
         List<Point> points = TankUtils.listClosePoint(gp, dist, width, height);
         double danger = Double.MAX_VALUE;
@@ -82,7 +83,7 @@ public class FieldMap {
             Point2D.Double position = new Point2D.Double(x, y);
             // add danger if collision with enemy
             d += enemies.stream().filter(e -> e.isAlive() &&
-                    collisionCircleSegment(e.getState().getPosition(), Constant.TANK_SIZE*1.1, state.getPosition(),
+                    collisionCircleSegment(e.getState(), Constant.TANK_SIZE*1.1, state,
                                            position)).mapToDouble(e -> 100).sum();
             if (d < danger) {
                 danger = d;

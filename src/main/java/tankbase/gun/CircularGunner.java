@@ -47,15 +47,15 @@ public class CircularGunner extends AbtractGunner {
     }
 
     private Point2D.Double[] forwardMovementPrediction(ITank target, List<Point2D.Double> predMoves, double firePower) {
-        Point2D.Double from = getGunner().getState().getPosition();
+        Point2D.Double from = getGunner().getState();
         double bulletSpeed = getBulletSpeed(firePower);
         TankState targetState = target.getState();
-        Point2D.Double prevPoint = targetState.getPosition();
+        Point2D.Double prevPoint = targetState;
         long prevTime = 0;
         long prevDelta = Long.MAX_VALUE;
 
         for (int i = 0; i < 10; i++) {
-            long time = (long) (from.distance(targetState.getPosition()) / bulletSpeed);
+            long time = (long) (from.distance(targetState) / bulletSpeed);
 
             if (prevTime == time || abs(time - prevTime) > prevDelta)
                 break;
@@ -66,18 +66,18 @@ public class CircularGunner extends AbtractGunner {
             predMoves.clear();
 
             for (long t = 0; t < time + 1; t++) {
-                prevPoint = targetState.getPosition();
+                prevPoint = targetState;
                 targetState = targetState.extrapolateNextState();
 
                 if (targetState == null)
                     return null;
 
-                predMoves.add(targetState.getPosition());
+                predMoves.add(targetState);
             }
         }
 
-        predMoves.remove(targetState.getPosition());
+        predMoves.remove(targetState);
         predMoves.remove(prevPoint);
-        return new Point2D.Double[]{prevPoint, targetState.getPosition()};
+        return new Point2D.Double[]{prevPoint, targetState};
     }
 }

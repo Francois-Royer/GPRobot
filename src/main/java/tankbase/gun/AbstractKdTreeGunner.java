@@ -19,8 +19,8 @@ import static tankbase.TankUtils.clonePoint;
 
 public abstract class AbstractKdTreeGunner extends AbtractGunner {
 
-    protected AbstractKdTreeGunner(ITank tank) {
-        super(tank);
+    protected AbstractKdTreeGunner(ITank gunner) {
+        super(gunner);
     }
 
 
@@ -44,9 +44,9 @@ public abstract class AbstractKdTreeGunner extends AbtractGunner {
     }
 
     private Point2D.Double[] getFiringPosition(ITank target, double firePower, List<Move> movesLog, List<Point2D.Double> predMoves) {
-        Point2D.Double from = getGunner().getState().getPosition();
+        Point2D.Double from = getGunner().getState();
         double bulletSpeed = getBulletSpeed(firePower);
-        Point2D.Double firePoint = clonePoint(target.getState().getPosition());
+        Point2D.Double firePoint = clonePoint(target.getState());
         Point2D.Double prevPoint = null;
         long prevTime = 0;
         long prevDelta = Long.MAX_VALUE;
@@ -60,7 +60,7 @@ public abstract class AbstractKdTreeGunner extends AbtractGunner {
             prevDelta = abs(time - prevTime);
             prevTime = time;
 
-            firePoint = target.getState().getPosition();
+            firePoint = clonePoint(target.getState());
             predMoves.clear();
             long moveDuration = 0;
             int step = 0;

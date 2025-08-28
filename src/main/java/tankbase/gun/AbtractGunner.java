@@ -49,7 +49,7 @@ public abstract class AbtractGunner implements Gunner {
 
         double power = MAX_BULLET_POWER;
         double close = 5 * TANK_SIZE;
-        double distance = target.getState().getPosition().distance(gunner.getState().getPosition());
+        double distance = target.getState().distance(gunner.getState());
 
         // Apply distance factor
         if (distance > close)

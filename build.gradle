@@ -5,8 +5,8 @@ plugins {
 }
 
 compileJava {
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
+    sourceCompatibility = '24'
+    targetCompatibility = '24'
 }
 
 def robotcode_home = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'c:/robocode' : "$System.env.HOME/robocode"
@@ -26,7 +26,7 @@ dependencies {
 
 project.configurations.implementation.setCanBeResolved(true)
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.deprecation = false
 }
 
@@ -47,7 +47,7 @@ shadowJar {
     dependsOn ('jar')
 }
 
-task copyBase(type: Copy) {
+tasks.register('copyBase', Copy) {
     from 'src/main/java'
     from 'build/classes/java/main'
     include '**/tankbase/**/*.*'
@@ -56,26 +56,28 @@ task copyBase(type: Copy) {
     dependsOn(':compileJava')
 }
 
-task copyLib(type: Copy) {
+tasks.register('copyLib', Copy) {
     from 'build/libs'
     include 'gprobot-all.jar'
     into "$robotcode_home/libs"
-    dependsOn ('shadowJar', 'copyBase')
+    dependsOn('shadowJar', 'copyBase')
 }
 
-task runGPBase(type: Exec) {
+tasks.register('runGPBase', Exec) {
     workingDir "$robotcode_home"
+    environment J2D_D3D: false
     commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/GPBaseSample.battle'
     dependsOn 'copyBase'
 }
 
-task runGPBaseDiamond(type: Exec) {
+tasks.register('runGPBaseDiamond', Exec) {
     workingDir "$robotcode_home"
+    environment J2D_D3D: false
     commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/GPBaseDiamond.battle'
     dependsOn 'copyBase'
 }
 
-task runGP(type: Exec) {
-    commandLine 'java',  '-cp', "$robotcode_home/libs/*", 'gprobot.RunGP'
+tasks.register('runGP', Exec) {
+    commandLine 'java', '-cp', "$robotcode_home/libs/*", 'gprobot.RunGP'
     dependsOn 'copyLib'
 }

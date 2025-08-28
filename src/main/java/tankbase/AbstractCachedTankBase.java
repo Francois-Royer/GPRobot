@@ -79,10 +79,6 @@ public abstract class AbstractCachedTankBase extends AdvancedRobot implements IT
         return tankState.getTime();
     }
 
-    public Point2D.Double getPosition() {
-        return new Point.Double(getX(), getY());
-    }
-
     @Override
     public KDFormula getPatternFormula() {
         return null;

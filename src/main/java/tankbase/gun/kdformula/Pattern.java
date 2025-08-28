@@ -43,8 +43,7 @@ public class Pattern implements KDFormula {
                 state.getVelocity() / MAX_VELOCITY,
                 ((normalAbsoluteAngle(state.getHeadingRadians()) - .001) % (PI / 4)) / (PI / 4),
                 state.getTurnRate() / MAX_TURN_RATE_RADIANS,
-                state.getPosition()
-                      .distance(wallIntersection(state.getPosition(), state.getMovingDirection())) / DISTANCE_MAX,
+                state.distance(wallIntersection(state, state.getMovingDirection())) / DISTANCE_MAX,
                 state.getAcceleration() / DECELERATION,
                 (double) min(state.getTime() - target.getLastStop(), 100) / 100,
                 (double) min(state.getTime() - target.getLastChangeDirection(), 100) / 100,

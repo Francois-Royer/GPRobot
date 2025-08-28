@@ -16,8 +16,9 @@ import static robocode.Rules.getBulletDamage;
 import static robocode.Rules.getBulletSpeed;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
-import static tankbase.AbstractTankBase.getEnemys;
+import static tankbase.AbstractTankBase.FIELD_HEIGHT;
 import static tankbase.Constant.TANK_SIZE;
+import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.TankUtils.collisionCircleSegment;
 import static tankbase.TankUtils.getPointAngle;
 import static tankbase.TankUtils.getVertexAngle;
@@ -25,6 +26,11 @@ import static tankbase.TankUtils.middle;
 import static tankbase.TankUtils.normalDistrib;
 
 public class Wave extends MovingPoint {
+
+    /*
+        Waves are detected bullets fired by enemy, bullet position is on an arc like wave
+     */
+
     transient ITank source;
     transient ITank target;
 
@@ -50,12 +56,12 @@ public class Wave extends MovingPoint {
     }
 
     public Wave(ITank target, double power, long start, ITank source) {
-        super(source.getState().getPosition(), getBulletSpeed(power), 0, start);
+        super(source.getState(), getBulletSpeed(power), 0, start);
 
         this.source = source;
         this.target = target;
 
-        head = target.getState().getPosition();
+        head = target.getState();
         double distance = distance(head);
         double time = distance / velocity;
 
@@ -78,16 +84,15 @@ public class Wave extends MovingPoint {
     public double getDanger(int x, int y, long now) {
         Point2D.Double waveNow = getPosition(now);
         double d = getDistance(now);
-        Point2D.Double p = new Point2D.Double(x * FieldMap.getScale(), y * FieldMap.getScale());
+        double scale = FieldMap.getScale();
+        Point2D.Double p = new Point2D.Double(x * scale + scale/2, y * scale + scale/2);
         double r = distance(p);
 
         if (d > r)
             return 0;
 
-        boolean shadowed = getEnemys()
-                .filter(Enemy::isAlive)
-                .filter(e -> e != source)
-                .map(e -> collisionCircleSegment(e.getState().getPosition(), TANK_SIZE, p, waveNow))
+        boolean shadowed = filterEnemies(e -> e.isAlive() && e != source).stream()
+                .map(e -> collisionCircleSegment(e.getState(), TANK_SIZE, p, waveNow))
                 .reduce((a, b) -> a || b)
                 .orElse(false);
 
@@ -108,6 +113,10 @@ public class Wave extends MovingPoint {
 
     public ITank getSource() {
         return source;
+    }
+
+    public double getArc() {
+        return arc;
     }
 
     @Override
