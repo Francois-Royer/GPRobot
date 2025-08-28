@@ -246,11 +246,11 @@ public class Enemy implements ITank {
         return tankBase.getState().distance(wallIntersection(state, state.getMovingDirection()));
     }
 
-    public double getDanger(int h, int v, double maxDamageMe) {
+    public double getDanger(int x, int y, double maxDamageMe) {
         double scale = FieldMap.getScale();
-        Point2D.Double p = new Point2D.Double(h * scale + scale / 2, v * scale + scale / 2);
+        Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
         double d = state.distance(p);
-        if (d > MAX_DANGER_RADIUS) {
+        if (!isMaxDanger(x, y)) {
             boolean shadowed =filterEnemies(e -> e.isAlive() && e != this).stream()
                     .map(e -> collisionCircleSegment(e.getState(), TANK_SIZE, p, state))
                     .reduce((a, b) -> a || b)
@@ -259,11 +259,19 @@ public class Enemy implements ITank {
             if (shadowed)
                 return 0;
 
-            double danger = Math.pow((DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DISTANCE_MAX, 4);
+            double danger = Math.pow((DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DISTANCE_MAX, 8);
             return danger * (damageMe + 10) / (maxDamageMe + 10);
         }
         return 1;
     }
+    public boolean isMaxDanger(int x, int y) {
+        double scale = FieldMap.getScale();
+        Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
+        double d = state.distance(p);
+        return d <= MAX_DANGER_RADIUS;
+
+    }
+
 
     public void fireHead() {
         fireHead++;

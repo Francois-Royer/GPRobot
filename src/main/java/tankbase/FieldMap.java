@@ -7,10 +7,7 @@ import java.awt.geom.Point2D;
 import java.util.Collection;
 import java.util.List;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
+import static java.lang.Math.*;
 import static tankbase.AbstractTankBase.*;
 import static tankbase.Constant.BORDER_OFFSET;
 import static tankbase.Constant.MAX_DANGER_ZONE;
@@ -65,6 +62,10 @@ public class FieldMap {
             }
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++) {
+                for (Enemy enemy : enemies)
+                    if (enemy.isAlive() && enemy.getLastScan() > 0 && enemy.isMaxDanger(x, y))
+                        map[x][y] = maxDanger;
+
                 map[x][y] /= maxDanger;
                 map[x][y] = max(map[x][y], battleZoneMap[x][y]);
             }

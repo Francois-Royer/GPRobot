@@ -105,7 +105,7 @@ public class Wave extends MovingPoint {
         d = p.distance(waveNow);
         if (d >= 0) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
-            danger *= Math.pow((DISTANCE_MAX - d) / DISTANCE_MAX, .5);
+            danger *= Math.pow((DISTANCE_MAX - d) / DISTANCE_MAX, .9);
         }
 
         return danger;

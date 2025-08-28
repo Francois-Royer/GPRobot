@@ -22,10 +22,10 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     boolean drawAiming = true;
     boolean drawAimPoint = false;
-    boolean drawDanger = true;
+    boolean drawDanger = false;
     boolean drawEnemy = true;
     boolean drawFire = false;
-    boolean drawWave = true;
+    boolean drawWave = false;
 
     public static void drawFillCircle(Graphics2D g, Color c, Point2D.Double p, int d) {
         g.setColor(c);

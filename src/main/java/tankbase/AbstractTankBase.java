@@ -13,14 +13,7 @@ import robocode.RoundEndedEvent;
 import robocode.ScannedRobotEvent;
 import robocode.SkippedTurnEvent;
 import tankbase.enemy.Enemy;
-import tankbase.gun.Aiming;
-import tankbase.gun.CircularGunner;
-import tankbase.gun.Fire;
-import tankbase.gun.FireStat;
-import tankbase.gun.Gunner;
-import tankbase.gun.HeadOnGunner;
-import tankbase.gun.PatternGunner;
-import tankbase.gun.SurferGunner;
+import tankbase.gun.*;
 import tankbase.gun.log.FireLog;
 
 import java.awt.*;
@@ -41,6 +34,7 @@ import static robocode.Rules.getBulletSpeed;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.Constant.MAX_NOT_SCAN_TIME;
+import static tankbase.Constant.MIN_CHANGE_TARGET_TIME;
 import static tankbase.enemy.EnemyDB.*;
 import static tankbase.FieldMap.computeDangerMap;
 import static tankbase.gun.log.FireLog.clearFireLog;
@@ -70,7 +64,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     public static PrintStream sysout;
     public int moveLogMaxSize;
 
-
     private static final Map<String, Gunner> gunners = new HashMap<>();
 
     private static FireStat gpStat;
@@ -87,7 +80,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
     public Point2D.Double destination;
 
-    public double scandirection = 1;
+    public double scanDirection = 1;
     public double forward = 1;
     public double turnLeft = 0;
     public double turnGunLeft = 0;
@@ -95,6 +88,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     public double ahead = 0;
     public double firePower = 0;
     private boolean alive;
+    private long lastTargetChange;
 
     protected AbstractTankBase() {
         super();
@@ -122,7 +116,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         computeSafePosition();
         computeAiming();
         selectTarget();
-        fireVirtualShell();
+        virtualFire();
         checks();
 
         turnRadarLeft = getTurnRadar();
@@ -170,11 +164,11 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     private double scanLeftRight(double ra, double ml, double mr) {
         if ((ra >= ml && ra < ml + 2 * Constant.SCAN_OFFSET)
                 || (ra < 2 * Constant.SCAN_OFFSET + ml - 2 * PI && ml > 2 * PI - 2 * Constant.SCAN_OFFSET))
-            scandirection = -1;
+            scanDirection = -1;
         else if ((ra < mr && ra > mr - 2 * Constant.SCAN_OFFSET) || (ra > 2 * PI - 2 * Constant.SCAN_OFFSET + mr && mr < 2 * Constant.SCAN_OFFSET))
-            scandirection = 1;
+            scanDirection = 1;
 
-        if (scandirection == 1)
+        if (scanDirection == 1)
             return ml + Constant.SCAN_OFFSET - ((ml >= ra) ? ra : ra - 2 * PI);
         else
             return mr - Constant.SCAN_OFFSET - ((mr <= ra) ? ra : ra + 2 * PI);
@@ -211,9 +205,11 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
     private void selectTarget() {
         prevTarget = target;
+        if ((getTime() - lastTargetChange) < MIN_CHANGE_TARGET_TIME && target != null && target.isAlive() && target.isScanned())
+            return;
+
         Enemy newTarget = null;
         double minDistance = Double.POSITIVE_INFINITY;
-        double prevTurnGun = 2 * PI;
 
         for (Enemy e : listEnemies()) {
             if (!e.isAlive() || !e.isScanned() || e.getTurnAimDatas().isEmpty()) continue;
@@ -250,6 +246,9 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
             else
                 aiming = target.getBestAiming();
         }
+
+        if (target != prevTarget)
+            lastTargetChange = getTime();
     }
 
     private void computeAiming() {
@@ -342,7 +341,9 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         }
     }
 
-    private void fireVirtualShell() {
+    private void virtualFire() {
+        if (getGunHeat() > 0) return;
+
         filterEnemies(Enemy::isAlive).forEach(e -> {
             e.getTurnAimDatas().forEach(ad -> {
                 //out.printf("new Shell to %.0f, %.0f\n", ad.getFiringPosition().getX(), ad.getFiringPosition().getY());
@@ -402,9 +403,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         setAdjustRadarForGunTurn(true);
         setColors(Color.red, Color.blue, Color.green);
 
-        listEnemies().forEach(Enemy::reset);
-        updateGunners();
         alive = true;
+        resetRoundData();
 
         while (true) {
             doTurn();
@@ -490,7 +490,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     @Override
     public void onRoundEnded(RoundEndedEvent event) {
         onEvent(event);
-        resetRoundDataPrintStat();
+        printStat();
     }
 
     @Override
@@ -518,13 +518,14 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         //setAhead(forward * TANK_SIZE * 2);
     }
 
-    private void resetRoundDataPrintStat() {
-        printStat();
+    private void resetRoundData() {
         clearFireLog();
         clearVirtualFireLog();
         clearWaveLog();
         mostLeft = mostRight = null;
         target = prevTarget = null;
+        lastTargetChange = 0;
+        alive = true;
         listEnemies().forEach(Enemy::reset);
         updateGunners();
     }

@@ -28,7 +28,7 @@ public class VirtualFireLog {
 
             boolean remove = true;
             if (target.isAlive()) {
-                if (fire.distance(p) < fire.distance(target.getState())+ TANK_SIZE / 2) {
+                if (fire.distance(p) < fire.distance(target.getState())+ TANK_SIZE) {
                     Point2D.Double o = fire.getPosition(now + 1);
 
                     remove = collisionCircleSegment(target.getState(), TANK_SIZE / 2, o, p);
