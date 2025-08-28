@@ -9,11 +9,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -28,15 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static gprobot.RobocodeConf.AVAILABLE_PROCESSORS;
-import static gprobot.RobocodeConf.BOT_PREFFIX;
-import static gprobot.RobocodeConf.POP_SIZE;
-import static gprobot.RobocodeConf.ROBOTS_FOLDER;
-import static gprobot.RobocodeConf.TARGET_PACKAGE;
-import static java.nio.file.Files.copy;
-import static java.nio.file.Files.createDirectory;
-import static java.nio.file.Files.createSymbolicLink;
-import static java.nio.file.Files.walk;
+import static gprobot.RobocodeConf.*;
+import static java.nio.file.Files.*;
 
 /**
  * @author froyer
@@ -67,7 +56,7 @@ public class RobotCodeUtil {
     public static void compileBots(final String[] sources) throws InterruptedException {
         // Compile code
         ExecutorService executorService = new ThreadPoolExecutor(AVAILABLE_PROCESSORS, AVAILABLE_PROCESSORS, 60, TimeUnit.SECONDS,
-                                                                 new LinkedBlockingQueue<Runnable>());
+                new LinkedBlockingQueue<Runnable>());
         List<List<String>> chunks = chunkList(Arrays.asList(sources), POP_SIZE / AVAILABLE_PROCESSORS / 2);
 
         for (List<String> chunk : chunks) {

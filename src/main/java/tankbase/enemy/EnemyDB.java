@@ -7,6 +7,9 @@ import java.util.function.Predicate;
 public class EnemyDB {
     private static Map<String, Enemy> enemies = new HashMap<>();
 
+    private EnemyDB() {
+    }
+
     public static Collection<Enemy> listEnemies() {
         return Collections.unmodifiableCollection(enemies.values());
     }
@@ -42,9 +45,9 @@ public class EnemyDB {
         return enemies.put(enemy.getName(), enemy);
     }
 
-
     static class CloseEnemy implements Comparator<Enemy> {
         private final Point2D.Double point;
+
         public CloseEnemy(Point2D.Double point) {
             this.point = point;
         }
@@ -60,5 +63,5 @@ public class EnemyDB {
         }
     }
 
-    private EnemyDB() {};
+    ;
 }

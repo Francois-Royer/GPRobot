@@ -12,10 +12,10 @@ import static java.lang.Math.PI;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
-import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
-import static tankbase.gun.log.FireLog.getFireLog;
 import static tankbase.TankUtils.concatArray;
 import static tankbase.TankUtils.getPointAngle;
+import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
+import static tankbase.gun.log.FireLog.getFireLog;
 
 public class Surfer extends Pattern {
     private static final double[] surferWeights = {1, 2, 10, 10, 10};

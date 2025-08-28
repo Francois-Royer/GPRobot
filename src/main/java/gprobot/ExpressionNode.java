@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static gprobot.RobocodeConf.MAX_DEPTH;
-import static gprobot.RobocodeConf.MIN_DEPTH;
-import static gprobot.RobocodeConf.random;
+import static gprobot.RobocodeConf.*;
 
 public class ExpressionNode implements Serializable {
     static final double PROB_TERM_UNIV = 0.35;
@@ -85,6 +83,14 @@ public class ExpressionNode implements Serializable {
             CONSTANT_TERMINALS,
             BASE_TERMINAL
     };
+    // All expressions available to the GP
+    static final String[][][] EXPRESSIONS = {
+            TERMINALS,
+            FUNCTIONS_A1,
+            FUNCTIONS_A2,
+            FUNCTIONS_A3,
+            FUNCTIONS_A4
+    };
     static final String[][] FUNCTIONS_A1 = {
             {"Math.abs(", ")"}, // Absolute Value
             // Too much Nan caused by Arc so add %1
@@ -114,14 +120,6 @@ public class ExpressionNode implements Serializable {
             {"", " > ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
             {"", " == ", " ? ", " : ", ""}, // X > Y ? ifYes : ifNo
             {"", " != ", " ? ", " : ", ""} // X != Y ? ifYes : ifNo
-    };
-    // All expressions available to the GP
-    static final String[][][] EXPRESSIONS = {
-            TERMINALS,
-            FUNCTIONS_A1,
-            FUNCTIONS_A2,
-            FUNCTIONS_A3,
-            FUNCTIONS_A4
     };
     private static final Logger log = Logger.getLogger(ExpressionNode.class.getName());
     private static final long serialVersionUID = 8049660827041716275L;

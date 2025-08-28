@@ -33,7 +33,7 @@ public class Fire extends MovingPoint {
     @Override
     public String toString() {
         return "Fire{" +
-                super.toString() +", " +
+                super.toString() + ", " +
                 aiming +
                 ", damage=" + damage +
                 '}';

@@ -3,8 +3,6 @@ package tankbase;
 import robocode.AdvancedRobot;
 import tankbase.gun.kdformula.KDFormula;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,10 +20,10 @@ public abstract class AbstractCachedTankBase extends AdvancedRobot implements IT
         if (tankState == null || tankState.getTime() < now) {
             TankState prev = tankState;
             tankState = new TankState(prev,
-                                      super.getX(), super.getY(),
-                                      trigoAngle(super.getHeadingRadians()), trigoAngle(super.getGunHeadingRadians()),
-                                      super.getTurnRemaining(), super.getVelocity(), super.getGunHeat(), super.getEnergy(),
-                                      super.getOthers(), now);
+                    super.getX(), super.getY(),
+                    trigoAngle(super.getHeadingRadians()), trigoAngle(super.getGunHeadingRadians()),
+                    super.getTurnRemaining(), super.getVelocity(), super.getGunHeat(), super.getEnergy(),
+                    super.getOthers(), now);
         }
     }
 

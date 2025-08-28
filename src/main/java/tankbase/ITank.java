@@ -2,7 +2,6 @@ package tankbase;
 
 import tankbase.gun.kdformula.KDFormula;
 
-import java.awt.geom.Point2D;
 import java.util.List;
 
 public interface ITank {

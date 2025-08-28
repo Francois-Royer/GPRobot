@@ -4,17 +4,8 @@ import robocode.ScannedRobotEvent;
 
 import java.awt.geom.Point2D;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.signum;
-import static java.lang.Math.sin;
-import static java.lang.Math.toDegrees;
-import static robocode.Rules.ACCELERATION;
-import static robocode.Rules.MAX_VELOCITY;
-import static robocode.Rules.getTurnRateRadians;
+import static java.lang.Math.*;
+import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.GUN_COOLING_RATE;
@@ -59,7 +50,7 @@ public class TankState extends Point2D.Double {
                      double velocity,
                      double gunHeat, double energy, int others, long time) {
         this(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time, 0, 0,
-             previous != null ? previous.vmax : 0, previous != null ? previous.vmin : 0);
+                previous != null ? previous.vmax : 0, previous != null ? previous.vmin : 0);
         computeDeltaTimeAccelerationAndTurnRate(previous);
     }
 
@@ -97,7 +88,7 @@ public class TankState extends Point2D.Double {
     public TankState extrapolateNextState() {
         if (energy == 0 || acceleration == 0 && velocity == 0 && turnRate == 0)
             return new TankState(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time,
-                                 acceleration, turnRate, vmax, vmin);
+                    acceleration, turnRate, vmax, vmin);
 
         double nextVelocity = checkMinMax(velocity + acceleration, max(vmin, -MAX_VELOCITY), min(vmax, MAX_VELOCITY));
         double nextAcceleration = nextVelocity - velocity;
@@ -108,7 +99,7 @@ public class TankState extends Point2D.Double {
 
         if (pointInBattleField(new Point2D.Double(nextX, nextY), TANK_SIZE / 2.5)) {
             return new TankState(nextX, nextY, nextHeading, gunHeadingRadians, turnRemaining, nextVelocity, nextGunHeat, energy, others,
-                                 time + 1, nextAcceleration, turnRate, vmax, vmin);
+                    time + 1, nextAcceleration, turnRate, vmax, vmin);
         }
 
         return null;

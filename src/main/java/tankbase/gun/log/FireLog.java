@@ -9,11 +9,16 @@ import java.util.Set;
 
 public class FireLog {
 
+    private static final Set<Fire> log = new HashSet<>();
+
+    private FireLog() {
+    }
+
     public static List<Fire> getFireLog(String targetName) {
         return log.stream()
-                  .filter(s -> s.getTarget().getName().equals(targetName))
-                  .sorted((s1, s2) -> (int) (s2.getStart() - s1.getStart()))
-                  .toList();
+                .filter(s -> s.getTarget().getName().equals(targetName))
+                .sorted((s1, s2) -> (int) (s2.getStart() - s1.getStart()))
+                .toList();
     }
 
     public static Optional<Fire> getFireByDirection(double direction) {
@@ -31,8 +36,4 @@ public class FireLog {
     public static void clearFireLog() {
         log.clear();
     }
-
-    private static final Set<Fire> log = new HashSet<>();
-
-    private FireLog() {}
 }

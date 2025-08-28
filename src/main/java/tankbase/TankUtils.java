@@ -6,22 +6,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.asin;
-import static java.lang.Math.exp;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.tan;
+import static java.lang.Math.*;
 import static robocode.Rules.MAX_VELOCITY;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.FIELD_HEIGHT;
 import static tankbase.AbstractTankBase.FIELD_WIDTH;
 
 public class TankUtils {
+
+    private TankUtils() {
+    }
 
     // -PI -> PI
     public static double getPointAngle(Point2D.Double a, Point2D.Double b) {
@@ -110,7 +104,6 @@ public class TankUtils {
         return (deviation > 0) ? 1 / (deviation * sqrt(2 * PI)) * exp(-.5 * pow((x - median) / deviation, 2)) : 1;
     }
 
-
     public static boolean collisionCircleSegment(Point2D.Double c, double r, Point2D.Double a, Point2D.Double b) {
         if (c.distance(a) < r || c.distance(b) < r)
             return true;
@@ -133,8 +126,8 @@ public class TankUtils {
 
     public static double triangleArea(Point2D.Double a, java.awt.geom.Point2D.Double b, java.awt.geom.Point2D.Double c) {
         return Math.abs(a.getX() * (b.getY() - c.getY()) +
-                                b.getX() * (c.getY() - a.getY()) +
-                                c.getX() * (a.getY() - b.getY())) / 2.0;
+                b.getX() * (c.getY() - a.getY()) +
+                c.getX() * (a.getY() - b.getY())) / 2.0;
     }
 
     public static Point2D.Double wallIntersection(Point2D.Double source, double direction) {
@@ -205,6 +198,4 @@ public class TankUtils {
     public static boolean pointInBattleField(Point2D.Double p) {
         return pointInBattleField(p, 0);
     }
-    
-    private TankUtils() {}
 }

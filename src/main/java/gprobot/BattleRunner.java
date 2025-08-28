@@ -21,13 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static gprobot.RobocodeConf.GET_FITNESS;
-import static gprobot.RobocodeConf.MSG;
-import static gprobot.RobocodeConf.ONE2ONE;
-import static gprobot.RobocodeConf.READY;
-import static gprobot.RobocodeConf.SET_OPPONENTS;
-import static gprobot.RobocodeConf.TARGET_PACKAGE;
-import static gprobot.RobocodeConf.opponents;
+import static gprobot.RobocodeConf.*;
 import static gprobot.RobotCodeUtil.updateRunner;
 
 public class BattleRunner {
@@ -103,8 +97,8 @@ public class BattleRunner {
 
         if (opponentsRobots.length > 1 && ONE2ONE)
             fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots).mapToDouble(opponent ->
-                                                                                                                   getRobotFitness(robot,
-                                                                                                                                   new String[]{opponent})
+                    getRobotFitness(robot,
+                            new String[]{opponent})
             ).sum()) / 2 / opponents.length;
 
         return fitnessScore;
@@ -113,7 +107,7 @@ public class BattleRunner {
     private double computeFitness(String robot, BattleObserver battleObserver) {
         BattleResults[] results = battleObserver.getResults();
         Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName()))
-                                           .findFirst();
+                .findFirst();
 
         int botScore = br.isPresent() ? getScore(br.get()) : 0;
         int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
@@ -161,7 +155,7 @@ class BattleObserver extends BattleAdaptor {
     @Override
     public void onTurnEnded(TurnEndedEvent e) {
         Optional<IRobotSnapshot> ors = Stream.of(e.getTurnSnapshot().getRobots()).filter(robot -> robot.getName().equals(robotName))
-                                             .findFirst();
+                .findFirst();
         if (ors.isPresent())
             remainEnergy += ors.get().getEnergy();
         roundDuration += e.getTurnSnapshot().getTurn();

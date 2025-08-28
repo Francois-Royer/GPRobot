@@ -1,24 +1,13 @@
 package gprobot;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static gprobot.RobocodeConf.GET_FITNESS;
-import static gprobot.RobocodeConf.MSG;
-import static gprobot.RobocodeConf.READY;
-import static gprobot.RobocodeConf.ROBOTS_FOLDER;
-import static gprobot.RobocodeConf.SET_OPPONENTS;
-import static gprobot.RobotCodeUtil.copyOrLinkDir;
-import static gprobot.RobotCodeUtil.copyOrLinkFile;
-import static gprobot.RobotCodeUtil.getRunnersDir;
+import static gprobot.RobocodeConf.*;
+import static gprobot.RobotCodeUtil.*;
 
 public class BattleControler {
 
@@ -48,8 +37,8 @@ public class BattleControler {
             copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "sample");
             copyOrLinkDir(new File(RobocodeConf.ROBO_CODE_PATH), workerFolder, ROBOTS_FOLDER + File.separator + "tankbase");
             copyOrLinkFile(new File(
-                                   RobocodeConf.ROBO_CODE_PATH + File.separator + ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath(),
-                           new File(workerFolder, ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath());
+                            RobocodeConf.ROBO_CODE_PATH + File.separator + ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath(),
+                    new File(workerFolder, ROBOTS_FOLDER + File.separator + "voidious.Diamond_1.8.28.jar").toPath());
         } catch (Exception ex) {
             log.log(Level.SEVERE, null, ex);
             System.exit(1);

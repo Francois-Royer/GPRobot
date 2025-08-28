@@ -9,9 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Math.abs;
-import static robocode.Rules.MAX_VELOCITY;
-import static robocode.Rules.MIN_BULLET_POWER;
-import static robocode.Rules.getBulletSpeed;
+import static robocode.Rules.*;
 
 public class CircularGunner extends AbtractGunner {
 

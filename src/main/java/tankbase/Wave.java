@@ -5,25 +5,13 @@ import tankbase.gun.Aiming;
 import java.awt.*;
 import java.awt.geom.Point2D;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.cos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.sin;
-import static java.lang.Math.toDegrees;
-import static robocode.Rules.MAX_BULLET_POWER;
-import static robocode.Rules.getBulletDamage;
-import static robocode.Rules.getBulletSpeed;
+import static java.lang.Math.*;
+import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
-import static tankbase.AbstractTankBase.FIELD_HEIGHT;
 import static tankbase.Constant.TANK_SIZE;
+import static tankbase.TankUtils.*;
 import static tankbase.enemy.EnemyDB.filterEnemies;
-import static tankbase.TankUtils.collisionCircleSegment;
-import static tankbase.TankUtils.getPointAngle;
-import static tankbase.TankUtils.getVertexAngle;
-import static tankbase.TankUtils.middle;
-import static tankbase.TankUtils.normalDistrib;
 
 public class Wave extends MovingPoint {
 
@@ -85,7 +73,7 @@ public class Wave extends MovingPoint {
         Point2D.Double waveNow = getPosition(now);
         double d = getDistance(now);
         double scale = FieldMap.getScale();
-        Point2D.Double p = new Point2D.Double(x * scale + scale/2, y * scale + scale/2);
+        Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
         double r = distance(p);
 
         if (d > r)
@@ -122,7 +110,7 @@ public class Wave extends MovingPoint {
     @Override
     public String toString() {
         return String.format("Wave{target=%s, source=%s, p=%.1f, d=%.0f°, a=%.1f}", target.getName(), source.getName(), getPower(),
-                             toDegrees(direction), toDegrees(arc));
+                toDegrees(direction), toDegrees(arc));
     }
 
     @Override

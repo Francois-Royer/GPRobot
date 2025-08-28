@@ -352,7 +352,7 @@ public abstract class KdTree<T> {
             if (cursor.status == Status.ALLVISITED) {
                 if (nextCursor.locationCount == 0
                         || (!nextCursor.singularity && pointRegionDist(location, nextCursor.minLimit,
-                                                                       nextCursor.maxLimit) > range)) {
+                        nextCursor.maxLimit) > range)) {
                     continue;
                 }
             }
@@ -455,7 +455,7 @@ public abstract class KdTree<T> {
                 if (nextCursor.locationCount == 0
                         || (!nextCursor.singularity &&
                         pointRegionMaxDist(location, nextCursor.minLimit,
-                                           nextCursor.maxLimit) < range)) {
+                                nextCursor.maxLimit) < range)) {
                     continue;
                 }
             }
@@ -573,7 +573,7 @@ public abstract class KdTree<T> {
 
             for (int i = 0; i < point.length; i++) {
                 double diff = Math.max(Math.abs(point[i] - min[i]),
-                                       Math.abs(max[i] - point[i])) * weights[i];
+                        Math.abs(max[i] - point[i])) * weights[i];
 
                 if (!Double.isNaN(diff)) {
                     d += diff * diff;

@@ -9,9 +9,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
+import static java.lang.Math.*;
 import static robocode.Rules.MIN_BULLET_POWER;
 import static robocode.Rules.getBulletSpeed;
 import static tankbase.Constant.TANK_SIZE;

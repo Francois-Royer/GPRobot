@@ -97,8 +97,8 @@ public class Aiming {
     @Override
     public String toString() {
         return String.format("Aiming[target=%s, firePower=%.2f, direction=%.2f, firing to=(%.2f, %.2f) from(%.2f, %.2f)]",
-                             target.getName(), firePower, Math.toDegrees(direction), firingPosition.x, firingPosition.y,
-                             gunner.getGunner().getState().x, gunner.getGunner().getState().y);
+                target.getName(), firePower, Math.toDegrees(direction), firingPosition.x, firingPosition.y,
+                gunner.getGunner().getState().x, gunner.getGunner().getState().y);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class Aiming {
 
         Aiming aiming = (Aiming) o;
         return Double.compare(firePower, aiming.firePower) == 0 && Objects.equals(nextPosition,
-                                                                                  aiming.nextPosition) && Objects.equals(
+                aiming.nextPosition) && Objects.equals(
                 expectedMoves, aiming.expectedMoves) && Objects.equals(kdEntry, aiming.kdEntry) && firingPosition.equals(
                 aiming.firingPosition) && direction.equals(aiming.direction);
     }

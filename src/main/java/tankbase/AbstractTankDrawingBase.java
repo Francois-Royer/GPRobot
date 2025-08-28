@@ -6,23 +6,22 @@ import tankbase.gun.Fire;
 import java.awt.*;
 import java.awt.geom.Point2D;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-import static java.lang.Math.toDegrees;
+import static java.lang.Math.*;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.Constant.TANK_SIZE_INT;
-import static tankbase.enemy.EnemyDB.filterEnemies;
+import static tankbase.FieldMap.isFullMap;
+import static tankbase.FieldMap.toggleMapMode;
 import static tankbase.TankUtils.range;
-import static tankbase.gun.log.VirtualFireLog.getVirtualFireLog;
 import static tankbase.WaveLog.getWaves;
+import static tankbase.enemy.EnemyDB.filterEnemies;
+import static tankbase.gun.log.VirtualFireLog.getVirtualFireLog;
 
 public abstract class AbstractTankDrawingBase extends AbstractTankBase implements ITank {
 
     boolean drawAiming = true;
     boolean drawAimPoint = false;
-    boolean drawDanger = false;
+    boolean drawDanger = true;
     boolean drawEnemy = true;
     boolean drawFire = false;
     boolean drawWave = false;
@@ -55,15 +54,16 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         int e = d + 5;
         g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc / 2, waveArc);
         g2D.drawLine((int) (w.x /*+ s * cos(w.direction)*/), (int) (w.y /*+ s * sin(w.direction)*/),
-                     (int) (w.x + e * cos(w.direction)), (int) (w.y + e * sin(w.direction)));
+                (int) (w.x + e * cos(w.direction)), (int) (w.y + e * sin(w.direction)));
         g2D.drawLine((int) (w.x + s * cos(w.direction + w.getArc() / 2)), (int) (w.y + s * sin(w.direction + w.getArc() / 2)),
-                     (int) (w.x + e * cos(w.direction + w.getArc() / 2)), (int) (w.y + e * sin(w.direction + w.getArc() / 2)));
+                (int) (w.x + e * cos(w.direction + w.getArc() / 2)), (int) (w.y + e * sin(w.direction + w.getArc() / 2)));
         g2D.drawLine((int) (w.x + s * cos(w.direction - w.getArc() / 2)), (int) (w.y + s * sin(w.direction - w.getArc() / 2)),
-                     (int) (w.x + e * cos(w.direction - w.getArc() / 2)), (int) (w.y + e * sin(w.direction - w.getArc() / 2)));
+                (int) (w.x + e * cos(w.direction - w.getArc() / 2)), (int) (w.y + e * sin(w.direction - w.getArc() / 2)));
     }
 
     @Override
     public void onKeyPressed(java.awt.event.KeyEvent e) {
+        sysout.printf("Key pressed %c%n", e.getKeyChar());
         switch (e.getKeyChar()) {
             case 'w':
                 drawWave = !drawWave;
@@ -82,6 +82,9 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
                 break;
             case 'p':
                 drawAimPoint = !drawAimPoint;
+                break;
+            case 'm':
+                toggleMapMode();
                 break;
             default:
                 drawWave = drawDanger = drawAiming = drawFire = drawEnemy = drawAimPoint = !drawAiming;
@@ -157,13 +160,25 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         double scaleX = FIELD_WIDTH / width;
         double scaleY = FIELD_HEIGHT / height;
 
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++) {
-                int alpha = (int) range(map[x][y], 0, 1, 0, 128);
-                Color c = new Color(r, g, b, alpha);
-                g2D.setColor(c);
+        if (isFullMap())
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++) {
+                    int alpha = (int) range(map[x][y], 0, 1, 0, 128);
+                    if (alpha > 0) {
+                        Color c = new Color(r, g, b, alpha);
+                        g2D.setColor(c);
+                        g2D.fillRect((int) (scaleX * x), (int) (scaleY * y), (int) scaleX, (int) scaleY);
+                    }
+                }
+        else
+            FieldMap.getDangerMapPoints().forEach(p -> {
+                int alpha = (int) range(map[p.x][p.y], 0, 1, 0, 128);
+                if (alpha > 0) {
+                    Color c = new Color(r, g, b, alpha);
+                    g2D.setColor(c);
+                    g2D.fillRect((int) (scaleX * p.x), (int) (scaleY * p.y), (int) scaleX, (int) scaleY);
+                }
+            });
 
-                g2D.fillRect((int) (scaleX * x), (int) (scaleY * y), (int) scaleX, (int) scaleY);
-            }
     }
 }

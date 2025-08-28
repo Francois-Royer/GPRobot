@@ -1,14 +1,8 @@
 package gprobot;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
+import java.io.*;
 
-import static gprobot.RobocodeConf.BOT_PREFFIX;
-import static gprobot.RobocodeConf.TARGET_PACKAGE;
-import static gprobot.RobocodeConf.random;
+import static gprobot.RobocodeConf.*;
 
 public class MetaBot implements Serializable {
 

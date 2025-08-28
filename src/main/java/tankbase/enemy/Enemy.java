@@ -20,12 +20,10 @@ import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.MIN_BULLET_POWER;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.*;
-import static tankbase.Constant.MAX_DANGER_RADIUS;
-import static tankbase.Constant.MAX_NOT_SCAN_TIME;
-import static tankbase.Constant.TANK_SIZE;
+import static tankbase.Constant.*;
 import static tankbase.TankUtils.*;
-import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.WaveLog.logWave;
+import static tankbase.enemy.EnemyDB.filterEnemies;
 
 
 public class Enemy implements ITank {
@@ -97,10 +95,10 @@ public class Enemy implements ITank {
             }
         }
 
-        alive = true;
-        scanned = true;
         prevScannedTankState = state;
         lastScan = state.getTime();
+        scanned = true;
+        alive = true;
     }
 
     void computeFEnergy() {
@@ -123,7 +121,12 @@ public class Enemy implements ITank {
 
     public void reset() {
         alive = false;
+        scanned = false;
         prevScannedTankState = prevState = state = null;
+    }
+
+    public void die() {
+        alive = false;
     }
 
     private void checkEnemyFire() {
@@ -251,7 +254,7 @@ public class Enemy implements ITank {
         Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
         double d = state.distance(p);
         if (!isMaxDanger(x, y)) {
-            boolean shadowed =filterEnemies(e -> e.isAlive() && e != this).stream()
+            boolean shadowed = filterEnemies(e -> e.isAlive() && e != this).stream()
                     .map(e -> collisionCircleSegment(e.getState(), TANK_SIZE, p, state))
                     .reduce((a, b) -> a || b)
                     .orElse(false);
@@ -264,6 +267,7 @@ public class Enemy implements ITank {
         }
         return 1;
     }
+
     public boolean isMaxDanger(int x, int y) {
         double scale = FieldMap.getScale();
         Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);

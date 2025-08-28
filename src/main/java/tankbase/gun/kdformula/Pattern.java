@@ -9,9 +9,7 @@ import java.util.List;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.min;
-import static robocode.Rules.DECELERATION;
-import static robocode.Rules.MAX_TURN_RATE_RADIANS;
-import static robocode.Rules.MAX_VELOCITY;
+import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
 import static tankbase.TankUtils.wallIntersection;

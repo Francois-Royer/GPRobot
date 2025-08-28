@@ -1,17 +1,7 @@
 package tankbase;
 
-import robocode.Bullet;
-import robocode.BulletHitBulletEvent;
-import robocode.BulletHitEvent;
-import robocode.BulletMissedEvent;
-import robocode.DeathEvent;
+import robocode.*;
 import robocode.Event;
-import robocode.HitByBulletEvent;
-import robocode.HitRobotEvent;
-import robocode.RobotDeathEvent;
-import robocode.RoundEndedEvent;
-import robocode.ScannedRobotEvent;
-import robocode.SkippedTurnEvent;
 import tankbase.enemy.Enemy;
 import tankbase.gun.*;
 import tankbase.gun.log.FireLog;
@@ -19,67 +9,36 @@ import tankbase.gun.log.FireLog;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static java.lang.Math.*;
-import static robocode.Rules.GUN_TURN_RATE_RADIANS;
-import static robocode.Rules.MAX_BULLET_POWER;
-import static robocode.Rules.MIN_BULLET_POWER;
-import static robocode.Rules.getBulletDamage;
-import static robocode.Rules.getBulletSpeed;
+import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.Constant.MAX_NOT_SCAN_TIME;
 import static tankbase.Constant.MIN_CHANGE_TARGET_TIME;
-import static tankbase.enemy.EnemyDB.*;
 import static tankbase.FieldMap.computeDangerMap;
-import static tankbase.gun.log.FireLog.clearFireLog;
-import static tankbase.gun.log.FireLog.getFireByDirection;
-import static tankbase.gun.log.FireLog.logFire;
-import static tankbase.gun.log.FireLog.removeFire;
-import static tankbase.TankUtils.computeTurnGun2Target;
-import static tankbase.TankUtils.computeTurnGun2TargetNextPos;
-import static tankbase.TankUtils.getPointAngle;
-import static tankbase.TankUtils.oppositeAngle;
-import static tankbase.TankUtils.trigoAngle;
-import static tankbase.gun.log.VirtualFireLog.clearVirtualFireLog;
-import static tankbase.gun.log.VirtualFireLog.logVirtualFire;
-import static tankbase.gun.log.VirtualFireLog.updateVirtualFires;
-import static tankbase.WaveLog.clearWaveLog;
-import static tankbase.WaveLog.getWave;
-import static tankbase.WaveLog.removeWave;
-import static tankbase.WaveLog.updateWaves;
+import static tankbase.TankUtils.*;
+import static tankbase.WaveLog.*;
+import static tankbase.enemy.EnemyDB.*;
+import static tankbase.gun.log.FireLog.*;
+import static tankbase.gun.log.VirtualFireLog.*;
 
 abstract public class AbstractTankBase extends AbstractCachedTankBase implements ITank {
 
+    private static final Map<String, Gunner> gunners = new HashMap<>();
     public static double FIELD_WIDTH;
     public static double FIELD_HEIGHT;
     public static Point2D.Double BATTLE_FIELD_CENTER;
     public static double DISTANCE_MAX;
     public static double GUN_COOLING_RATE;
     public static PrintStream sysout;
-    public int moveLogMaxSize;
-
-    private static final Map<String, Gunner> gunners = new HashMap<>();
-
     private static FireStat gpStat;
     private static HeadOnGunner headOnGunner = null;
-
-    private Enemy prevTarget = null;
+    public int moveLogMaxSize;
     public Enemy target;
-    protected Enemy mostLeft;
-    protected Enemy mostRight;
-
-    protected Aiming aiming = null;
-
-    private int aliveCount;
-
     public Point2D.Double destination;
-
     public double scanDirection = 1;
     public double forward = 1;
     public double turnLeft = 0;
@@ -87,6 +46,11 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     public double turnRadarLeft = 0;
     public double ahead = 0;
     public double firePower = 0;
+    protected Enemy mostLeft;
+    protected Enemy mostRight;
+    protected Aiming aiming = null;
+    private Enemy prevTarget = null;
+    private int aliveCount;
     private boolean alive;
     private long lastTargetChange;
 
@@ -98,7 +62,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
     /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Static methods
-
     public static void putGunner(Gunner gunner) {
         gunners.put(gunner.getName(), gunner);
     }
@@ -175,7 +138,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private void updateDangerMap() {
-        computeDangerMap(listEnemies(), getEmenmiesMaxDamageMe(), getTime());
+        computeDangerMap(listEnemies(), getEmenmiesMaxDamageMe(), getTime(), getState());
     }
 
     private long updateLeftRightEnemies() {
@@ -252,7 +215,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private void computeAiming() {
-        filterEnemies(Enemy::isAlive).forEach(e-> computeAimingTarget(e));
+        filterEnemies(Enemy::isAlive).forEach(e -> computeAimingTarget(e));
     }
 
     private void computeAimingTarget(Enemy target) {
@@ -465,7 +428,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
         e.damageMe(getBulletDamage(hbbe.getPower()));
 
-        Bullet b =hbbe.getBullet();
+        Bullet b = hbbe.getBullet();
         Point2D.Double p = new Point2D.Double(b.getX(), b.getY());
         Optional<Wave> ow = getWave(hbbe.getName(), p, getTime());
         ow.ifPresent(wave -> {
@@ -498,7 +461,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         onEvent(event);
         Enemy enemy = getEnemy(event.getName());
         if (enemy != null) // If robot die before we scan it
-            enemy.reset();
+            enemy.die();
     }
 
     private void onEvent(Event e) {
@@ -542,7 +505,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
             listEnemies().forEach(enemy -> {
                 FireStat fs = gunner.getEnemyRoundFireStat(enemy);
                 out.printf("    %s hitrate = %.0f%% / %d, dmg/cost=%.0f%%%n", enemy.getName(), fs.getHitRate() * 100, fs.getFireCount(),
-                           fs.getDommageCostRatio() * 100);
+                        fs.getDommageCostRatio() * 100);
             });
         });
         resetRoundStat();

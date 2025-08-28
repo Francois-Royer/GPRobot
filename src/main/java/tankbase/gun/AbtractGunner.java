@@ -6,9 +6,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
+import static java.lang.Math.*;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.MIN_BULLET_POWER;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
