@@ -134,7 +134,11 @@ public class Enemy implements ITank {
             return;
 
         double drop = prevState.getEnergy() - state.getEnergy();
-        if (drop < MIN_BULLET_POWER || drop > MAX_BULLET_POWER)
+        if (drop < 0
+                || drop < MIN_BULLET_POWER
+                || drop > MAX_BULLET_POWER
+                || wallDistance(state) == 0
+                || wallDistance(prevState) == 0)
             return;
 
         state.setGunHeat(Rules.getGunHeat(drop));

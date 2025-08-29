@@ -583,11 +583,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     @Override
-    public void onHitRobot(HitRobotEvent e) {
-        // Try escape backward and turn PI/2
-        //forward *= -1;
-        //setTurnLeftRadians(PI / 2);
-        //setAhead(forward * TANK_SIZE * 2);
+    public void onHitRobot(HitRobotEvent hre) {
+        onEvent(hre);
+        Enemy e = getEnemy(hre.getName());
+        if (e != null) {
+            target = e;
+            lastTargetChange = hre.getTime();
+        }
     }
 
     private void resetRoundData() {
