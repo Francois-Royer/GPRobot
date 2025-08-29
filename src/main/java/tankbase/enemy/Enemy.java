@@ -126,7 +126,7 @@ public class Enemy implements ITank {
     }
 
     public void die() {
-        alive = false;
+        scanned = alive = false;
     }
 
     private void checkEnemyFire() {
@@ -250,6 +250,7 @@ public class Enemy implements ITank {
     }
 
     public double getDanger(int x, int y, double maxDamageMe) {
+        if (!scanned) return 0;
         double scale = FieldMap.getScale();
         Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
         double d = state.distance(p);

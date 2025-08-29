@@ -116,50 +116,54 @@ public class TankUtils {
         return min_dist <= r && max_dist >= r;
     }
 
-    public static Point2D.Double vector(Point2D.Double a, java.awt.geom.Point2D.Double b) {
+    public static Point2D.Double vector(Point2D.Double a, Point2D.Double b) {
         return new Point2D.Double(b.getX() - a.getX(), b.getY() - a.getY());
     }
 
-    public static double dot(Point2D.Double a, java.awt.geom.Point2D.Double b) {
+    public static double dot(Point2D.Double a, Point2D.Double b) {
         return a.getX() * b.getX() + a.getY() * b.getY();
     }
 
-    public static double triangleArea(Point2D.Double a, java.awt.geom.Point2D.Double b, java.awt.geom.Point2D.Double c) {
+    public static double triangleArea(Point2D.Double a, Point2D.Double b, Point2D.Double c) {
         return Math.abs(a.getX() * (b.getY() - c.getY()) +
                 b.getX() * (c.getY() - a.getY()) +
                 c.getX() * (a.getY() - b.getY())) / 2.0;
     }
 
     public static Point2D.Double wallIntersection(Point2D.Double source, double direction) {
-        if (direction == PI / 2) return new Point2D.Double(source.getX(), FIELD_HEIGHT);
+        if (direction == PI / 2) return new Point2D.Double(source.getX(), FIELD_HEIGHT-1);
         if (direction == -PI / 2) return new Point2D.Double(source.getX(), 0);
-        if (direction == 0) return new Point2D.Double(FIELD_WIDTH, source.getY());
+        if (direction == 0) return new Point2D.Double(FIELD_WIDTH-1, source.getY());
         if (direction == PI) return new Point2D.Double(0, source.getY());
 
         if (direction > 0) {
             if (direction < PI / 2) {
-                double y = source.getY() + (FIELD_WIDTH - source.getX()) * tan(direction);
-                if (y <= FIELD_HEIGHT) return new Point2D.Double(FIELD_WIDTH, y);
-                double x = source.getX() + (FIELD_HEIGHT - source.getY()) / tan(direction);
-                return new Point2D.Double(x, FIELD_HEIGHT);
+                double y = source.getY() + (FIELD_WIDTH - source.getX()) * sin(direction);
+                if (y < FIELD_HEIGHT) return new Point2D.Double(FIELD_WIDTH-1, y);
+                double x = source.getX() + (FIELD_HEIGHT - source.getY()) / cos(direction);
+                return new Point2D.Double(x, FIELD_HEIGHT-1);
             }
-            double y = source.getY() - source.getX() * tan(direction);
-            if (y <= FIELD_HEIGHT) return new Point2D.Double(0, y);
-            double x = source.getX() + (FIELD_HEIGHT - source.getY()) / tan(direction);
-            return new Point2D.Double(x, FIELD_HEIGHT);
+            double y = source.getY() + source.getX() * sin(direction);
+            if (y < FIELD_HEIGHT) return new Point2D.Double(0, y);
+            double x = source.getX() + (FIELD_HEIGHT - source.getY()) / cos(direction);
+            return new Point2D.Double(x, FIELD_HEIGHT-1);
         }
 
         if (direction > -PI / 2) {
-            double y = source.getY() + (FIELD_WIDTH - source.getX()) * tan(direction);
-            if (y >= 0) return new Point2D.Double(FIELD_WIDTH, y);
-            double x = source.getX() - (source.getY()) / tan(direction);
+            double y = source.getY() + (FIELD_WIDTH - source.getX()) * sin(direction);
+            if (y >= 0) return new Point2D.Double(FIELD_WIDTH-1, y);
+            double x = source.getX() + (source.getY()) / cos(direction);
             return new Point2D.Double(x, 0);
         }
 
-        double y = source.getY() - source.getX() * tan(direction);
+        double y = source.getY() + source.getX() * sin(direction);
         if (y >= 0) return new Point2D.Double(0, y);
-        double x = source.getX() - source.getY() / tan(direction);
+        double x = source.getX() + source.getY() / cos(direction);
         return new Point2D.Double(x, 0);
+    }
+
+    public static double wallDistance(Point2D.Double p) {
+        return min(min(p.x, FIELD_WIDTH-p.x), min(p.y, FIELD_HEIGHT-p.y));
     }
 
     @SafeVarargs

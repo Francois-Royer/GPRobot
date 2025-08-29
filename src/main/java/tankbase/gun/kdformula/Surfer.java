@@ -18,7 +18,7 @@ import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
 import static tankbase.gun.log.FireLog.getFireLog;
 
 public class Surfer extends Pattern {
-    private static final double[] surferWeights = {1, 2, 10, 10, 10};
+    private static final double[] surferWeights = {1, 1, 1, 3, 3, 2, 2, 1, 1};
     private final ITank gunner;
 
     public Surfer(ITank target, ITank gunner) {
@@ -35,20 +35,15 @@ public class Surfer extends Pattern {
                 state.distance(gunner.getState()) / DISTANCE_MAX,
                 normalRelativeAngle(state.getHeadingRadians() - getPointAngle(gunner.getState(), state)) / PI,
                 gunner.getState().getGunHeat() / MAX_GUN_HEAT,
-                0, 0
+                0, 0, 0, 0, 0, 0
         };
 
         List<Fire> aimLog = getFireLog(target.getName());
-        if (!aimLog.isEmpty()) {
-            surferPoint[3] = aimLog.get(0).age(state.getTime()) * Rules.getBulletSpeed(
-                    aimLog.get(0).getAimingData().getFirePower()) / DISTANCE_MAX;
-            surferPoint[4] = aimLog.get(0).getAimingData().getFirePower() / MAX_BULLET_POWER;
-        }
 
-        /*for (int i = 0; i < aimLog.size() && i * 2 + 4 < surferPoint.length; i++) {
+        for (int i = 0; i < aimLog.size() && i * 2 + 4 < surferPoint.length; i++) {
             surferPoint[i * 2 + 3] = aimLog.get(i).getAimingData().getFirePower() / MAX_BULLET_POWER;
-            surferPoint[i * 2 + 4] = aimLog.get(i).age(gunner.getState().getDate()) / DISTANCE_MAX * Rules.getBulletSpeed(aimLog.get(i).getAimingData().getFirePower());
-        }*/
+            surferPoint[i * 2 + 4] = aimLog.get(i).age(gunner.getState().getTime()) / DISTANCE_MAX * Rules.getBulletSpeed(aimLog.get(i).getAimingData().getFirePower());
+        }
 
         return concatArray(super.getPoint(state), surferPoint);
     }

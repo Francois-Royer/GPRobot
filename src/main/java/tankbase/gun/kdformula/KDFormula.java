@@ -7,7 +7,7 @@ import tankbase.kdtree.KdTree;
 import java.util.List;
 
 public interface KDFormula {
-    int KDTREE_MAX_SIZE = 1000;
+    int KDTREE_MAX_SIZE = 400;
 
     KdTree<List<Move>> getKdTree();
 

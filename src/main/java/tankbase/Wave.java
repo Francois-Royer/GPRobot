@@ -57,7 +57,7 @@ public class Wave extends MovingPoint {
         circular.x = head.x + cos(target.getState().getHeadingRadians()) * time * target.getState().getVelocity();
         circular.y = head.y + sin(target.getState().getHeadingRadians()) * time * target.getState().getVelocity();
 
-        this.arc = min(max(getVertexAngle(this, circular, head), PI / 12), PI / 4);
+        this.arc = min(max(getVertexAngle(this, circular, head), PI / 8), PI / 3);
         middle = TankUtils.middle(head, circular);
         direction = getPointAngle(this, middle);
         median = normalAbsoluteAngle(direction);
@@ -89,11 +89,11 @@ public class Wave extends MovingPoint {
 
         double angle = getVertexAngle(this, waveNow, p);
 
-        double danger = getBulletDamage(getPower()) / getBulletDamage(MAX_BULLET_POWER);
+        double danger = max(0.3, getBulletDamage(getPower()) / getBulletDamage(MAX_BULLET_POWER));
         d = p.distance(waveNow);
         if (d >= 0) {
             danger *= normalDistrib(angle + median, median, deviation) / normalMedian;
-            danger *= Math.pow((DISTANCE_MAX - d) / DISTANCE_MAX, .9);
+            danger *= Math.pow((DISTANCE_MAX - d) / DISTANCE_MAX, 2);
         }
 
         return danger;

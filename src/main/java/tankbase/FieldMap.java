@@ -5,24 +5,30 @@ import tankbase.enemy.Enemy;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.Collection;
+import java.util.Collections;
 
 import static java.lang.Math.*;
 import static tankbase.AbstractTankBase.*;
+import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.BORDER_OFFSET;
 import static tankbase.TankUtils.*;
 import static tankbase.WaveLog.getWaves;
 
 public class FieldMap {
-    public static int totalFieldZone = 6000;
-    public static int dangerRadius = 16;
-    public static boolean fullMap = false;
+    private static int totalFieldZone = 6000;
+    private static int dangerRadius = 16;
+    private static boolean fullMap = false;
     private static int width;
     private static int height;
     private static double scale;
     private static double[][] map;
     private static double[][] battleZoneMap;
     private static double maxDanger;
-    private static Collection<Point> points;
+    private static Collection<Point> points = Collections.emptyList();
+    private static boolean searchMode=true;
+    private static boolean forceRebuildZone;
+    private static Point zoneCenter;
+    private static double zoneRadius;
 
     private FieldMap() {
     }
@@ -31,18 +37,32 @@ public class FieldMap {
         scale = sqrt(FIELD_WIDTH * FIELD_HEIGHT / totalFieldZone);
         width = (int) (FIELD_WIDTH / scale);
         height = (int) (FIELD_HEIGHT / scale);
-        setBattleZoneToField();
-        sysout.println(String.format("FieldMap[scale=%.2f, width=%d, height=%d]", scale, width, height));
+        forceRebuildZone = true;
+        if (searchMode)
+            setBattleZoneToField();
+        else
+            setBattleZone(zoneCenter, zoneRadius);
+        forceRebuildZone = false;
     }
 
     public static void setBattleZoneToField() {
-        double a = (double) width / 2;
-        double b = (double) height / 2;
-        double e = sqrt(1 - b * b / a / a); // exentricity
-        double f = e * a; // focal distance
-        Point c1 = new Point((int) ((double) width / 2 - f), height / 2);
-        Point c2 = new Point((int) ((double) width / 2 + f), height / 2);
-        setBattleZone(a, b, c1, c2);
+        if (!searchMode || forceRebuildZone) {
+            double a = (double) width / 2;
+            double b = (double) height / 2;
+            double e = sqrt(1 - b * b / a / a); // eccentricity
+            double f = e * a; // focal distance
+            Point c1 = new Point((int) ((double) width / 2 - f), height / 2);
+            Point c2 = new Point((int) ((double) width / 2 + f), height / 2);
+            searchMode = true;
+            setBattleZone(a, b, c1, c2);
+        }
+    }
+
+    public static void setBattleZone(Point c, double r) {
+        zoneCenter = c;
+        zoneRadius = r;
+        searchMode = false;
+        setBattleZone(r, r, c, c);
     }
 
     public static void computeDangerMap(Collection<Enemy> enemies, double maxEnemyDamage, long now, TankState state) {
@@ -52,7 +72,7 @@ public class FieldMap {
             computeNearDangerMap(enemies, maxEnemyDamage, now, state);
     }
 
-    public static Point2D.Double computeSafePosition(TankState state, Collection<Enemy> enemies) {
+    public static Point2D.Double computeSafeDestination(TankState state, Collection<Enemy> enemies) {
         Point2D.Double safePosition = state;
         Point gp = new Point((int) (state.getX() / scale), (int) (state.getY() / scale));
 
@@ -77,15 +97,16 @@ public class FieldMap {
         return safePosition;
     }
 
-
     public static double computeMoveDanger(Point from, Point to) {
         double d = from.distance(to);
         if (d == 0) return Double.MAX_VALUE;
         double danger = 0;
-        for (int p = 0; p < d; p++) {
+        for (double p = 0; p < d; p++) {
             int x = from.x + (int) (p * (to.x - from.x) / d);
             int y = from.y + (int) (p * (to.y - from.y) / d);
-            danger += map[x][y];
+
+            if (x>=0 && x<width && y>=0 && y<width)
+                danger += map[x][y];
         }
         return danger / pow(d, 1.1);
     }
@@ -149,7 +170,8 @@ public class FieldMap {
                         map[x][y] = maxDanger;
 
                 map[x][y] /= maxDanger;
-                map[x][y] = max(map[x][y], battleZoneMap[x][y]);
+                if (!BIG_BATTLE_FIELD || !searchMode)
+                    map[x][y] = max(map[x][y], battleZoneMap[x][y]);
             }
     }
 
@@ -176,7 +198,8 @@ public class FieldMap {
                     map[p.x][p.y] = maxDanger;
 
             map[p.x][p.y] /= maxDanger;
-            map[p.x][p.y] = max(map[p.x][p.y], battleZoneMap[p.x][p.y]);
+            if (!BIG_BATTLE_FIELD || !searchMode)
+                map[p.x][p.y] = max(map[p.x][p.y], battleZoneMap[p.x][p.y]);
         });
     }
 
@@ -194,14 +217,14 @@ public class FieldMap {
                 else
                     battleZoneMap[x][y] = pow(range(d, 0, rMax, 0, 1), 8);
             }
+
+        if (INFO_LEVEL > 0)
+        sysout.println(String.format("FieldMap[scale=%.2f, width=%d, height=%d, searchMode=%b, a=%.2f, b=%.2f]",
+                scale, width, height, searchMode, a, b));
     }
 
     private static void clear() {
         maxDanger = 0;
         map = new double[width][height];
-    }
-
-    public void setBattleZone(Point c, double r) {
-        setBattleZone(r, r, c, c);
     }
 }

@@ -13,12 +13,11 @@ import java.util.*;
 import java.util.List;
 
 import static java.lang.Math.*;
+import static java.util.function.Predicate.not;
 import static robocode.Rules.*;
-import static robocode.util.Utils.normalAbsoluteAngle;
-import static robocode.util.Utils.normalRelativeAngle;
-import static tankbase.Constant.MAX_NOT_SCAN_TIME;
-import static tankbase.Constant.MIN_CHANGE_TARGET_TIME;
-import static tankbase.FieldMap.computeDangerMap;
+import static robocode.util.Utils.*;
+import static tankbase.Constant.*;
+import static tankbase.FieldMap.*;
 import static tankbase.TankUtils.*;
 import static tankbase.WaveLog.*;
 import static tankbase.enemy.EnemyDB.*;
@@ -26,14 +25,16 @@ import static tankbase.gun.log.FireLog.*;
 import static tankbase.gun.log.VirtualFireLog.*;
 
 abstract public class AbstractTankBase extends AbstractCachedTankBase implements ITank {
-
     private static final Map<String, Gunner> gunners = new HashMap<>();
     public static double FIELD_WIDTH;
     public static double FIELD_HEIGHT;
     public static Point2D.Double BATTLE_FIELD_CENTER;
     public static double DISTANCE_MAX;
     public static double GUN_COOLING_RATE;
+    public static boolean BIG_BATTLE_FIELD;
     public static PrintStream sysout;
+
+
     private static FireStat gpStat;
     private static HeadOnGunner headOnGunner = null;
     public int moveLogMaxSize;
@@ -50,8 +51,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     protected Enemy mostRight;
     protected Aiming aiming = null;
     private Enemy prevTarget = null;
-    private int aliveCount;
+
+    private long aliveCount;
+    private long scanCount;
+    private long prevScanCount;
+
     private boolean alive;
+    private boolean running;
     private long lastTargetChange;
 
     protected AbstractTankBase() {
@@ -74,9 +80,9 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     public void doTurn() {
-        doUpdate();
+        doUpdates();
 
-        computeSafePosition();
+        computeDestination();
         computeAiming();
         selectTarget();
         virtualFire();
@@ -95,25 +101,16 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         robotSetActions();
     }
 
-    private void doUpdate() {
+    private void doUpdates() {
         updateRobotCache();
         updateEnemies();
         updateWaves(getState(), getTime());
         updateVirtualFires(getTime());
         updateDangerMap();
         aliveCount = getAliveCount();
+        prevScanCount = scanCount;
+        scanCount = getScanCount();
         aiming = null;
-    }
-
-    private double getTurnRadar() {
-        int oc = getOthers();
-        if (aliveCount == oc && oc > 0) {
-            long lastupdateDelta = updateLeftRightEnemies();
-            if (lastupdateDelta > MAX_NOT_SCAN_TIME) return 2 * PI;
-            double ra = normalAbsoluteAngle(trigoAngle(getRadarHeadingRadians()));
-            return scanLeftRight(ra, mostLeft.getAngle(), mostRight.getAngle());
-        }
-        return 2 * PI;
     }
 
     private void robotSetActions() {
@@ -122,6 +119,17 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         setAhead(ahead);
         setTurnGunLeftRadians(turnGunLeft);
         fireTargetIfPossible();
+    }
+
+    private double getTurnRadar() {
+        int oc = getOthers();
+        if ((scanCount==oc || (BIG_BATTLE_FIELD && scanCount > 0)) && oc > 0) {
+            long lastupdateDelta = updateLeftRightEnemies();
+            if (lastupdateDelta > MAX_NOT_SCAN_TIME && !BIG_BATTLE_FIELD) return 2 * PI;
+            double ra = normalAbsoluteAngle(trigoAngle(getRadarHeadingRadians()));
+            return scanLeftRight(ra, mostLeft.getAngle(), mostRight.getAngle());
+        }
+        return 2 * PI;
     }
 
     private double scanLeftRight(double ra, double ml, double mr) {
@@ -148,8 +156,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
             return Double.compare(a1, a2);
         });
 
-        Enemy prev = mostRight = sEnemies.get(0);
-        mostLeft = sEnemies.get(sEnemies.size() - 1);
+        Enemy prev = mostRight = sEnemies.getFirst();
+        mostLeft = sEnemies.getLast();
         double ba = abs(mostLeft.getAngle() - mostRight.getAngle());
         if (ba > PI) ba = 2 * PI - ba;
         long lastUpdateDelta = 0;
@@ -199,7 +207,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
         // If no aiming available just pick an alive target and turn gun to him
         if (newTarget == null && aliveCount > 0)
-            newTarget = getCloseAliveEnemy(getState());
+            newTarget = getCloseScannedEnemy(getState());
 
         target = newTarget;
 
@@ -215,7 +223,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private void computeAiming() {
-        filterEnemies(Enemy::isAlive).forEach(e -> computeAimingTarget(e));
+        filterEnemies(Enemy::isAlive).forEach(this::computeAimingTarget);
     }
 
     private void computeAimingTarget(Enemy target) {
@@ -239,8 +247,86 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                 .max(Double::compare).orElse(0.0);
     }
 
-    private void computeSafePosition() {
-        destination = FieldMap.computeSafePosition(getState(), listEnemies());
+
+
+    private int pathStep = 0;
+    private Point2D.Double[] searchPath;
+
+    private void computeDestination() {
+        if (BIG_BATTLE_FIELD)
+            computeBibBattleFieldDestination();
+        else
+            destination = computeSafeDestination(getState(), listEnemies());
+    }
+
+    private void computeBibBattleFieldDestination() {
+        if (scanCount > 0) {
+            double scale = getScale();
+            double r = RADAR_SCAN_RADIUS/scale;
+
+            if (prevScanCount == 0) {
+                TankState e = filterEnemies(Enemy::isScanned).getFirst().getState();
+                Point c = new Point((int) (e.x / scale), (int) (e.y / scale));
+                setBattleZone(c, r);
+            } else
+            if (target != null) {
+                TankState e = target.getState();
+                if (e.distance(getState()) > RADAR_SEARCH_RADIUS) {
+                    Point c = new Point((int) (e.x / scale), (int) (e.y / scale));
+                    setBattleZone(c, r);
+                }
+            }
+
+            destination = computeSafeDestination(getState(), listEnemies());
+        } else {
+            setBattleZoneToField();
+
+            // search Enenmy
+            Enemy e = getCloseAliveEnemy(getState());
+
+            if (e != null && e.getState().distance(getState()) > RADAR_SCAN_RADIUS/2)
+                destination = e.getState();
+            else {
+                if (destination == null) {
+                    double dmin = Double.MAX_VALUE;
+                    for (int i=0; i<searchPath.length; i++) {
+                        double d = searchPath[i].distance(getState());
+                        if (d<dmin) {
+                            dmin = d;
+                            pathStep = i;
+                        }
+                    }
+                } else
+                    if (destination.distance(getState()) == 0)
+                        pathStep = (pathStep+1)%searchPath.length;
+
+                destination = searchPath[pathStep];
+            }
+        }
+    }
+
+    private void randomWallDestination() {
+        Random r = getRandom();
+        int i = r.nextInt(4);
+        Point2D.Double nd = destination;
+        //while (nd.x == destination.x || nd.y == destination.y)
+            switch (i) {
+                case 0:
+                    nd = new Point2D.Double(0, r.nextInt((int) FIELD_HEIGHT));
+                    break;
+                case 1:
+                    nd = new Point2D.Double(FIELD_WIDTH, r.nextInt((int) FIELD_HEIGHT));
+                    break;
+                case 2:
+                    nd = new Point2D.Double(r.nextInt((int) FIELD_WIDTH), 0);
+                    break;
+                default:
+                    nd = new Point2D.Double(r.nextInt((int) FIELD_WIDTH), FIELD_HEIGHT);
+                    break;
+            }
+
+
+        destination = nd;
     }
 
     private double getTurn() {
@@ -305,7 +391,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private void virtualFire() {
-        if (getGunHeat() > 0) return;
+        //if (getGunHeat() > 0) return;
 
         filterEnemies(Enemy::isAlive).forEach(e -> {
             e.getTurnAimDatas().forEach(ad -> {
@@ -336,8 +422,16 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         return computeTurnGun2Target(getNextPosition(), aiming.getFiringPosition(), getGunHeadingRadians());
     }
 
-    public int getAliveCount() {
-        return (int) listEnemies().stream().filter(Enemy::isAlive).count();
+    public long getAliveCount() {
+        return listEnemies().stream().filter(Enemy::isAlive).count();
+    }
+
+    public long getScanCount() {
+        return listEnemies().stream().filter(Enemy::isScanned).count();
+    }
+
+    public long unScanCount() {
+        return listEnemies().stream().filter(not(Enemy::isScanned)).count();
     }
 
     @Override
@@ -356,9 +450,19 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         BATTLE_FIELD_CENTER = new Point2D.Double(FIELD_WIDTH / 2, FIELD_HEIGHT / 2);
         GUN_COOLING_RATE = getGunCoolingRate();
         DISTANCE_MAX = new Point2D.Double(0, 0).distance(FIELD_WIDTH, FIELD_HEIGHT);
+        BIG_BATTLE_FIELD = FIELD_HEIGHT > RADAR_SCAN_RADIUS;
 
-        FieldMap.initFieldMap();
+        initFieldMap();
         moveLogMaxSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 1);
+        searchPath = new Point2D.Double[] {
+                new Point2D.Double(RADAR_SEARCH_RADIUS, RADAR_SEARCH_RADIUS),
+                new Point2D.Double(FIELD_WIDTH - RADAR_SEARCH_RADIUS, RADAR_SEARCH_RADIUS),
+                new Point2D.Double(FIELD_WIDTH - RADAR_SEARCH_RADIUS,FIELD_HEIGHT-RADAR_SEARCH_RADIUS),
+                new Point2D.Double(RADAR_SEARCH_RADIUS,FIELD_HEIGHT-RADAR_SEARCH_RADIUS),
+                new Point2D.Double(RADAR_SEARCH_RADIUS,FIELD_HEIGHT/2+RADAR_SEARCH_RADIUS/2),
+                new Point2D.Double(FIELD_WIDTH/2,FIELD_HEIGHT/2),
+                new Point2D.Double(RADAR_SEARCH_RADIUS,FIELD_HEIGHT/2-RADAR_SEARCH_RADIUS/2),
+        };
 
         updateRobotCache();
         aliveCount = super.getOthers();
@@ -366,10 +470,10 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         setAdjustRadarForGunTurn(true);
         setColors(Color.red, Color.blue, Color.green);
 
-        alive = true;
+        running = alive = true;
         resetRoundData();
 
-        while (true) {
+        while (running) {
             doTurn();
             execute();
         }
@@ -447,12 +551,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     @Override
     public void onDeath(DeathEvent event) {
         onEvent(event);
-        alive = false;
+        running = alive = false;
     }
 
     @Override
     public void onRoundEnded(RoundEndedEvent event) {
         onEvent(event);
+        running = false;
         printStat();
     }
 
@@ -462,6 +567,10 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         Enemy enemy = getEnemy(event.getName());
         if (enemy != null) // If robot die before we scan it
             enemy.die();
+        scanCount--;
+        aliveCount--;
+        if (BIG_BATTLE_FIELD && scanCount == 0)
+            destination = null;
     }
 
     private void onEvent(Event e) {
@@ -491,6 +600,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         alive = true;
         listEnemies().forEach(Enemy::reset);
         updateGunners();
+        aliveCount = getOthers();
+        scanCount = 0;
     }
 
     /// ///////////////////////////////////////////////////////////////////////////////////////

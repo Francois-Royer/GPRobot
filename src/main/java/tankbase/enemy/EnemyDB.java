@@ -26,19 +26,23 @@ public class EnemyDB {
         return enemies.get(name);
     }
 
-    public static Enemy getCloseAliveEnemy(Point2D.Double point) {
+    public static Enemy getCloseScannedEnemy(Point2D.Double point) {
         Comparator<Enemy> comp = new CloseEnemy(point);
 
         return enemies.values().stream()
                 .filter(Enemy::isAlive)
                 .filter(Enemy::isScanned)
                 .sorted(comp)
-                .findFirst().orElse(
-                        enemies.values().stream()
-                                .filter(Enemy::isAlive)
-                                .sorted(comp)
-                                .findFirst().orElse(null)
-                );
+                .findFirst().orElse(null);
+    }
+
+    public static Enemy getCloseAliveEnemy(Point2D.Double point) {
+        Comparator<Enemy> comp = new CloseEnemy(point);
+
+        return enemies.values().stream()
+                .filter(Enemy::isAlive)
+                .sorted(comp)
+                .findFirst().orElse(null);
     }
 
     public static Enemy addEnemy(Enemy enemy) {

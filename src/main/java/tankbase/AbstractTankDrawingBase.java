@@ -19,6 +19,8 @@ import static tankbase.gun.log.VirtualFireLog.getVirtualFireLog;
 
 public abstract class AbstractTankDrawingBase extends AbstractTankBase implements ITank {
 
+    public static int INFO_LEVEL = 0;
+
     boolean drawAiming = true;
     boolean drawAimPoint = false;
     boolean drawDanger = true;
@@ -63,28 +65,34 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     @Override
     public void onKeyPressed(java.awt.event.KeyEvent e) {
-        sysout.printf("Key pressed %c%n", e.getKeyChar());
+        if (INFO_LEVEL>0)
+            sysout.printf("Key pressed %c%n", e.getKeyChar());
+
         switch (e.getKeyChar()) {
-            case 'w':
-                drawWave = !drawWave;
+            case 'a':
+                drawAiming = !drawAiming;
                 break;
             case 'd':
                 drawDanger = !drawDanger;
                 break;
-            case 'a':
-                drawAiming = !drawAiming;
+            case 'e':
+                drawEnemy = !drawEnemy;
                 break;
             case 'f':
                 drawFire = !drawFire;
                 break;
-            case 'e':
-                drawEnemy = !drawEnemy;
+            case 'i':
+                INFO_LEVEL = (INFO_LEVEL + 1) % 4;
+                sysout.printf("INFO_LEVEL set to " + INFO_LEVEL);
+                break;
+            case 'm':
+                toggleMapMode();
                 break;
             case 'p':
                 drawAimPoint = !drawAimPoint;
                 break;
-            case 'm':
-                toggleMapMode();
+            case 'w':
+                drawWave = !drawWave;
                 break;
             default:
                 drawWave = drawDanger = drawAiming = drawFire = drawEnemy = drawAimPoint = !drawAiming;

@@ -2,7 +2,6 @@ package tankbase.gun;
 
 import tankbase.ITank;
 import tankbase.Move;
-import tankbase.TankUtils;
 import tankbase.kdtree.KdTree;
 
 import java.awt.geom.Point2D;
@@ -14,6 +13,7 @@ import static robocode.Rules.MIN_BULLET_POWER;
 import static robocode.Rules.getBulletSpeed;
 import static tankbase.Constant.TANK_SIZE;
 import static tankbase.TankUtils.clonePoint;
+import static tankbase.TankUtils.pointInBattleField;
 
 public abstract class AbstractKdTreeGunner extends AbtractGunner {
 
@@ -81,7 +81,7 @@ public abstract class AbstractKdTreeGunner extends AbtractGunner {
                 firePoint.x += dist * cos(dir);
                 firePoint.y += dist * sin(dir);
 
-                if (!TankUtils.pointInBattleField(firePoint, TANK_SIZE / 2.5))
+                if (!pointInBattleField(firePoint, TANK_SIZE / 2.5))
                     return null;
 
 
