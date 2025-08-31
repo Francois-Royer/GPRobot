@@ -32,6 +32,7 @@ public class EnemyDB {
         return enemies.values().stream()
                 .filter(Enemy::isAlive)
                 .filter(Enemy::isScanned)
+                .filter(e -> e.getState() != null)
                 .sorted(comp)
                 .findFirst().orElse(null);
     }
@@ -41,6 +42,7 @@ public class EnemyDB {
 
         return enemies.values().stream()
                 .filter(Enemy::isAlive)
+                .filter(e -> e.getState() != null)
                 .sorted(comp)
                 .findFirst().orElse(null);
     }
@@ -58,10 +60,6 @@ public class EnemyDB {
 
         @Override
         public int compare(Enemy e1, Enemy e2) {
-            if (e1.getState() == null)
-                return 1;
-            if (e2.getState() == null)
-                return -1;
             return Double.compare(point.distance(e1.getState()),
                     point.distance(e2.getState()));
         }

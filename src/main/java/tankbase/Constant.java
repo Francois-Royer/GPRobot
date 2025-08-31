@@ -1,5 +1,6 @@
 package tankbase;
 
+import static java.lang.Math.sqrt;
 import static robocode.Rules.RADAR_SCAN_RADIUS;
 import static robocode.Rules.RADAR_TURN_RATE_RADIANS;
 
@@ -16,7 +17,7 @@ public class Constant {
     public static final long MAX_NOT_SCAN_TIME = 10;
     public static final long MIN_CHANGE_TARGET_TIME = 10;
 
-    public static final double RADAR_SEARCH_RADIUS = RADAR_SCAN_RADIUS*4/5;
+    public static final double RADAR_SEARCH_RADIUS = RADAR_SCAN_RADIUS/sqrt(2);
 
     private Constant() {
     }

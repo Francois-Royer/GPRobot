@@ -3,6 +3,7 @@ package tankbase;
 import robocode.*;
 import robocode.Event;
 import tankbase.enemy.Enemy;
+import tankbase.enemy.EnenyDetectedEvent;
 import tankbase.gun.*;
 import tankbase.gun.log.FireLog;
 
@@ -37,9 +38,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
     private static FireStat gpStat;
     private static HeadOnGunner headOnGunner = null;
+
     public int moveLogMaxSize;
     public Enemy target;
     public Point2D.Double destination;
+    public Point2D.Double[] searchPath;
+    private int pathStep = 0;
+
     public double scanDirection = 1;
     public double forward = 1;
     public double turnLeft = 0;
@@ -247,11 +252,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                 .max(Double::compare).orElse(0.0);
     }
 
-
-
-    private int pathStep = 0;
-    private Point2D.Double[] searchPath;
-
     private void computeDestination() {
         if (BIG_BATTLE_FIELD)
             computeBibBattleFieldDestination();
@@ -261,15 +261,44 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
     private void computeBibBattleFieldDestination() {
         if (scanCount > 0) {
-            double scale = getScale();
-            double r = RADAR_SCAN_RADIUS/scale;
+            destinationWithScans();
+        } else {
+            searchPathDestination();
+        }
+    }
 
-            if (prevScanCount == 0) {
-                TankState e = filterEnemies(Enemy::isScanned).getFirst().getState();
-                Point c = new Point((int) (e.x / scale), (int) (e.y / scale));
-                setBattleZone(c, r);
-            } else
+    private int nextSearchStep() {
+        return (pathStep+1)%searchPath.length;
+    }
+
+    private int prevSearchStep() {
+        return pathStep == 0 ? searchPath.length-1 : pathStep -1;
+    }
+
+    private int getClosestSearchPath(Point2D.Double p) {
+        double dmin = Double.MAX_VALUE;
+        for (int i=0; i<searchPath.length; i++) {
+            double d = searchPath[i].distance(getState());
+            if (d<dmin) {
+                dmin = d;
+                pathStep = i;
+            }
+        }
+        return pathStep;
+    }
+
+    private void destinationWithScans() {
+        double scale = getScale();
+        double r = RADAR_SCAN_RADIUS/scale;
+
+        if (prevScanCount == 0) {
+            // We create a circle battle zone around closest enemy
+            TankState e = getCloseAliveEnemy(getState()).getState();
+            Point c = new Point((int) (e.x / scale), (int) (e.y / scale));
+            setBattleZone(c, r);
+        } else
             if (target != null) {
+                // We maintain the actual target centered in battle zone so can can continue to scan it
                 TankState e = target.getState();
                 if (e.distance(getState()) > RADAR_SEARCH_RADIUS) {
                     Point c = new Point((int) (e.x / scale), (int) (e.y / scale));
@@ -277,56 +306,28 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                 }
             }
 
-            destination = computeSafeDestination(getState(), listEnemies());
-        } else {
-            setBattleZoneToField();
-
-            // search Enenmy
-            Enemy e = getCloseAliveEnemy(getState());
-
-            if (e != null && e.getState().distance(getState()) > RADAR_SCAN_RADIUS/2)
-                destination = e.getState();
-            else {
-                if (destination == null) {
-                    double dmin = Double.MAX_VALUE;
-                    for (int i=0; i<searchPath.length; i++) {
-                        double d = searchPath[i].distance(getState());
-                        if (d<dmin) {
-                            dmin = d;
-                            pathStep = i;
-                        }
-                    }
-                } else
-                    if (destination.distance(getState()) == 0)
-                        pathStep = (pathStep+1)%searchPath.length;
-
-                destination = searchPath[pathStep];
-            }
-        }
+        destination = computeSafeDestination(getState(), listEnemies());
     }
 
-    private void randomWallDestination() {
-        Random r = getRandom();
-        int i = r.nextInt(4);
-        Point2D.Double nd = destination;
-        //while (nd.x == destination.x || nd.y == destination.y)
-            switch (i) {
-                case 0:
-                    nd = new Point2D.Double(0, r.nextInt((int) FIELD_HEIGHT));
-                    break;
-                case 1:
-                    nd = new Point2D.Double(FIELD_WIDTH, r.nextInt((int) FIELD_HEIGHT));
-                    break;
-                case 2:
-                    nd = new Point2D.Double(r.nextInt((int) FIELD_WIDTH), 0);
-                    break;
-                default:
-                    nd = new Point2D.Double(r.nextInt((int) FIELD_WIDTH), FIELD_HEIGHT);
-                    break;
+    private void searchPathDestination() {
+        // search Enenmy
+
+        // Get closet
+        Enemy e = getCloseAliveEnemy(getState());
+
+        if (e != null)
+            destination = e.getState();
+        else {
+            if (destination == null)
+                pathStep = getClosestSearchPath(getState());
+            else {
+                if (destination.distance(getState()) <= TANK_SIZE)
+                    pathStep = nextSearchStep();
             }
 
+            destination = searchPath[pathStep];
+        }
 
-        destination = nd;
     }
 
     private double getTurn() {
@@ -454,16 +455,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
         initFieldMap();
         moveLogMaxSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 1);
-        searchPath = new Point2D.Double[] {
-                new Point2D.Double(RADAR_SEARCH_RADIUS, RADAR_SEARCH_RADIUS),
-                new Point2D.Double(FIELD_WIDTH - RADAR_SEARCH_RADIUS, RADAR_SEARCH_RADIUS),
-                new Point2D.Double(FIELD_WIDTH - RADAR_SEARCH_RADIUS,FIELD_HEIGHT-RADAR_SEARCH_RADIUS),
-                new Point2D.Double(RADAR_SEARCH_RADIUS,FIELD_HEIGHT-RADAR_SEARCH_RADIUS),
-                new Point2D.Double(RADAR_SEARCH_RADIUS,FIELD_HEIGHT/2+RADAR_SEARCH_RADIUS/2),
-                new Point2D.Double(FIELD_WIDTH/2,FIELD_HEIGHT/2),
-                new Point2D.Double(RADAR_SEARCH_RADIUS,FIELD_HEIGHT/2-RADAR_SEARCH_RADIUS/2),
-        };
-
+        if (BIG_BATTLE_FIELD)
+            searchPath = computeSearchPath();
         updateRobotCache();
         aliveCount = super.getOthers();
         setAdjustGunForRobotTurn(true);
@@ -496,7 +489,20 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         onEvent(bhe);
         gpStat.hit(bhe.getEnergy());
         Optional<Fire> of = getFireByDirection(trigoAngle(bhe.getBullet().getHeadingRadians()));
-        of.ifPresent(FireLog::removeFire);
+        of.ifPresent(f -> {
+            removeFire(f);
+            String name = bhe.getName();
+            Enemy enemy = getEnemy(bhe.getName());
+
+           /* if (enemy == null) {
+                enemy=new Enemy(new EnenyDetectedEvent(bhe, f), name, this);
+                sysout.printf("BVR detection of %s at x=%.0f, y%.0f%n",
+                        name, enemy.getState().getX(), enemy.getState().getY());
+                addEnemy(enemy);
+            } else
+                enemy.update(new EnenyDetectedEvent(bhe, f),this);
+            */
+        });
     }
 
     @Override
@@ -569,8 +575,12 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
             enemy.die();
         scanCount--;
         aliveCount--;
+        if (enemy==target)
+            target=null;
+
         if (BIG_BATTLE_FIELD && scanCount == 0)
-            destination = null;
+            destination = null; // To force get close search path
+
     }
 
     private void onEvent(Event e) {
@@ -592,6 +602,41 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         }
     }
 
+    /// ///////////////////////////////////////////////////////////////////////////////////////
+    // Private stuff
+    private Point2D.Double[] computeSearchPath() {
+        double dx= FIELD_WIDTH / (1+(int) (FIELD_WIDTH/RADAR_SEARCH_RADIUS));
+        double dy=FIELD_HEIGHT / (1+(int) (FIELD_HEIGHT/RADAR_SEARCH_RADIUS));
+
+        double offsetX = dx;
+        double offsetY = dy;
+
+        Double width = FIELD_WIDTH - dx*2;
+        Double height = FIELD_HEIGHT - dy*2;
+
+        LinkedList<Point2D> pList = new LinkedList<>();
+
+        while(height > 0) {
+            int i = (int) (width / dx)+1;
+            int j = (int) (height / dy)+1;
+
+            for (int x=0 ; x<=i ; x++) pList.add(new Point2D.Double(offsetX + x*dx, offsetY));
+            for (int y=1 ; y<=j ; y++) pList.add(new Point2D.Double(FIELD_WIDTH-offsetX, offsetY + y*dy));
+            for (int x=i-1 ; x>=0 ; x--) pList.add(new Point2D.Double(offsetX + x*dx, FIELD_HEIGHT-offsetY));
+            for (int y=j-1 ; y>0 ; y--) pList.add(new Point2D.Double(offsetX, offsetY + y*dy));
+
+            offsetX +=dx;
+            offsetY +=dy;
+            width -= dx*2;
+            height -= dy*2;
+        }
+
+        int i = (int) (width / RADAR_SEARCH_RADIUS) + 1;
+        for (int x=0 ; x<i ; x++) pList.add(new Point2D.Double(offsetX + x*dx, offsetY));
+
+        return pList.toArray(new Point2D.Double[0]);
+    }
+
     private void resetRoundData() {
         clearFireLog();
         clearVirtualFireLog();
@@ -606,8 +651,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         scanCount = 0;
     }
 
-    /// ///////////////////////////////////////////////////////////////////////////////////////
-    // Utils
     private void resetRoundStat() {
         gunners.values().forEach(gunner -> gunner.resetRoundStat());
     }

@@ -26,10 +26,14 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     boolean drawDanger = true;
     boolean drawEnemy = true;
     boolean drawFire = false;
-    boolean drawWave = true;
+    boolean drawWave = false;
 
     public static void drawFillCircle(Graphics2D g, Color c, Point2D.Double p, int d) {
         g.setColor(c);
+        drawFillCircle(g, p, d);
+    }
+
+    public static void drawFillCircle(Graphics2D g, Point2D.Double p, int d) {
         g.fillArc((int) p.x - d / 2, (int) p.y - d / 2, d, d, 0, 360);
     }
 
@@ -47,8 +51,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         g.drawLine((int) p.x, (int) p.y + d / 2, (int) p.x, (int) p.y + d / div);
     }
 
-    public static void drawWave(Graphics2D g2D, Color c, Wave w, long tick) {
-        g2D.setColor(c);
+    public static void drawWave(Graphics2D g2D, Wave w, long tick) {
         int waveArc = (int) (toDegrees(w.getArc()));
         int d = (int) w.getDistance(tick);
         int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
@@ -111,7 +114,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     }
 
     private void paintEnemies(Graphics2D g2D) {
-        int de = TANK_SIZE_INT;
+        int de = TANK_SIZE_INT+5;
         filterEnemies(Enemy::isAlive).forEach(e -> {
             if (e == target)
                 drawAimCircle(g2D, Color.CYAN, e.getState(), de);
@@ -126,14 +129,16 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     }
 
     private void paintAiming(Graphics2D g2D) {
+        g2D.setColor(Color.YELLOW);
         for (Point2D.Double p : aiming.getExpectedMoves())
-            drawFillCircle(g2D, Color.yellow, p, 5);
+            drawFillCircle(g2D, p, 5);
         drawAimCircle(g2D, aiming.getGunner().getColor(), aiming.getFiringPosition(), 20);
     }
 
     private void paintWaves(Graphics2D g2D) {
+        g2D.setColor(Color.ORANGE);
         for (Wave w : getWaves())
-            drawWave(g2D, Color.ORANGE, w, getTime());
+            drawWave(g2D, w, getTime());
     }
 
     private void paintShells(Graphics2D g2D) {
@@ -154,6 +159,19 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         if (destination != null) {
             drawFillCircle(g2D, Color.GREEN, destination, 10);
             g2D.drawLine((int) getX(), (int) getY(), (int) destination.getX(), (int) destination.getY());
+        }
+    }
+
+    private void drawSearchPath(Graphics2D g2D) {
+        if (BIG_BATTLE_FIELD) {
+            drawFillCircle(g2D, Color.BLUE, searchPath[0], 15);
+
+            for (int i=1 ; i<searchPath.length; i++) {
+                drawFillCircle(g2D, searchPath[i], 20);
+                g2D.drawLine((int) searchPath[i-1].getX(), (int) searchPath[i-1].getY(),
+                        (int) searchPath[i].getX(), (int) searchPath[i].getY());
+
+            }
         }
     }
 
@@ -188,5 +206,6 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
                 }
             });
 
+        drawSearchPath(g2D);
     }
 }
