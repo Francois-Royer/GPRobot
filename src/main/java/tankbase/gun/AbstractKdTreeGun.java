@@ -15,9 +15,9 @@ import static tankbase.Constant.TANK_SIZE;
 import static tankbase.TankUtils.clonePoint;
 import static tankbase.TankUtils.pointInBattleField;
 
-public abstract class AbstractKdTreeGunner extends AbtractGunner {
+public abstract class AbstractKdTreeGun extends AbtractGun {
 
-    protected AbstractKdTreeGunner(ITank gunner) {
+    protected AbstractKdTreeGun(ITank gunner) {
         super(gunner);
     }
 
@@ -42,7 +42,7 @@ public abstract class AbstractKdTreeGunner extends AbtractGunner {
     }
 
     private Point2D.Double[] getFiringPosition(ITank target, double firePower, List<Move> movesLog, List<Point2D.Double> predMoves) {
-        Point2D.Double from = getGunner().getState();
+        Point2D.Double from = getFirer().getState();
         double bulletSpeed = getBulletSpeed(firePower);
         Point2D.Double firePoint = clonePoint(target.getState());
         Point2D.Double prevPoint = null;

@@ -11,9 +11,9 @@ import java.util.List;
 import static java.lang.Math.abs;
 import static robocode.Rules.*;
 
-public class CircularGunner extends AbtractGunner {
+public class CircularGun extends AbtractGun {
 
-    public CircularGunner(ITank tank) {
+    public CircularGun(ITank tank) {
         super(tank);
     }
 
@@ -45,7 +45,7 @@ public class CircularGunner extends AbtractGunner {
     }
 
     private Point2D.Double[] forwardMovementPrediction(ITank target, List<Point2D.Double> predMoves, double firePower) {
-        Point2D.Double from = getGunner().getState();
+        Point2D.Double from = getFirer().getState();
         double bulletSpeed = getBulletSpeed(firePower);
         TankState targetState = target.getState();
         Point2D.Double prevPoint = targetState;

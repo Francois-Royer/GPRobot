@@ -7,6 +7,7 @@ import static robocode.Rules.RADAR_TURN_RATE_RADIANS;
 public class Constant {
 
     public static final double TANK_SIZE = 36;
+    public static final double INITIAL_ENERGY = 100;
     public static final double SCAN_OFFSET = RADAR_TURN_RATE_RADIANS / 2;
     public static final double BORDER_OFFSET = TANK_SIZE * 9 / 8;
     public static final double FIRE_TOLERANCE = TANK_SIZE / 2.01;

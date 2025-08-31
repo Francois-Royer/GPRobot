@@ -12,13 +12,13 @@ import static robocode.Rules.MIN_BULLET_POWER;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
 import static tankbase.Constant.TANK_SIZE;
 
-public abstract class AbtractGunner implements Gunner {
+public abstract class AbtractGun implements Gun {
     private final String name = this.getClass().getSimpleName();
     Map<String, FireStat> fireRoundStats = new HashMap<>();
-    private ITank gunner;
+    private ITank firer;
 
-    protected AbtractGunner(ITank gunner) {
-        this.gunner = gunner;
+    protected AbtractGun(ITank firer) {
+        this.firer = firer;
     }
 
     @Override
@@ -47,7 +47,7 @@ public abstract class AbtractGunner implements Gunner {
 
         double power = MAX_BULLET_POWER;
         double close = 5 * TANK_SIZE;
-        double distance = target.getState().distance(gunner.getState());
+        double distance = target.getState().distance(firer.getState());
 
         // Apply distance factor
         if (distance > close)
@@ -60,7 +60,7 @@ public abstract class AbtractGunner implements Gunner {
         power /= 1 + (target.getState().getTime() - target.getLastScan()) / 5.0;
 
         // shot for remaining energie
-        power = min(power, getBulletPowerForDamage(target.getFEnergy() + 1));
+        power = min(power, getBulletPowerForDamage(target.getFEnergy())+.1);
 
         // check min/max
         power = min(MAX_BULLET_POWER, max(MIN_BULLET_POWER, power));
@@ -79,12 +79,12 @@ public abstract class AbtractGunner implements Gunner {
     }
 
     @Override
-    public ITank getGunner() {
-        return gunner;
+    public ITank getFirer() {
+        return firer;
     }
 
     @Override
-    public void setGunner(ITank gunner) {
-        this.gunner = gunner;
+    public void setFirer(ITank firer) {
+        this.firer = firer;
     }
 }

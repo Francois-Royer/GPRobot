@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Aiming {
-    private final Gunner gunner;
+    private final Gun gun;
     private final ITank target;
     private final Point2D.Double nextPosition;
     private final double firePower;
@@ -20,33 +20,33 @@ public class Aiming {
     private Point2D.Double firingPosition;
     private Double direction;
 
-    public Aiming(Gunner gunner, ITank target, double firePower) {
-        this(gunner, target, target.getState(), firePower);
+    public Aiming(Gun gun, ITank target, double firePower) {
+        this(gun, target, target.getState(), firePower);
     }
 
-    public Aiming(Gunner gunner, ITank target, Point2D.Double firingPosition, double firePower) {
-        this(gunner, target, firingPosition, firingPosition, firePower, new ArrayList<>());
+    public Aiming(Gun gun, ITank target, Point2D.Double firingPosition, double firePower) {
+        this(gun, target, firingPosition, firingPosition, firePower, new ArrayList<>());
     }
 
-    public Aiming(Gunner gunner, ITank target, Point2D.Double firingPosition, Point2D.Double nextPosition, double firePower,
+    public Aiming(Gun gun, ITank target, Point2D.Double firingPosition, Point2D.Double nextPosition, double firePower,
                   List<Point2D.Double> expectedMoves) {
-        this(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, null);
+        this(gun, target, firingPosition, nextPosition, firePower, expectedMoves, null);
     }
 
-    public Aiming(Gunner gunner, ITank target, Point2D.Double firingPosition, Point2D.Double nextPosition, double firePower,
+    public Aiming(Gun gun, ITank target, Point2D.Double firingPosition, Point2D.Double nextPosition, double firePower,
                   List<Point2D.Double> expectedMoves, KdTree.Entry<List<Move>> kdEntry) {
-        this.gunner = gunner;
+        this.gun = gun;
         this.target = target;
         this.firingPosition = firingPosition;
         this.nextPosition = nextPosition;
         this.firePower = firePower;
         this.expectedMoves = expectedMoves;
-        this.direction = TankUtils.getPointAngle(gunner.getGunner().getState(), firingPosition);
+        this.direction = TankUtils.getPointAngle(gun.getFirer().getState(), firingPosition);
         this.kdEntry = kdEntry;
     }
 
-    public Gunner getGunner() {
-        return gunner;
+    public Gun getGun() {
+        return gun;
     }
 
     public ITank getTarget() {
@@ -86,11 +86,11 @@ public class Aiming {
     }
 
     public double hitRate() {
-        return gunner.getEnemyRoundFireStat(target).getHitRate();
+        return gun.getEnemyRoundFireStat(target).getHitRate();
     }
 
     public Aiming copy() {
-        return new Aiming(gunner, target, firingPosition, nextPosition, firePower, expectedMoves, kdEntry);
+        return new Aiming(gun, target, firingPosition, nextPosition, firePower, expectedMoves, kdEntry);
     }
 
 
@@ -98,7 +98,7 @@ public class Aiming {
     public String toString() {
         return String.format("Aiming[target=%s, firePower=%.2f, direction=%.2f, firing to=(%.2f, %.2f) from(%.2f, %.2f)]",
                 target.getName(), firePower, Math.toDegrees(direction), firingPosition.x, firingPosition.y,
-                gunner.getGunner().getState().x, gunner.getGunner().getState().y);
+                gun.getFirer().getState().x, gun.getFirer().getState().y);
     }
 
     @Override

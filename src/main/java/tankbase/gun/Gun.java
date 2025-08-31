@@ -4,7 +4,7 @@ import tankbase.ITank;
 
 import java.awt.*;
 
-public interface Gunner {
+public interface Gun {
     String getName();
 
     Aiming aim(ITank target);
@@ -17,7 +17,7 @@ public interface Gunner {
 
     Color getColor();
 
-    ITank getGunner();
+    ITank getFirer();
 
-    void setGunner(ITank gunner);
+    void setFirer(ITank firer);
 }

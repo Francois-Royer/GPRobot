@@ -23,7 +23,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     boolean drawAiming = true;
     boolean drawAimPoint = false;
-    boolean drawDanger = true;
+    boolean drawMap = true;
     boolean drawEnemy = true;
     boolean drawFire = false;
     boolean drawWave = false;
@@ -75,9 +75,6 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
             case 'a':
                 drawAiming = !drawAiming;
                 break;
-            case 'd':
-                drawDanger = !drawDanger;
-                break;
             case 'e':
                 drawEnemy = !drawEnemy;
                 break;
@@ -86,19 +83,22 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
                 break;
             case 'i':
                 INFO_LEVEL = (INFO_LEVEL + 1) % 4;
-                sysout.printf("INFO_LEVEL set to " + INFO_LEVEL);
+                sysout.printf("INFO_LEVEL set to %d%n", INFO_LEVEL);
                 break;
             case 'm':
-                toggleMapMode();
+                drawMap = !drawMap;
                 break;
             case 'p':
                 drawAimPoint = !drawAimPoint;
+                break;
+            case 't':
+                toggleMapMode();
                 break;
             case 'w':
                 drawWave = !drawWave;
                 break;
             default:
-                drawWave = drawDanger = drawAiming = drawFire = drawEnemy = drawAimPoint = !drawAiming;
+                drawWave = drawMap = drawAiming = drawFire = drawEnemy = drawAimPoint = !drawAiming;
                 break;
         }
     }
@@ -110,20 +110,21 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         if (drawWave) paintWaves(g2D);
         if (drawFire) paintShells(g2D);
         if (drawAimPoint) paintFirePoints(g2D);
-        if (drawDanger) paintDanger(g2D);
+        if (drawMap) paintMap(g2D);
     }
 
     private void paintEnemies(Graphics2D g2D) {
-        int de = TANK_SIZE_INT+5;
+        int de = TANK_SIZE_INT*2;
         filterEnemies(Enemy::isAlive).forEach(e -> {
+            TankState state = e.getState();
             if (e == target)
-                drawAimCircle(g2D, Color.CYAN, e.getState(), de);
+                drawAimCircle(g2D, Color.CYAN, state, de);
             else if (e == mostLeft)
-                drawCircle(g2D, Color.GREEN, e.getState(), de);
+                drawCircle(g2D, Color.GREEN, state, de);
             else if (e == mostRight)
-                drawCircle(g2D, Color.YELLOW, e.getState(), de);
+                drawCircle(g2D, Color.YELLOW, state, de);
             else
-                drawCircle(g2D, Color.PINK, e.getState(), de);
+                drawCircle(g2D, Color.PINK, state, de);
         });
         drawCircle(g2D, Color.MAGENTA, getState(), TANK_SIZE_INT);
     }
@@ -132,7 +133,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         g2D.setColor(Color.YELLOW);
         for (Point2D.Double p : aiming.getExpectedMoves())
             drawFillCircle(g2D, p, 5);
-        drawAimCircle(g2D, aiming.getGunner().getColor(), aiming.getFiringPosition(), 20);
+        drawAimCircle(g2D, aiming.getGun().getColor(), aiming.getFiringPosition(), 20);
     }
 
     private void paintWaves(Graphics2D g2D) {
@@ -154,7 +155,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         }
     }
 
-    private void paintDanger(Graphics2D g2D) {
+    private void paintMap(Graphics2D g2D) {
         drawDangerMap(g2D);
         if (destination != null) {
             drawFillCircle(g2D, Color.GREEN, destination, 10);
@@ -186,26 +187,27 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         double scaleX = FIELD_WIDTH / width;
         double scaleY = FIELD_HEIGHT / height;
 
-        if (isFullMap())
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++) {
-                    int alpha = (int) range(map[x][y], 0, 1, 0, 128);
+        if (!(filterEnemies(Enemy::isScanned).isEmpty() && BIG_BATTLE_FIELD)) {
+            if (isFullMap())
+                for (int y = 0; y < height; y++)
+                    for (int x = 0; x < width; x++) {
+                        int alpha = (int) range(map[x][y], 0, 1, 0, 128);
+                        if (alpha > 0) {
+                            Color c = new Color(r, g, b, alpha);
+                            g2D.setColor(c);
+                            g2D.fillRect((int) (scaleX * x), (int) (scaleY * y), (int) scaleX, (int) scaleY);
+                        }
+                    }
+            else
+                FieldMap.getDangerMapPoints().forEach(p -> {
+                    int alpha = (int) range(map[p.x][p.y], 0, 1, 0, 128);
                     if (alpha > 0) {
                         Color c = new Color(r, g, b, alpha);
                         g2D.setColor(c);
-                        g2D.fillRect((int) (scaleX * x), (int) (scaleY * y), (int) scaleX, (int) scaleY);
+                        g2D.fillRect((int) (scaleX * p.x), (int) (scaleY * p.y), (int) scaleX, (int) scaleY);
                     }
-                }
-        else
-            FieldMap.getDangerMapPoints().forEach(p -> {
-                int alpha = (int) range(map[p.x][p.y], 0, 1, 0, 128);
-                if (alpha > 0) {
-                    Color c = new Color(r, g, b, alpha);
-                    g2D.setColor(c);
-                    g2D.fillRect((int) (scaleX * p.x), (int) (scaleY * p.y), (int) scaleX, (int) scaleY);
-                }
-            });
-
-        drawSearchPath(g2D);
+                });
+        } else
+            drawSearchPath(g2D);
     }
 }

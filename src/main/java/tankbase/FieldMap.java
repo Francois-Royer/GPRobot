@@ -13,6 +13,7 @@ import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.BORDER_OFFSET;
 import static tankbase.TankUtils.*;
 import static tankbase.WaveLog.getWaves;
+import static tankbase.enemy.EnemyDB.filterEnemies;
 
 public class FieldMap {
     private static int totalFieldZone = 6000;
@@ -29,9 +30,6 @@ public class FieldMap {
     private static boolean forceRebuildZone;
     private static Point zoneCenter;
     private static double zoneRadius;
-
-    private FieldMap() {
-    }
 
     public static void initFieldMap() {
         scale = sqrt(FIELD_WIDTH * FIELD_HEIGHT / totalFieldZone);
@@ -72,7 +70,8 @@ public class FieldMap {
             computeNearDangerMap(enemies, maxEnemyDamage, now, state);
     }
 
-    public static Point2D.Double computeSafeDestination(TankState state, Collection<Enemy> enemies) {
+    public static Point2D.Double computeSafeDestination(TankState state) {
+        Collection<Enemy> enemies = filterEnemies(Enemy::isScanned);
         Point2D.Double safePosition = state;
         Point gp = new Point((int) (state.getX() / scale), (int) (state.getY() / scale));
 
@@ -184,7 +183,7 @@ public class FieldMap {
         points.forEach(p -> {
             double danger = 0;
             for (Enemy enemy : enemies)
-                if (enemy.isAlive() && enemy.getLastScan() > 0)
+                if (enemy.getLastScan() > 0)
                     danger += enemy.getDanger(p.x, p.y, maxEnemyDamage);
             for (Wave wave : getWaves())
                 danger += wave.getDanger(p.x, p.y, now);
@@ -218,8 +217,8 @@ public class FieldMap {
                     battleZoneMap[x][y] = pow(range(d, 0, rMax, 0, 1), 8);
             }
 
-        if (INFO_LEVEL > 0)
-        sysout.println(String.format("FieldMap[scale=%.2f, width=%d, height=%d, searchMode=%b, a=%.2f, b=%.2f]",
+        if (INFO_LEVEL > 1)
+            sysout.println(String.format("FieldMap[scale=%.2f, width=%d, height=%d, searchMode=%b, a=%.2f, b=%.2f]",
                 scale, width, height, searchMode, a, b));
     }
 
@@ -227,4 +226,8 @@ public class FieldMap {
         maxDanger = 0;
         map = new double[width][height];
     }
+
+    private FieldMap() {
+    }
+
 }

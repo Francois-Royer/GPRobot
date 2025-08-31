@@ -18,8 +18,8 @@ public class Fire extends MovingPoint {
         return aiming.getTarget();
     }
 
-    public Gunner getGunner() {
-        return aiming.getGunner();
+    public Gun getGunner() {
+        return aiming.getGun();
     }
 
     public Aiming getAimingData() {

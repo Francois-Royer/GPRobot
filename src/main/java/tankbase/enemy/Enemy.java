@@ -1,7 +1,6 @@
 package tankbase.enemy;
 
 import robocode.Rules;
-import robocode.ScannedRobotEvent;
 import tankbase.*;
 import tankbase.gun.Aiming;
 import tankbase.gun.kdformula.KDFormula;
@@ -14,16 +13,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static java.lang.Math.min;
-import static java.lang.Math.signum;
-import static robocode.Rules.MAX_BULLET_POWER;
-import static robocode.Rules.MIN_BULLET_POWER;
+import static java.lang.Math.*;
+import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.*;
+import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.*;
 import static tankbase.TankUtils.*;
 import static tankbase.WaveLog.logWave;
 import static tankbase.enemy.EnemyDB.filterEnemies;
+import static tankbase.enemy.EnemyDB.listAllEnemies;
 
 
 public class Enemy implements ITank {
@@ -51,20 +50,25 @@ public class Enemy implements ITank {
     private boolean alive = false;
     private boolean scanned = false;
 
-    public Enemy(ScannedRobotEvent sre, String name, AbstractTankBase tankBase) {
+    public Enemy(EnenyDetectedEvent ede, String name, AbstractTankBase tankBase) {
         this.name = name;
-        state = null;
-        alive = false;
         pattern = new Pattern(this);
         surfer = new Surfer(this, tankBase);
-        update(sre, tankBase);
+        reset();
+        update(ede, tankBase);
     }
 
-    public void update(ScannedRobotEvent sre, AbstractTankBase tankBase) {
+    public void update(EnenyDetectedEvent ede, AbstractTankBase tankBase) {
+        if (!alive) {
+            // Scan event after RobotDeath event???
+            return;
+        }
+
         this.tankBase = tankBase;
         prevState = state;
-        state = new TankState(sre, prevState, tankBase.getState());
+        state = new TankState(ede, prevState, tankBase.getState());
         lastScan = state.getTime();
+
 
         computeFEnergy();
 
@@ -97,8 +101,10 @@ public class Enemy implements ITank {
 
         prevScannedTankState = state;
         lastScan = state.getTime();
+        if (scanned == false && INFO_LEVEL>1) {
+            sysout.printf("%s scanned %s%n", name, state);
+        }
         scanned = true;
-        alive = true;
     }
 
     void computeFEnergy() {
@@ -108,21 +114,19 @@ public class Enemy implements ITank {
 
     public void move() {
         TankState newState = state.extrapolateNextState();
-        if (newState != null) {
-            if (newState.getTime() <= tankBase.getTime()) {
-                prevState = state;
-                state = newState;
-            }
-
-            if (state.getTime() - lastScan > MAX_NOT_SCAN_TIME)
-                scanned = false;
+        if (newState.getTime() <= tankBase.getTime()) {
+            prevState = state;
+            state = newState;
         }
+        if (state.getTime() - lastScan > MAX_NOT_SCAN_TIME)
+            scanned = false;
     }
 
     public void reset() {
-        alive = false;
+        alive = true;
         scanned = false;
-        prevScannedTankState = prevState = state = null;
+        prevScannedTankState = prevState = null;
+        state = new TankState(0, 0, 0, 0, 0, 0, MAX_GUN_HEAT, INITIAL_ENERGY, listAllEnemies().size(), 0, 0, 0,0,0);
     }
 
     public void die() {
@@ -174,6 +178,10 @@ public class Enemy implements ITank {
 
     public boolean isScanned() {
         return scanned;
+    }
+
+    public boolean hasState() {
+        return state !=  null;
     }
 
     public double getFEnergy() {
@@ -310,7 +318,7 @@ public class Enemy implements ITank {
         double maxhitrate = 0;
         Aiming aiming = null;
         for (Aiming ad : turnAimDatas) {
-            double hr = ad.getGunner().getEnemyRoundFireStat(this).getHitRate();
+            double hr = ad.getGun().getEnemyRoundFireStat(this).getHitRate();
             if ((hr > maxhitrate) || aiming == null) {
                 aiming = ad;
                 maxhitrate = hr;

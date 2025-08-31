@@ -9,6 +9,8 @@ import static java.lang.Math.*;
 import static robocode.Rules.*;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
+import static tankbase.AbstractTankBase.sysout;
+import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.TANK_SIZE;
 import static tankbase.TankUtils.*;
 import static tankbase.enemy.EnemyDB.filterEnemies;
@@ -34,7 +36,7 @@ public class Wave extends MovingPoint {
     double deviation;
 
     public Wave(Aiming ad, long start) {
-        this(ad.getTarget(), ad.getFirePower(), start, ad.getGunner().getGunner());
+        this(ad.getTarget(), ad.getFirePower(), start, ad.getGun().getFirer());
     }
 
     public Wave(ITank target, double power, long start, ITank source, int headCount, int circularCount) {
@@ -45,6 +47,8 @@ public class Wave extends MovingPoint {
 
     public Wave(ITank target, double power, long start, ITank source) {
         super(source.getState(), getBulletSpeed(power), 0, start);
+        if (INFO_LEVEL > 1)
+            sysout.printf("Wave detected from %s x=%.0f y=%.0f%n", source.getName(), x, y);
 
         this.source = source;
         this.target = target;

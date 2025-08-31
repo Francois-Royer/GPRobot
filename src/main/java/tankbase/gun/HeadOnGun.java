@@ -2,8 +2,8 @@ package tankbase.gun;
 
 import tankbase.ITank;
 
-public class HeadOnGunner extends AbtractGunner {
-    public HeadOnGunner(ITank tank) {
+public class HeadOnGun extends AbtractGun {
+    public HeadOnGun(ITank tank) {
         super(tank);
     }
 

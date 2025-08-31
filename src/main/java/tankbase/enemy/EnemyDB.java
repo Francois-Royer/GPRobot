@@ -10,12 +10,16 @@ public class EnemyDB {
     private EnemyDB() {
     }
 
-    public static Collection<Enemy> listEnemies() {
+    public static Collection<Enemy> listAllEnemies() {
         return Collections.unmodifiableCollection(enemies.values());
     }
 
     public static List<Enemy> filterEnemies(Predicate<Enemy> filter) {
         return enemies.values().stream().filter(filter).toList();
+    }
+
+    public static long countFilteredEnemies(Predicate<Enemy> filter) {
+        return enemies.values().stream().filter(filter).count();
     }
 
     public static List<Enemy> filterAndSortEnemies(Predicate<Enemy> filter, Comparator<Enemy> comparator) {

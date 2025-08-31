@@ -1,6 +1,7 @@
 package tankbase;
 
 import robocode.ScannedRobotEvent;
+import tankbase.enemy.EnenyDetectedEvent;
 
 import java.awt.geom.Point2D;
 
@@ -55,17 +56,17 @@ public class TankState extends Point2D.Double {
     }
 
     // Create initial TankState from ScannedRobotEvent
-    public TankState(ScannedRobotEvent sre, TankState scanner) {
-        headingRadians = trigoAngle(sre.getHeadingRadians());
-        double angle = normalAbsoluteAngle(scanner.getHeadingRadians() - sre.getBearingRadians());
-        double distance = sre.getDistance();
+    public TankState(EnenyDetectedEvent ede, TankState scanner) {
+        headingRadians = ede.getHeadingRadians();
+        double angle = normalAbsoluteAngle(scanner.getHeadingRadians() - ede.getBearingRadians());
+        double distance = ede.getDistance();
         x = scanner.getX() + distance * cos(angle);
         y = scanner.getY() + distance * sin(angle);
-        velocity = sre.getVelocity();
+        velocity = ede.getVelocity();
         gunHeat = MAX_GUN_HEAT;
-        energy = sre.getEnergy();
+        energy = ede.getEnergy();
         others = scanner.getOthers();
-        time = sre.getTime();
+        time = ede.getTime();
         acceleration = 0;
         turnRate = 0;
         vmax = max(0, velocity);
@@ -73,8 +74,8 @@ public class TankState extends Point2D.Double {
     }
 
     // Create TankState from ScannedRobotEvent and previous TankState to calculate acceleration, turnRate, gunHeat
-    public TankState(ScannedRobotEvent sre, TankState previous, TankState scanner) {
-        this(sre, scanner);
+    public TankState(EnenyDetectedEvent ede, TankState previous, TankState scanner) {
+        this(ede, scanner);
         if (previous != null) {
             long deltaTime = computeDeltaTimeAccelerationAndTurnRate(previous);
             double newGunHeat = previous.gunHeat - GUN_COOLING_RATE * deltaTime;
@@ -86,23 +87,21 @@ public class TankState extends Point2D.Double {
 
     // Extrapolate next TankState based on current state return null if out of battlefield (hit wall)
     public TankState extrapolateNextState() {
-        if (energy == 0 || acceleration == 0 && velocity == 0 && turnRate == 0)
-            return new TankState(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time,
-                    acceleration, turnRate, vmax, vmin);
+        if (!(energy == 0 || acceleration == 0 && velocity == 0 && turnRate == 0)) {
+            double nextVelocity = checkMinMax(velocity + acceleration, max(vmin, -MAX_VELOCITY), min(vmax, MAX_VELOCITY));
+            double nextAcceleration = nextVelocity - velocity;
+            double nextHeading = headingRadians + min(abs(turnRate), getTurnRateRadians(velocity)) * signum(turnRate);
+            double nextX = x + nextVelocity * cos(nextHeading);
+            double nextY = y + nextVelocity * sin(nextHeading);
+            double nextGunHeat = gunHeat > 0 ? gunHeat - GUN_COOLING_RATE : 0;
 
-        double nextVelocity = checkMinMax(velocity + acceleration, max(vmin, -MAX_VELOCITY), min(vmax, MAX_VELOCITY));
-        double nextAcceleration = nextVelocity - velocity;
-        double nextHeading = headingRadians + min(abs(turnRate), getTurnRateRadians(velocity)) * signum(turnRate);
-        double nextX = x + nextVelocity * cos(nextHeading);
-        double nextY = y + nextVelocity * sin(nextHeading);
-        double nextGunHeat = gunHeat > 0 ? gunHeat - GUN_COOLING_RATE : 0;
-
-        if (pointInBattleField(new Point2D.Double(nextX, nextY), TANK_SIZE / 2.5)) {
-            return new TankState(nextX, nextY, nextHeading, gunHeadingRadians, turnRemaining, nextVelocity, nextGunHeat, energy, others,
-                    time + 1, nextAcceleration, turnRate, vmax, vmin);
+            if (pointInBattleField(new Point2D.Double(nextX, nextY), TANK_SIZE / 2.5)) {
+                return new TankState(nextX, nextY, nextHeading, gunHeadingRadians, turnRemaining, nextVelocity, nextGunHeat, energy, others,
+                        time + 1, nextAcceleration, turnRate, vmax, vmin);
+            }
         }
-
-        return null;
+        return new TankState(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time+1,
+                acceleration, turnRate, vmax, vmin);
     }
 
     public double getHeadingRadians() {

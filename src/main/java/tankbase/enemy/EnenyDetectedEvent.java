@@ -7,6 +7,8 @@ import tankbase.gun.Fire;
 
 import java.awt.geom.Point2D;
 
+import static java.lang.Math.toDegrees;
+import static tankbase.AbstractTankBase.sysout;
 import static tankbase.TankUtils.getPointAngle;
 import static tankbase.TankUtils.trigoAngle;
 
@@ -30,22 +32,18 @@ public class EnenyDetectedEvent {
     public EnenyDetectedEvent(BulletHitEvent bhe, Fire fire) {
         this.time = bhe.getTime();
         Point2D.Double position = fire.getPosition(time);
-        TankState gunner = fire.getAimingData().getGunner().getGunner().getState();
-        this.heading = getPointAngle(gunner, position);
-        this.bearing = 0; // unknow
+        TankState firer = fire.getAimingData().getGun().getFirer().getState();
+
+        this.heading = 0; // unkown
+        this.bearing = firer.getHeadingRadians() - getPointAngle(firer, position);
         this.energy= bhe.getEnergy();
-        this.distance = gunner.distance(position);
+        this.distance = firer.distance(position);
         this.velocity = 0; // unknow;
     }
 
     public EnenyDetectedEvent(BulletHitEvent bhe, Fire fire, TankState prev) {
-        this.time = bhe.getTime();
-        Point2D.Double position = fire.getPosition(time);
-        TankState gunner = fire.getAimingData().getGunner().getGunner().getState();
-        this.heading = getPointAngle(gunner, position);
-        this.bearing = gunner.getGunHeadingRadians()-prev.getHeadingRadians();
-        this.energy= bhe.getEnergy();
-        this.distance = gunner.distance(position);
+        this(bhe, fire);
+        this.heading = prev.getHeadingRadians();
         this.velocity = prev.getVelocity();
     }
 
