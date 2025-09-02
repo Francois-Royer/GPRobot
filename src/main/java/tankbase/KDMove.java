@@ -6,9 +6,8 @@ public class KDMove {
 
     Move move;
 
-    public KDMove(double[] clusterKdPoint, double[] antiSurferKdPoint, double turn, double distance, long duration) {
+    public KDMove(double[] clusterKdPoint, double turn, double distance, long duration) {
         this.clusterKdPoint = clusterKdPoint;
-        this.antiSurferKdPoint = antiSurferKdPoint;
         move = new Move(turn, distance, duration);
     }
 

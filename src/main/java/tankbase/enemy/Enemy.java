@@ -3,6 +3,7 @@ package tankbase.enemy;
 import robocode.Rules;
 import tankbase.*;
 import tankbase.gun.Aiming;
+import tankbase.gun.Fire;
 import tankbase.gun.kdformula.KDFormula;
 import tankbase.gun.kdformula.Cluster;
 import tankbase.gun.kdformula.AntiSurfer;
@@ -21,6 +22,7 @@ import static tankbase.AbstractTankBase.*;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.*;
 import static tankbase.TankUtils.*;
+import static tankbase.gun.log.FireLog.getFireLog;
 import static tankbase.wave.WaveLog.logWave;
 import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.enemy.EnemyDB.listAllEnemies;
@@ -87,7 +89,17 @@ public class Enemy implements ITank {
                 long deltaTime = state.getTime() - prevScannedTankState.getTime();
                 double distance = state.distance(prevScannedTankState);
                 double turn = state.getHeadingRadians() - prevScannedTankState.getHeadingRadians();
-                KDMoveLog.add(new KDMove(cluster.getPoint(prevState), antiSurfer.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
+                KDMoveLog.add(new KDMove(cluster.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
+                List<Fire> fireLog = getFireLog(name);
+                if (!fireLog.isEmpty()) {
+                    Fire f = fireLog.get(0);
+                    if (f != null) {
+                        int age = (int) f.age(tankBase.getTime());
+                        if (age < KDMoveLog.size() && KDMoveLog.get(age).getAntiSurferKdPoint() == null) {
+                            KDMoveLog.get(age).setAntiSurferKdPoint(antiSurfer.getPoint(prevState));
+                        }
+                    }
+                }
             }
 
             if (KDMoveLog.size() > tankBase.moveLogMaxSize) {
@@ -103,7 +115,7 @@ public class Enemy implements ITank {
 
         prevScannedTankState = state;
         lastScan = state.getTime();
-        if (scanned == false && INFO_LEVEL>1) {
+        if (scanned == false && INFO_LEVEL > 1) {
             sysout.printf("%s scanned %s%n", name, state);
         }
         scanned = true;
@@ -111,7 +123,7 @@ public class Enemy implements ITank {
 
     void computeFEnergy() {
         fEnergy = state.getEnergy();
-        FireLog.getFireLog(name).forEach(a -> fEnergy -= a.getDamage());
+        getFireLog(name).forEach(a -> fEnergy -= a.getDamage());
     }
 
     public void move() {
