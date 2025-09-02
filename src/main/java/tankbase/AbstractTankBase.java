@@ -3,8 +3,10 @@ package tankbase;
 import robocode.*;
 import robocode.Event;
 import tankbase.enemy.Enemy;
-import tankbase.enemy.EnenyDetectedEvent;
+import tankbase.enemy.EnemyDetectedEvent;
 import tankbase.gun.*;
+import tankbase.wave.Wave;
+import tankbase.wave.WaveLog;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -20,7 +22,7 @@ import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.*;
 import static tankbase.FieldMap.*;
 import static tankbase.TankUtils.*;
-import static tankbase.WaveLog.*;
+import static tankbase.wave.WaveLog.*;
 import static tankbase.enemy.EnemyDB.*;
 import static tankbase.gun.log.FireLog.*;
 import static tankbase.gun.log.VirtualFireLog.*;
@@ -42,7 +44,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     public int moveLogMaxSize;
     public Enemy target;
     public Point2D.Double destination;
-    public Point2D.Double[] searchPath;
+    public Collection<SearchPoint> searchPoints;
     private int pathStep = 0;
 
     public double scanDirection = 1;
@@ -263,24 +265,10 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
             searchPathDestination();
     }
 
-    private int nextSearchStep() {
-        return (pathStep+1)%searchPath.length;
-    }
-
-    private int prevSearchStep() {
-        return pathStep == 0 ? searchPath.length-1 : pathStep -1;
-    }
-
-    private int getClosestSearchPath(Point2D.Double p) {
-        double dmin = Double.MAX_VALUE;
-        for (int i=0; i<searchPath.length; i++) {
-            double d = searchPath[i].distance(getState());
-            if (d<dmin) {
-                dmin = d;
-                pathStep = i;
-            }
-        }
-        return pathStep;
+    private Point2D.Double getClosestSearchPath(Point2D.Double p) {
+        return searchPoints.stream()
+                .min(Comparator.comparingInt(SearchPoint::visited).thenComparingDouble(p::distance))
+                .orElse(null);
     }
 
     void printEnemyStatus() {
@@ -325,16 +313,15 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                 if (INFO_LEVEL>0)
                     sysout.printf("searching for %s at x=%.0f y=%.0f%n",
                             e.getName(), destination.getX(), destination.getY());
-            } else {
-                pathStep = getClosestSearchPath(getState());
-                destination = searchPath[pathStep];
+            } else
+                destination = getClosestSearchPath(getState());
+        } else {
+            if (destination.distance(getState()) <= MAX_VELOCITY) {
+                if (destination instanceof SearchPoint)
+                    ((SearchPoint) destination).visit();
             }
 
-        } else {
-            if (destination.distance(getState()) <= TANK_SIZE)
-                pathStep = nextSearchStep();
-
-            destination = searchPath[pathStep];
+            destination = getClosestSearchPath(getState());
         }
     }
 
@@ -468,7 +455,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         initFieldMap();
         moveLogMaxSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 1);
         if (BIG_BATTLE_FIELD)
-            searchPath = computeSearchPath();
+            searchPoints = computeSearchPath();
         updateRobotCache();
         aliveCount = super.getOthers();
         setAdjustGunForRobotTurn(true);
@@ -489,7 +476,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         onEvent(sre);
         String name = sre.getName();
         Enemy enemy = getEnemy(name);
-        EnenyDetectedEvent ede = new EnenyDetectedEvent(sre);
+        EnemyDetectedEvent ede = new EnemyDetectedEvent(sre);
 
         if (enemy == null)
             addEnemy(new Enemy(ede, name, this));
@@ -509,13 +496,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                 Enemy enemy = getEnemy(bhe.getName());
 
                 if (enemy == null) {
-                    enemy = new Enemy(new EnenyDetectedEvent(bhe, f), name, this);
+                    enemy = new Enemy(new EnemyDetectedEvent(bhe, f), name, this);
                     addEnemy(enemy);
                 } else
-                    enemy.update(new EnenyDetectedEvent(bhe, f, enemy.getState()), this);
+                    enemy.update(new EnemyDetectedEvent(bhe, f, enemy.getState()), this);
 
                 if (INFO_LEVEL>0)
-                    sysout.printf("BVR detection of %s at x=%.0f, y=%.0f%n",
+                    sysout.printf("Beyond Radar Range detection of %s at x=%.0f, y=%.0f%n",
                             name, enemy.getState().getX(), enemy.getState().getY());
             }
         });
@@ -559,8 +546,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         Optional<Wave> ow = getWave(hbbe.getName(), p, getTime());
         ow.ifPresent(wave -> {
             double bulletHeading = trigoAngle(hbbe.getHeadingRadians());
-            double headOn = getPointAngle(wave, wave.head);
-            double circular = getPointAngle(wave, wave.circular);
+            double headOn = getPointAngle(wave, wave.getHead());
+            double circular = getPointAngle(wave, wave.getCircular());
 
             if (abs(headOn - bulletHeading) < abs(circular - bulletHeading))
                 e.fireHead();
@@ -588,18 +575,14 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         onEvent(event);
         String name = event.getName();
         Enemy enemy = getEnemy(name);
-        if (enemy != null) // If robot die before we scan it
+        if (enemy != null) {
             enemy.die();
-        else
-
-        scanCount--;
-        aliveCount--;
-        if (enemy==target)
-            target=null;
-
-        if (BIG_BATTLE_FIELD && scanCount == 0)
-            destination = null; // To force get close search path
-
+            if (enemy == target) {
+                target = null;
+                if (BIG_BATTLE_FIELD)
+                    destination = null;
+            }
+        }
     }
 
     private void onEvent(Event e) {
@@ -623,37 +606,16 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
 
     /// ///////////////////////////////////////////////////////////////////////////////////////
     // Private stuff
-    private Point2D.Double[] computeSearchPath() {
+    private Collection<SearchPoint> computeSearchPath() {
         double dx= FIELD_WIDTH / (1+(int) (FIELD_WIDTH/RADAR_SEARCH_RADIUS));
         double dy=FIELD_HEIGHT / (1+(int) (FIELD_HEIGHT/RADAR_SEARCH_RADIUS));
 
-        double offsetX = dx;
-        double offsetY = dy;
+        List<SearchPoint> sp = new ArrayList<>();
+        for (double y=1; y*dy < FIELD_HEIGHT; y++)
+            for (double x=1; x*dx < FIELD_WIDTH; x++)
+                sp.add(new SearchPoint(x*dx, y*dy));
 
-        Double width = FIELD_WIDTH - dx*2;
-        Double height = FIELD_HEIGHT - dy*2;
-
-        LinkedList<Point2D> pList = new LinkedList<>();
-
-        while(height > 0) {
-            int i = (int) (width / dx)+1;
-            int j = (int) (height / dy)+1;
-
-            for (int x=0 ; x<=i ; x++) pList.add(new Point2D.Double(offsetX + x*dx, offsetY));
-            for (int y=1 ; y<=j ; y++) pList.add(new Point2D.Double(FIELD_WIDTH-offsetX, offsetY + y*dy));
-            for (int x=i-1 ; x>=0 ; x--) pList.add(new Point2D.Double(offsetX + x*dx, FIELD_HEIGHT-offsetY));
-            for (int y=j-1 ; y>0 ; y--) pList.add(new Point2D.Double(offsetX, offsetY + y*dy));
-
-            offsetX +=dx;
-            offsetY +=dy;
-            width -= dx*2;
-            height -= dy*2;
-        }
-
-        int i = (int) (width / RADAR_SEARCH_RADIUS) + 1;
-        for (int x=0 ; x<i ; x++) pList.add(new Point2D.Double(offsetX + x*dx, offsetY));
-
-        return pList.toArray(new Point2D.Double[0]);
+        return sp;
     }
 
     private void resetRoundData() {
@@ -665,6 +627,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         lastTargetChange = 0;
         alive = true;
         listAllEnemies().forEach(Enemy::reset);
+        if (BIG_BATTLE_FIELD)
+            searchPoints.forEach(SearchPoint::reset);
         updateGuns();
         aliveCount = getOthers();
         scanCount = 0;
@@ -701,8 +665,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         if (guns.size() == 0) {
             headOnGunner = new HeadOnGun(this);
             putGun(new CircularGun(this));
-            putGun(new PatternGun(this));
-            putGun(new SurferGun(this));
+            putGun(new ClusterGun(this));
+            putGun(new AntiSurferGun(this));
         }
     }
 

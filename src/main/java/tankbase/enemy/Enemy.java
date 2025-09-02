@@ -4,9 +4,10 @@ import robocode.Rules;
 import tankbase.*;
 import tankbase.gun.Aiming;
 import tankbase.gun.kdformula.KDFormula;
-import tankbase.gun.kdformula.Pattern;
-import tankbase.gun.kdformula.Surfer;
+import tankbase.gun.kdformula.Cluster;
+import tankbase.gun.kdformula.AntiSurfer;
 import tankbase.gun.log.FireLog;
+import tankbase.wave.Wave;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import static tankbase.AbstractTankBase.*;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.*;
 import static tankbase.TankUtils.*;
-import static tankbase.WaveLog.logWave;
+import static tankbase.wave.WaveLog.logWave;
 import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.enemy.EnemyDB.listAllEnemies;
 
@@ -30,8 +31,8 @@ public class Enemy implements ITank {
 
     private final String name;
     private final LinkedList<Move> moveLog = new LinkedList<>();
-    private final Pattern pattern;
-    private final Surfer surfer;
+    private final Cluster cluster;
+    private final AntiSurfer antiSurfer;
     int fireHead = 1;
     int fireCircular = 0;
     int FIRE_STAT_COUNT_MAX = 3;
@@ -50,15 +51,15 @@ public class Enemy implements ITank {
     private boolean alive = false;
     private boolean scanned = false;
 
-    public Enemy(EnenyDetectedEvent ede, String name, AbstractTankBase tankBase) {
+    public Enemy(EnemyDetectedEvent ede, String name, AbstractTankBase tankBase) {
         this.name = name;
-        pattern = new Pattern(this);
-        surfer = new Surfer(this, tankBase);
+        cluster = new Cluster(this);
+        antiSurfer = new AntiSurfer(this, tankBase);
         reset();
         update(ede, tankBase);
     }
 
-    public void update(EnenyDetectedEvent ede, AbstractTankBase tankBase) {
+    public void update(EnemyDetectedEvent ede, AbstractTankBase tankBase) {
         if (!alive) {
             // Scan event after RobotDeath event???
             return;
@@ -86,15 +87,15 @@ public class Enemy implements ITank {
                 long deltaTime = state.getTime() - prevScannedTankState.getTime();
                 double distance = state.distance(prevScannedTankState);
                 double turn = state.getHeadingRadians() - prevScannedTankState.getHeadingRadians();
-                moveLog.add(new Move(pattern.getPoint(prevState), surfer.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
+                moveLog.add(new Move(cluster.getPoint(prevState), antiSurfer.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
             }
 
             if (moveLog.size() > tankBase.moveLogMaxSize) {
                 List<Move> log = new ArrayList<>(moveLog.subList(moveLog.size() - tankBase.moveLogMaxSize, moveLog.size()));
                 Move m = log.get(0);
-                pattern.addPoint(m.getPatternKdPoint(), log);
-                if (m.getSurferKdPoint() != null)
-                    surfer.addPoint(m.getSurferKdPoint(), log);
+                cluster.addPoint(m.getClusterKdPoint(), log);
+                if (m.getAntiSurferKdPoint() != null)
+                    antiSurfer.addPoint(m.getAntiSurferKdPoint(), log);
                 moveLog.removeFirst();
             }
         }
@@ -233,11 +234,11 @@ public class Enemy implements ITank {
     }
 
     public KDFormula getPatternFormula() {
-        return pattern;
+        return cluster;
     }
 
     public KDFormula getSurferFormula() {
-        return surfer;
+        return antiSurfer;
     }
 
     @Override
@@ -275,7 +276,7 @@ public class Enemy implements ITank {
             if (shadowed)
                 return 0;
 
-            double danger = Math.pow((DISTANCE_MAX - d + MAX_DANGER_RADIUS) / DISTANCE_MAX, 8);
+            double danger = Math.pow((DISTANCE_MAX - d + TANK_MAX_DANGER_RADIUS) / DISTANCE_MAX, 8);
             return danger * (damageMe + 10) / (maxDamageMe + 10);
         }
         return 1;
@@ -285,7 +286,7 @@ public class Enemy implements ITank {
         double scale = FieldMap.getScale();
         Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
         double d = state.distance(p);
-        return d <= MAX_DANGER_RADIUS;
+        return d <= TANK_MAX_DANGER_RADIUS;
 
     }
 

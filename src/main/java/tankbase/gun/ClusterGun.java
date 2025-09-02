@@ -7,9 +7,9 @@ import tankbase.kdtree.KdTree;
 import java.awt.*;
 import java.util.List;
 
-public class PatternGun extends AbstractKdTreeGun {
+public class ClusterGun extends AbstractKdTreeGun {
 
-    public PatternGun(ITank tank) {
+    public ClusterGun(ITank tank) {
         super(tank);
     }
 

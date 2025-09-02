@@ -14,12 +14,12 @@ import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
 import static tankbase.TankUtils.wallIntersection;
 
-public class Pattern implements KDFormula {
+public class Cluster implements KDFormula {
     KdTree.WeightedSqrEuclid<List<Move>> kdTree;
     ITank target;
     double[] weights = {1, 1, 1, 1, 1, 1, 1, 1};
 
-    public Pattern(ITank target) {
+    public Cluster(ITank target) {
         this.target = target;
         kdTree = new KdTree.WeightedSqrEuclid<>(weights.length, KDTREE_MAX_SIZE);
         kdTree.setWeights(weights);

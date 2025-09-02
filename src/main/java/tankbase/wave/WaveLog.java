@@ -1,4 +1,4 @@
-package tankbase;
+package tankbase.wave;
 
 import java.awt.*;
 import java.awt.geom.Point2D;

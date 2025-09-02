@@ -17,11 +17,11 @@ import static tankbase.TankUtils.getPointAngle;
 import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
 import static tankbase.gun.log.FireLog.getFireLog;
 
-public class Surfer extends Pattern {
+public class AntiSurfer extends Cluster {
     private static final double[] surferWeights = {1, 1, 1, 3, 3, 2, 2, 1, 1};
     private final ITank gunner;
 
-    public Surfer(ITank target, ITank gunner) {
+    public AntiSurfer(ITank target, ITank gunner) {
         super(target);
         this.gunner = gunner;
         weights = concatArray(super.weights, surferWeights);

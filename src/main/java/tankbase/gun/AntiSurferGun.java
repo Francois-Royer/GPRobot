@@ -7,9 +7,9 @@ import tankbase.kdtree.KdTree;
 import java.awt.*;
 import java.util.List;
 
-public class SurferGun extends AbstractKdTreeGun {
+public class AntiSurferGun extends AbstractKdTreeGun {
 
-    public SurferGun(ITank tank) {
+    public AntiSurferGun(ITank tank) {
         super(tank);
     }
 

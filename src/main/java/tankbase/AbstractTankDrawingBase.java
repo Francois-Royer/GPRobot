@@ -2,6 +2,7 @@ package tankbase;
 
 import tankbase.enemy.Enemy;
 import tankbase.gun.Fire;
+import tankbase.wave.Wave;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -13,7 +14,7 @@ import static tankbase.Constant.TANK_SIZE_INT;
 import static tankbase.FieldMap.isFullMap;
 import static tankbase.FieldMap.toggleMapMode;
 import static tankbase.TankUtils.range;
-import static tankbase.WaveLog.getWaves;
+import static tankbase.wave.WaveLog.getWaves;
 import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.gun.log.VirtualFireLog.getVirtualFireLog;
 
@@ -165,14 +166,11 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     private void drawSearchPath(Graphics2D g2D) {
         if (BIG_BATTLE_FIELD) {
-            drawFillCircle(g2D, Color.BLUE, searchPath[0], 15);
+            g2D.setColor(Color.WHITE);
+            g2D.setFont(new Font("TimesRoman", Font.PLAIN, 32));
+            for (SearchPoint s:searchPoints)
+                g2D.drawString(Integer.toString(s.visited()), (int) s.getX(), (int) s.getY());
 
-            for (int i=1 ; i<searchPath.length; i++) {
-                drawFillCircle(g2D, searchPath[i], 20);
-                g2D.drawLine((int) searchPath[i-1].getX(), (int) searchPath[i-1].getY(),
-                        (int) searchPath[i].getX(), (int) searchPath[i].getY());
-
-            }
         }
     }
 

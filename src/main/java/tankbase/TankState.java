@@ -1,7 +1,6 @@
 package tankbase;
 
-import robocode.ScannedRobotEvent;
-import tankbase.enemy.EnenyDetectedEvent;
+import tankbase.enemy.EnemyDetectedEvent;
 
 import java.awt.geom.Point2D;
 
@@ -56,7 +55,7 @@ public class TankState extends Point2D.Double {
     }
 
     // Create initial TankState from ScannedRobotEvent
-    public TankState(EnenyDetectedEvent ede, TankState scanner) {
+    public TankState(EnemyDetectedEvent ede, TankState scanner) {
         headingRadians = ede.getHeadingRadians();
         double angle = normalAbsoluteAngle(scanner.getHeadingRadians() - ede.getBearingRadians());
         double distance = ede.getDistance();
@@ -74,7 +73,7 @@ public class TankState extends Point2D.Double {
     }
 
     // Create TankState from ScannedRobotEvent and previous TankState to calculate acceleration, turnRate, gunHeat
-    public TankState(EnenyDetectedEvent ede, TankState previous, TankState scanner) {
+    public TankState(EnemyDetectedEvent ede, TankState previous, TankState scanner) {
         this(ede, scanner);
         if (previous != null) {
             long deltaTime = computeDeltaTimeAccelerationAndTurnRate(previous);

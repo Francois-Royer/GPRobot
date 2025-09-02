@@ -1,30 +1,31 @@
 package tankbase;
 
 public class Move {
-    private final double[] patternKdPoint; // Point for kdtree
+    private final double[] clusterKdPoint; // Point for kdtree
+    private double[] antiSurferKdPoint; // Point for kdtree
+
     private final double turn;
     private final double distance;
     private final long duration;
-    private double[] surferKdPoint; // Point for kdtree
 
-    public Move(double[] patternKdPoint, double[] surferKdPoint, double turn, double distance, long duration) {
-        this.patternKdPoint = patternKdPoint;
-        this.surferKdPoint = surferKdPoint;
+    public Move(double[] clusterKdPoint, double[] antiSurferKdPoint, double turn, double distance, long duration) {
+        this.clusterKdPoint = clusterKdPoint;
+        this.antiSurferKdPoint = antiSurferKdPoint;
         this.turn = turn;
         this.distance = distance;
         this.duration = duration;
     }
 
-    public double[] getPatternKdPoint() {
-        return patternKdPoint;
+    public double[] getClusterKdPoint() {
+        return clusterKdPoint;
     }
 
-    public double[] getSurferKdPoint() {
-        return surferKdPoint;
+    public double[] getAntiSurferKdPoint() {
+        return antiSurferKdPoint;
     }
 
-    public void setSurferKdPoint(double[] surferKdPoint) {
-        this.surferKdPoint = surferKdPoint;
+    public void setAntiSurferKdPoint(double[] antiSurferKdPoint) {
+        this.antiSurferKdPoint = antiSurferKdPoint;
     }
 
     public double getTurn() {

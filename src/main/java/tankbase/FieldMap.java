@@ -1,6 +1,7 @@
 package tankbase;
 
 import tankbase.enemy.Enemy;
+import tankbase.wave.Wave;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -12,7 +13,7 @@ import static tankbase.AbstractTankBase.*;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.BORDER_OFFSET;
 import static tankbase.TankUtils.*;
-import static tankbase.WaveLog.getWaves;
+import static tankbase.wave.WaveLog.getWaves;
 import static tankbase.enemy.EnemyDB.filterEnemies;
 
 public class FieldMap {

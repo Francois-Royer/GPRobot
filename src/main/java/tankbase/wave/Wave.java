@@ -1,5 +1,6 @@
-package tankbase;
+package tankbase.wave;
 
+import tankbase.*;
 import tankbase.gun.Aiming;
 
 import java.awt.*;
@@ -21,19 +22,20 @@ public class Wave extends MovingPoint {
         Waves are detected bullets fired by enemy, bullet position is on an arc like wave
      */
 
-    transient ITank source;
-    transient ITank target;
+    private transient ITank source;
+    private transient ITank target;
 
-    transient AbstractTankBase robotBase;
+    private transient AbstractTankBase robotBase;
 
-    double arc;
-    Point2D.Double head;
-    Point2D.Double middle;
-    Point2D.Double circular;
+    private double arc;
 
-    double median;
-    double normalMedian;
-    double deviation;
+    private Point2D.Double head;
+    private Point2D.Double middle;
+    private Point2D.Double circular;
+
+    private double median;
+    private double normalMedian;
+    private double deviation;
 
     public Wave(Aiming ad, long start) {
         this(ad.getTarget(), ad.getFirePower(), start, ad.getGun().getFirer());
@@ -109,6 +111,14 @@ public class Wave extends MovingPoint {
 
     public double getArc() {
         return arc;
+    }
+
+    public Double getHead() {
+        return head;
+    }
+
+    public Double getCircular() {
+        return circular;
     }
 
     @Override
