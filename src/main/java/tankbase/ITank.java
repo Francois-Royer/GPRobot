@@ -15,7 +15,7 @@ public interface ITank {
 
     KDFormula getSurferFormula();
 
-    List<Move> getMoveLog();
+    List<KDMove> getMoveLog();
 
     void addFEnergy(double energy);
 

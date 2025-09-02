@@ -1,6 +1,7 @@
 package tankbase.gun;
 
 import tankbase.ITank;
+import tankbase.KDMove;
 import tankbase.Move;
 import tankbase.kdtree.KdTree;
 
@@ -67,12 +68,12 @@ public abstract class AbstractKdTreeGun extends AbtractGun {
             while (moveDuration < time + 1 && step < movesLog.size()) {
                 Move m = movesLog.get(step++);
                 long overtime = moveDuration - time;
-                double dist = m.getDistance();
-                dir += m.getTurn();
+                double dist = m.distance();
+                dir += m.turn();
 
                 if (overtime > 0) {
-                    dist -= m.getDistance() * overtime;
-                    dir -= m.getTurn() * overtime / m.getDuration();
+                    dist -= m.distance() * overtime;
+                    dir -= m.turn() * overtime / m.duration();
                 }
 
                 if (moveDuration == time)
@@ -86,7 +87,7 @@ public abstract class AbstractKdTreeGun extends AbtractGun {
 
 
                 predMoves.add(clonePoint(firePoint));
-                moveDuration += m.getDuration();
+                moveDuration += m.duration();
             }
         }
 

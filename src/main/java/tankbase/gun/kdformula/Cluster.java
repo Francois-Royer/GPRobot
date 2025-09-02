@@ -1,6 +1,7 @@
 package tankbase.gun.kdformula;
 
 import tankbase.ITank;
+import tankbase.KDMove;
 import tankbase.Move;
 import tankbase.TankState;
 import tankbase.kdtree.KdTree;

@@ -88,7 +88,7 @@ public abstract class AbstractCachedTankBase extends AdvancedRobot implements IT
     }
 
     @Override
-    public List<Move> getMoveLog() {
+    public List<KDMove> getMoveLog() {
         return Collections.emptyList();
     }
 

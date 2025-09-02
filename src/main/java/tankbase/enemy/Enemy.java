@@ -30,7 +30,7 @@ public class Enemy implements ITank {
     public static final int MAX_GUN_HEAT = 3;
 
     private final String name;
-    private final LinkedList<Move> moveLog = new LinkedList<>();
+    private final LinkedList<KDMove> KDMoveLog = new LinkedList<>();
     private final Cluster cluster;
     private final AntiSurfer antiSurfer;
     int fireHead = 1;
@@ -87,16 +87,17 @@ public class Enemy implements ITank {
                 long deltaTime = state.getTime() - prevScannedTankState.getTime();
                 double distance = state.distance(prevScannedTankState);
                 double turn = state.getHeadingRadians() - prevScannedTankState.getHeadingRadians();
-                moveLog.add(new Move(cluster.getPoint(prevState), antiSurfer.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
+                KDMoveLog.add(new KDMove(cluster.getPoint(prevState), antiSurfer.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
             }
 
-            if (moveLog.size() > tankBase.moveLogMaxSize) {
-                List<Move> log = new ArrayList<>(moveLog.subList(moveLog.size() - tankBase.moveLogMaxSize, moveLog.size()));
-                Move m = log.get(0);
-                cluster.addPoint(m.getClusterKdPoint(), log);
+            if (KDMoveLog.size() > tankBase.moveLogMaxSize) {
+                List<KDMove> log = new ArrayList<>(KDMoveLog.subList(KDMoveLog.size() - tankBase.moveLogMaxSize, KDMoveLog.size()));
+                KDMove m = log.get(0);
+                List<Move> mLog = log.stream().map(KDMove::getMove).toList();
+                cluster.addPoint(m.getClusterKdPoint(), mLog);
                 if (m.getAntiSurferKdPoint() != null)
-                    antiSurfer.addPoint(m.getAntiSurferKdPoint(), log);
-                moveLog.removeFirst();
+                    antiSurfer.addPoint(m.getAntiSurferKdPoint(), mLog);
+                KDMoveLog.removeFirst();
             }
         }
 
@@ -242,8 +243,8 @@ public class Enemy implements ITank {
     }
 
     @Override
-    public List<Move> getMoveLog() {
-        return moveLog;
+    public List<KDMove> getMoveLog() {
+        return KDMoveLog;
     }
 
     public double getWallDistanceX() {
