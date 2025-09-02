@@ -158,8 +158,8 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private long updateLeftRightEnemies(List<Enemy> enemies) {
-        Enemy prev = mostRight = enemies.getFirst();
-        mostLeft = enemies.getLast();
+        Enemy prev = mostRight = enemies.get(0);
+        mostLeft = enemies.get(enemies.size()-1);
         double ba = abs(mostLeft.getAngle() - mostRight.getAngle());
         if (ba > PI) ba = 2 * PI - ba;
         long lastUpdateDelta = 0;
@@ -387,7 +387,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private void virtualFire() {
-        //if (getGunHeat() > 0) return;
+        if (getGunHeat() > 0) return;
 
         filterEnemies(Enemy::isAlive).forEach(e -> {
             e.getTurnAimDatas().forEach(ad -> {
