@@ -22,6 +22,10 @@ public class EnemyDB {
         return enemies.values().stream().filter(filter).count();
     }
 
+    public static long enemyCount() {
+        return enemies.size();
+    }
+
     public static List<Enemy> filterAndSortEnemies(Predicate<Enemy> filter, Comparator<Enemy> comparator) {
         return enemies.values().stream().filter(filter).sorted(comparator).toList();
     }

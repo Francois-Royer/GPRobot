@@ -89,14 +89,14 @@ public class Enemy implements ITank {
                 long deltaTime = state.getTime() - prevScannedTankState.getTime();
                 double distance = state.distance(prevScannedTankState);
                 double turn = state.getHeadingRadians() - prevScannedTankState.getHeadingRadians();
-                KDMoveLog.add(new KDMove(cluster.getPoint(prevState), turn, distance * signum(state.getVelocity()), deltaTime));
+                KDMoveLog.add(new KDMove(cluster.getPoint(), turn, distance * signum(state.getVelocity()), deltaTime));
                 List<Fire> fireLog = getFireLog(name);
                 if (!fireLog.isEmpty()) {
                     Fire f = fireLog.get(0);
                     if (f != null) {
                         int age = (int) f.age(tankBase.getTime());
                         if (age < KDMoveLog.size() && KDMoveLog.get(age).getAntiSurferKdPoint() == null) {
-                            KDMoveLog.get(age).setAntiSurferKdPoint(antiSurfer.getPoint(prevState));
+                            KDMoveLog.get(age).setAntiSurferKdPoint(antiSurfer.getPoint());
                         }
                     }
                 }
@@ -148,15 +148,11 @@ public class Enemy implements ITank {
     }
 
     private void checkEnemyFire() {
-        if (prevState == null || state.getGunHeat() > 0 || !scanned)
+        if (state.getGunHeat() > 0 || !scanned)
             return;
 
-        double drop = prevState.getEnergy() - state.getEnergy();
-        if (drop < 0
-                || drop < MIN_BULLET_POWER
-                || drop > MAX_BULLET_POWER
-                || wallDistance(state) == 0
-                || wallDistance(prevState) == 0)
+        double drop = prevScannedTankState.getEnergy() - state.getEnergy();
+        if (drop < MIN_BULLET_POWER || drop > MAX_BULLET_POWER)
             return;
 
         state.setGunHeat(Rules.getGunHeat(drop));

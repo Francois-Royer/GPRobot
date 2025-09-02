@@ -15,29 +15,19 @@ import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
 import static tankbase.TankUtils.wallIntersection;
 
-public class Cluster implements KDFormula {
-    KdTree.WeightedSqrEuclid<List<Move>> kdTree;
-    ITank target;
+public class Cluster extends AbastractKDFormula {
     double[] weights = {1, 1, 1, 1, 1, 1, 1, 1};
+    ITank target;
 
     public Cluster(ITank target) {
         this.target = target;
-        kdTree = new KdTree.WeightedSqrEuclid<>(weights.length, KDTREE_MAX_SIZE);
+        kdTree = new KdTree.WeightedSqrEuclid<>(weights.length, 1000);
         kdTree.setWeights(weights);
     }
 
     @Override
-    public KdTree<List<Move>> getKdTree() {
-        return kdTree;
-    }
-
-    @Override
-    public void addPoint(double[] point, List<Move> moveList) {
-        kdTree.addPoint(point, moveList);
-    }
-
-    @Override
-    public double[] getPoint(TankState state) {
+    public double[] getPoint() {
+        TankState state = target.getState();
         return new double[]{
                 state.getVelocity() / MAX_VELOCITY,
                 ((normalAbsoluteAngle(state.getHeadingRadians()) - .001) % (PI / 4)) / (PI / 4),
