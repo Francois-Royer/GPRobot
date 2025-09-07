@@ -22,7 +22,7 @@ public class EnemyDetectedEvent {
         this.time = sre.getTime();
         this.heading = trigoAngle(sre.getHeadingRadians());
         this.bearing = sre.getBearingRadians();
-        this.energy= sre.getEnergy();
+        this.energy = sre.getEnergy();
         this.distance = sre.getDistance();
         this.velocity = sre.getVelocity();
     }
@@ -34,7 +34,7 @@ public class EnemyDetectedEvent {
 
         this.heading = 0; // unkown
         this.bearing = firer.getHeadingRadians() - getPointAngle(firer, position);
-        this.energy= bhe.getEnergy();
+        this.energy = bhe.getEnergy();
         this.distance = firer.distance(position);
         this.velocity = 0; // unknow;
     }

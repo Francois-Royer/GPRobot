@@ -14,9 +14,9 @@ import static tankbase.Constant.TANK_SIZE_INT;
 import static tankbase.FieldMap.isFullMap;
 import static tankbase.FieldMap.toggleMapMode;
 import static tankbase.TankUtils.range;
-import static tankbase.wave.WaveLog.getWaves;
 import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.gun.log.VirtualFireLog.getVirtualFireLog;
+import static tankbase.wave.WaveLog.getWaves;
 
 public abstract class AbstractTankDrawingBase extends AbstractTankBase implements ITank {
 
@@ -69,7 +69,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
 
     @Override
     public void onKeyPressed(java.awt.event.KeyEvent e) {
-        if (INFO_LEVEL>0)
+        if (INFO_LEVEL > 0)
             sysout.printf("Key pressed %c%n", e.getKeyChar());
 
         switch (e.getKeyChar()) {
@@ -115,8 +115,8 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     }
 
     private void paintEnemies(Graphics2D g2D) {
-        int de = TANK_SIZE_INT*2;
-        filterEnemies(Enemy::isAlive).forEach(e -> {
+        int de = TANK_SIZE_INT * 2;
+        filterEnemies(Enemy::isScanned).forEach(e -> {
             TankState state = e.getState();
             if (e == target)
                 drawAimCircle(g2D, Color.CYAN, state, de);
@@ -168,7 +168,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
         if (BIG_BATTLE_FIELD) {
             g2D.setColor(Color.WHITE);
             g2D.setFont(new Font("TimesRoman", Font.PLAIN, 32));
-            for (SearchPoint s:searchPoints)
+            for (SearchPoint s : searchPoints)
                 g2D.drawString(Integer.toString(s.visited()), (int) s.getX(), (int) s.getY());
 
         }

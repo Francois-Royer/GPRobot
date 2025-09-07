@@ -44,7 +44,6 @@ public class ExpressionNode implements Serializable {
             "MAX_BULLET_POWER",
             "MAX_TURN_RATE_RADIANS",
             "GUN_TURN_RATE_RADIANS",
-            "RADAR_TURN_RATE_RADIANS",
             "ROBOT_HIT_DAMAGE",
             "ROBOT_HIT_BONUS",
             "Double.MIN_VALUE",
@@ -76,8 +75,8 @@ public class ExpressionNode implements Serializable {
             "getGunCoolingRate()",
             "getHeadingRadians()",
             "getGunHeadingRadians()",
-            "getRadarHeadingRadians()",
-            "Rules.getBulletSpeed(fire)",
+            "getBulletSpeed(fire)",
+            "getBulletDamage(fire)",
     };
     static final String[][] TERMINALS = {
             CONSTANT_TERMINALS,

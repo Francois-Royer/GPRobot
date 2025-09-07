@@ -1,9 +1,7 @@
 package tankbase.gun;
 
 import tankbase.ITank;
-import tankbase.KDMove;
 import tankbase.Move;
-import tankbase.TankState;
 import tankbase.kdtree.KdTree;
 
 import java.awt.*;

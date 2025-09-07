@@ -1,7 +1,5 @@
 package sample;
 
-public class %s extends
-
-GPBase {
+public class %s extends GPBase {
 
 }

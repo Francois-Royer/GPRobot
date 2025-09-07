@@ -46,12 +46,11 @@ public abstract class AbtractGun implements Gun {
             return MIN_BULLET_POWER;
 
         double power = MAX_BULLET_POWER;
-        double close = 5 * TANK_SIZE;
+        double close = 3 * TANK_SIZE;
         double distance = target.getState().distance(firer.getState());
 
         // Apply distance factor
-        if (distance > close)
-            power *= pow(1 - (distance - close) / DISTANCE_MAX, 2);
+        power *= pow(1 - (distance - close) / DISTANCE_MAX, 4);
 
         // Apply a hitrate factor
         power *= pow(getEnemyRoundFireStat(target).getHitRate() + .5, 4);
@@ -60,7 +59,7 @@ public abstract class AbtractGun implements Gun {
         power /= 1 + (target.getState().getTime() - target.getLastScan()) / 5.0;
 
         // shot for remaining energie
-        power = min(power, getBulletPowerForDamage(target.getFEnergy())+.1);
+        power = min(power, getBulletPowerForDamage(target.getFEnergy()) + .1);
 
         // check min/max
         power = min(MAX_BULLET_POWER, max(MIN_BULLET_POWER, power));

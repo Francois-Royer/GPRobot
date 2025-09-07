@@ -13,8 +13,8 @@ import static tankbase.AbstractTankBase.*;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.BORDER_OFFSET;
 import static tankbase.TankUtils.*;
-import static tankbase.wave.WaveLog.getWaves;
 import static tankbase.enemy.EnemyDB.filterEnemies;
+import static tankbase.wave.WaveLog.getWaves;
 
 public class FieldMap {
     private static int totalFieldZone = 6000;
@@ -27,7 +27,7 @@ public class FieldMap {
     private static double[][] battleZoneMap;
     private static double maxDanger;
     private static Collection<Point> points = Collections.emptyList();
-    private static boolean searchMode=true;
+    private static boolean searchMode = true;
     private static boolean forceRebuildZone;
     private static Point zoneCenter;
     private static double zoneRadius;
@@ -105,7 +105,7 @@ public class FieldMap {
             int x = from.x + (int) (p * (to.x - from.x) / d);
             int y = from.y + (int) (p * (to.y - from.y) / d);
 
-            if (x>=0 && x<width && y>=0 && y<width)
+            if (x >= 0 && x < width && y >= 0 && y < width)
                 danger += map[x][y];
         }
         return danger / pow(d, 1.1);
@@ -220,7 +220,7 @@ public class FieldMap {
 
         if (INFO_LEVEL > 1)
             sysout.println(String.format("FieldMap[scale=%.2f, width=%d, height=%d, searchMode=%b, a=%.2f, b=%.2f]",
-                scale, width, height, searchMode, a, b));
+                    scale, width, height, searchMode, a, b));
     }
 
     private static void clear() {

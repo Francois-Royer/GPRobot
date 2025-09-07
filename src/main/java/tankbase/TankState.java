@@ -10,7 +10,8 @@ import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.GUN_COOLING_RATE;
 import static tankbase.Constant.TANK_SIZE;
-import static tankbase.TankUtils.*;
+import static tankbase.TankUtils.checkMinMax;
+import static tankbase.TankUtils.pointInBattleField;
 import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
 
 public class TankState extends Point2D.Double {
@@ -99,7 +100,7 @@ public class TankState extends Point2D.Double {
                         time + 1, nextAcceleration, turnRate, vmax, vmin);
             }
         }
-        return new TankState(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time+1,
+        return new TankState(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time + 1,
                 acceleration, turnRate, vmax, vmin);
     }
 

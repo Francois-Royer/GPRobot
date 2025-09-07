@@ -51,7 +51,6 @@ public class Enemy implements ITank {
     private double damageMe = 0;
     private double fEnergy;
     private boolean alive = false;
-    private boolean scanned = false;
 
     public Enemy(EnemyDetectedEvent ede, String name, AbstractTankBase tankBase) {
         this.name = name;
@@ -90,16 +89,7 @@ public class Enemy implements ITank {
                 double distance = state.distance(prevScannedTankState);
                 double turn = state.getHeadingRadians() - prevScannedTankState.getHeadingRadians();
                 KDMoveLog.add(new KDMove(cluster.getPoint(), turn, distance * signum(state.getVelocity()), deltaTime));
-                List<Fire> fireLog = getFireLog(name);
-                if (!fireLog.isEmpty()) {
-                    Fire f = fireLog.get(0);
-                    if (f != null) {
-                        int age = (int) f.age(tankBase.getTime());
-                        if (age < KDMoveLog.size() && KDMoveLog.get(age).getAntiSurferKdPoint() == null) {
-                            KDMoveLog.get(age).setAntiSurferKdPoint(antiSurfer.getPoint());
-                        }
-                    }
-                }
+
             }
 
             if (KDMoveLog.size() > tankBase.moveLogMaxSize) {
@@ -115,10 +105,13 @@ public class Enemy implements ITank {
 
         prevScannedTankState = state;
         lastScan = state.getTime();
-        if (scanned == false && INFO_LEVEL > 1) {
+        if (INFO_LEVEL > 2) {
             sysout.printf("%s scanned %s%n", name, state);
         }
-        scanned = true;
+    }
+
+    public void setAntiSurferPoint(Fire fire) {
+        KDMoveLog.get(KDMoveLog.size()-1).setAntiSurferKdPoint(antiSurfer.getPoint());
     }
 
     void computeFEnergy() {
@@ -127,28 +120,25 @@ public class Enemy implements ITank {
     }
 
     public void move() {
+        if (state == null) return;
         TankState newState = state.extrapolateNextState();
         if (newState.getTime() <= tankBase.getTime()) {
             prevState = state;
             state = newState;
         }
-        if (state.getTime() - lastScan > MAX_NOT_SCAN_TIME)
-            scanned = false;
     }
 
     public void reset() {
         alive = true;
-        scanned = false;
-        prevScannedTankState = prevState = null;
-        state = new TankState(0, 0, 0, 0, 0, 0, MAX_GUN_HEAT, INITIAL_ENERGY, listAllEnemies().size(), 0, 0, 0,0,0);
+        state = prevScannedTankState = prevState = null;
     }
 
     public void die() {
-        scanned = alive = false;
+        alive = false;
     }
 
     private void checkEnemyFire() {
-        if (state.getGunHeat() > 0 || !scanned)
+        if (state.getGunHeat() > 0 || prevScannedTankState == null)
             return;
 
         double drop = prevScannedTankState.getEnergy() - state.getEnergy();
@@ -187,7 +177,7 @@ public class Enemy implements ITank {
     }
 
     public boolean isScanned() {
-        return scanned;
+        return prevScannedTankState != null && alive;
     }
 
     public boolean hasState() {
@@ -272,12 +262,12 @@ public class Enemy implements ITank {
     }
 
     public double getDanger(int x, int y, double maxDamageMe) {
-        if (!scanned) return 0;
+        if (state == null) return 0;
         double scale = FieldMap.getScale();
         Point2D.Double p = new Point2D.Double(x * scale + scale / 2, y * scale + scale / 2);
         double d = state.distance(p);
         if (!isMaxDanger(x, y)) {
-            boolean shadowed = filterEnemies(e -> e.isAlive() && e != this).stream()
+            boolean shadowed = filterEnemies(e -> e.isScanned() && e != this).stream()
                     .map(e -> collisionCircleSegment(e.getState(), TANK_SIZE, p, state))
                     .reduce((a, b) -> a || b)
                     .orElse(false);

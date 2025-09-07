@@ -131,27 +131,27 @@ public class TankUtils {
     }
 
     public static Point2D.Double wallIntersection(Point2D.Double source, double direction) {
-        if (direction == PI / 2) return new Point2D.Double(source.getX(), FIELD_HEIGHT-1);
+        if (direction == PI / 2) return new Point2D.Double(source.getX(), FIELD_HEIGHT - 1);
         if (direction == -PI / 2) return new Point2D.Double(source.getX(), 0);
-        if (direction == 0) return new Point2D.Double(FIELD_WIDTH-1, source.getY());
+        if (direction == 0) return new Point2D.Double(FIELD_WIDTH - 1, source.getY());
         if (direction == PI) return new Point2D.Double(0, source.getY());
 
         if (direction > 0) {
             if (direction < PI / 2) {
                 double y = source.getY() + (FIELD_WIDTH - source.getX()) * sin(direction);
-                if (y < FIELD_HEIGHT) return new Point2D.Double(FIELD_WIDTH-1, y);
+                if (y < FIELD_HEIGHT) return new Point2D.Double(FIELD_WIDTH - 1, y);
                 double x = source.getX() + (FIELD_HEIGHT - source.getY()) / cos(direction);
-                return new Point2D.Double(x, FIELD_HEIGHT-1);
+                return new Point2D.Double(x, FIELD_HEIGHT - 1);
             }
             double y = source.getY() + source.getX() * sin(direction);
             if (y < FIELD_HEIGHT) return new Point2D.Double(0, y);
             double x = source.getX() + (FIELD_HEIGHT - source.getY()) / cos(direction);
-            return new Point2D.Double(x, FIELD_HEIGHT-1);
+            return new Point2D.Double(x, FIELD_HEIGHT - 1);
         }
 
         if (direction > -PI / 2) {
             double y = source.getY() + (FIELD_WIDTH - source.getX()) * sin(direction);
-            if (y >= 0) return new Point2D.Double(FIELD_WIDTH-1, y);
+            if (y >= 0) return new Point2D.Double(FIELD_WIDTH - 1, y);
             double x = source.getX() + (source.getY()) / cos(direction);
             return new Point2D.Double(x, 0);
         }
@@ -163,7 +163,7 @@ public class TankUtils {
     }
 
     public static double wallDistance(Point2D.Double p) {
-        return min(min(p.x, FIELD_WIDTH-p.x), min(p.y, FIELD_HEIGHT-p.y));
+        return min(min(p.x, FIELD_WIDTH - p.x), min(p.y, FIELD_HEIGHT - p.y));
     }
 
     @SafeVarargs

@@ -1,13 +1,12 @@
 package tankbase.gun.kdformula;
 
-import tankbase.ITank;
 import tankbase.Move;
 import tankbase.kdtree.KdTree;
 
 import java.util.List;
 
 abstract public class AbastractKDFormula implements KDFormula {
-    KdTree.WeightedSqrEuclid<List<Move>> kdTree;
+    protected KdTree.WeightedSqrEuclid<List<Move>> kdTree;
 
     @Override
     public KdTree<List<Move>> getKdTree() {
