@@ -1,5 +1,6 @@
 package tankbase.gun.kdformula;
 
+import tankbase.AbstractTankBase;
 import tankbase.ITank;
 import tankbase.TankState;
 import tankbase.kdtree.KdTree;
@@ -11,11 +12,12 @@ import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
 import static tankbase.TankUtils.wallIntersection;
 
-public class Cluster extends AbastractKDFormula {
+public class Cluster extends AbstractKDFormula {
     double[] weights = {1, 1, 1, 1, 1, 1, 1, 1};
     ITank target;
 
-    public Cluster(ITank target) {
+    public Cluster(ITank target, AbstractTankBase base) {
+        super(base);
         this.target = target;
         kdTree = new KdTree.WeightedSqrEuclid<>(weights.length, 1000);
         kdTree.setWeights(weights);

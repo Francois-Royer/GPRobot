@@ -1,34 +1,35 @@
 package tankbase.gun.kdformula;
 
+import tankbase.AbstractTankBase;
 import tankbase.ITank;
 import tankbase.TankState;
+import tankbase.TankUtils;
 import tankbase.enemy.Enemy;
 import tankbase.gun.Fire;
 import tankbase.kdtree.KdTree;
 
-import java.awt.geom.Point2D;
 import java.util.List;
 
 import static java.lang.Math.*;
-import static robocode.Rules.MAX_VELOCITY;
-import static robocode.util.Utils.normalRelativeAngle;
+import static robocode.Rules.*;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
-import static tankbase.Constant.TANK_SIZE;
 import static tankbase.TankUtils.pointInBattleField;
 import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
 import static tankbase.enemy.EnemyDB.countFilteredEnemies;
 import static tankbase.enemy.EnemyDB.enemyCount;
 import static tankbase.gun.log.FireLog.getFireLog;
 
-public class AntiSurfer extends AbastractKDFormula {
-    double[] weights = {3, 4, 3, 2, 4, 2, 3, 2, 2};
+public class AntiSurfer extends AbstractKDFormula {
+    double MAX_BULLET_SPEED = getBulletSpeed(MAX_BULLET_POWER);
+    double[] weights = {1,1,1,1,5,5,1,1,10,10,10,2,2,2,1,1,1};
     ITank target;
     ITank firer;
 
-    public AntiSurfer(ITank target, ITank firer) {
+    public AntiSurfer(ITank target, AbstractTankBase base) {
+        super(base);
         this.target = target;
-        this.firer = firer;
-        kdTree = new KdTree.WeightedSqrEuclid<>(weights.length, 50);
+        this.firer = base;
+        kdTree = new KdTree.WeightedSqrEuclid<>(weights.length, 256);
         kdTree.setWeights(weights);
     }
 
@@ -38,38 +39,31 @@ public class AntiSurfer extends AbastractKDFormula {
         if (aimLog.isEmpty()) {
             return null;
         }
-        Fire f = aimLog.get(aimLog.size()-1);
-        double targetDistance = f.distance(state);
-        double targetRelativeHeading = normalRelativeAngle(state.getHeadingRadians() - f.getDirection());
-        double wallDistance = directToWallDistance(state, state.getHeadingRadians()) / MAX_VELOCITY / targetDistance/f.getVelocity();
-        double wallRevDistance = directToWallDistance(state, state.getHeadingRadians() + PI) / MAX_VELOCITY / targetDistance/f.getVelocity();
+        double wallDistance = TankUtils.directToWallDistance(state, state.getHeadingRadians());
+        double wallRevDistance = TankUtils.directToWallDistance(state, state.getHeadingRadians() + PI);
         double aliveCount = countFilteredEnemies(Enemy::isAlive);
 
         return new double[]{
-                min(91, f.distance(state) / f.getVelocity()) / 91,
                 state.getVelocity() / MAX_VELOCITY,
-                targetRelativeHeading/ PI,
                 state.getAcceleration() / 2,
                 wallDistance,
                 wallRevDistance,
-                min(1.0, ((double) target.getLastVelocityChange())
-                        / targetDistance / f.getVelocity()),
+                min(1.0, ((double) target.getLastStop())/100),
+                min(1.0, ((double) target.getLastVelocityChange())/100),
                 firer.getState().getGunHeat() / MAX_GUN_HEAT,
-                aliveCount > 1 ? sqrt((aliveCount - 1) / max(enemyCount() - 1, 1)) : 0
+                aliveCount > 1 ? sqrt((aliveCount - 1) / max(enemyCount() - 1, 1)) : 0,
+
+                base.bulletDistance(0)/DISTANCE_MAX*base.bulletSpeed(0)/MAX_BULLET_SPEED,
+                base.bulletPower(0)/ MAX_BULLET_POWER,
+                base.bulletRelativeAngle(0),
+
+                base.bulletDistance(1)/DISTANCE_MAX*base.bulletSpeed(1)/MAX_BULLET_SPEED,
+                base.bulletPower(1)/ MAX_BULLET_POWER,
+                base.bulletRelativeAngle(1),
+
+                base.bulletDistance(2)/DISTANCE_MAX*base.bulletSpeed(2)/MAX_BULLET_SPEED,
+                base.bulletPower(2)/ MAX_BULLET_POWER,
+                base.bulletRelativeAngle(2)
         };
-    }
-
-    public static double directToWallDistance(Point2D.Double target, double heading) {
-        double cosHeading = cos(heading);
-        double sinHeading = sin(heading);
-
-        Point2D.Double d = new Point2D.Double(target.x, target.y);
-
-        for (int x = 0; pointInBattleField(d, TANK_SIZE / 2); x++) {
-            d.x += cosHeading;
-            d.y += sinHeading;
-        }
-
-        return d.distance(target);
     }
 }

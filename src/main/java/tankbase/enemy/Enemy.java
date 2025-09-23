@@ -54,7 +54,7 @@ public class Enemy implements ITank {
 
     public Enemy(EnemyDetectedEvent ede, String name, AbstractTankBase tankBase) {
         this.name = name;
-        cluster = new Cluster(this);
+        cluster = new Cluster(this, tankBase);
         antiSurfer = new AntiSurfer(this, tankBase);
         reset();
         update(ede, tankBase);

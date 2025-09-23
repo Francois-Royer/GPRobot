@@ -50,7 +50,6 @@ public class RunGP {
 
         if (args.length >= 2) {
             RUNNERS_COUNT = Integer.parseInt(args[0]);
-            ONE2ONE = Boolean.parseBoolean(args[1]);
         }
 
         new StatServer().start();
@@ -76,6 +75,7 @@ public class RunGP {
             // -- EC loop
             long begin = 0;
             while (genCount < MAX_GENS) {
+                System.gc();
                 long beginGen = System.currentTimeMillis();
 
                 console.println("#".repeat(80));

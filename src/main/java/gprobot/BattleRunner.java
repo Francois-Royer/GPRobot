@@ -15,7 +15,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Socket;
 import java.nio.file.FileSystems;
+import java.security.*;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,7 +38,6 @@ public class BattleRunner {
         super();
         this.runnerId = runnerId;
         this.runnerPath = FileSystems.getDefault().getPath(".").toAbsolutePath().toString();
-        engine = new RobocodeEngine(new File(runnerPath));
         battlefield = new BattlefieldSpecification(800, 600);
     }
 
@@ -53,15 +54,17 @@ public class BattleRunner {
         }
     }
 
-    static int getScore(BattleResults result) {
+    static double getScore(BattleResults result) {
         /*return result.getSurvival()
             + result.getLastSurvivorBonus()*4
             + result.getBulletDamage()
             + result.getBulletDamageBonus()
             + result.getRamDamage()
             + result.getRamDamageBonus();*/
-        return result.getScore();
         //return result.getScore();
+        return result.getBulletDamage()
+            + result.getBulletDamageBonus();
+
     }
 
     public RobotSpecification[] getRobotSpecification(String bot, String[] oponents) {
@@ -84,42 +87,54 @@ public class BattleRunner {
     }
 
     public double getRobotFitness(String robot, String[] opponentsRobots) {
-        String robotClass = TARGET_PACKAGE + "." + robot;
-        BattleObserver battleObserver = new BattleObserver(robot);
-        engine.addBattleListener(battleObserver);
+        double fitnessScore = 0;
 
-        RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
-        int rounds = RobocodeConf.ROUNDS;// * opponentsRobots.length;
-        BattleSpecification battleSpec = new BattleSpecification(rounds, battlefield, selectedBots);
-        engine.runBattle(battleSpec, true);
-        double fitnessScore = computeFitness(robotClass, battleObserver);
-        engine.close();
+        if (battleType == BattleType.MELEE || battleType == BattleType.ALL)
+            fitnessScore = runBattle(robot, opponentsRobots);
 
-        if (opponentsRobots.length > 1 && ONE2ONE)
-            fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots).mapToDouble(opponent ->
-                    getRobotFitness(robot,
-                            new String[]{opponent})
-            ).sum()) / 2 / opponents.length;
+        if (battleType == BattleType.DUEL || battleType == BattleType.ALL)
+            fitnessScore = (fitnessScore * opponentsRobots.length + Stream.of(opponentsRobots)
+                    .mapToDouble(opponent -> runBattle(robot, new String[]{opponent}))
+                    .sum()) / opponents.length;
+
+        if (battleType == BattleType.ALL)
+            fitnessScore /= 2;
 
         return fitnessScore;
     }
 
+    private double runBattle(String robot, String[] opponentsRobots) {
+        String robotClass = TARGET_PACKAGE + "." + robot;
+        BattleObserver battleObserver;
+        System.gc();
+        engine = new RobocodeEngine(new File(runnerPath));
+        battleObserver = new BattleObserver(robot);
+        engine.addBattleListener(battleObserver);
+        RobotSpecification[] selectedBots = getRobotSpecification(robotClass, opponentsRobots);
+        BattleSpecification battleSpec = new BattleSpecification(ROUNDS, battlefield, selectedBots);
+        engine.runBattle(battleSpec, true);
+        engine.close();
+        engine.removeBattleListener(battleObserver);
+        return computeFitness(robotClass, battleObserver);
+    }
+
     private double computeFitness(String robot, BattleObserver battleObserver) {
         BattleResults[] results = battleObserver.getResults();
-        Optional<BattleResults> br = Stream.of(results).filter(result -> robot.equals(result.getTeamLeaderName()))
-                .findFirst();
 
-        int botScore = br.isPresent() ? getScore(br.get()) : 0;
-        int totalScore = Stream.of(results).mapToInt(BattleRunner::getScore).sum();
-        if (totalScore == 0)
-            return 0;
+        double botScore = Stream.of(results)
+                .filter(result -> robot.equals(result.getTeamLeaderName()))
+                .mapToDouble(br -> getScore(br))
+                .sum();
 
-        return (double) botScore / (totalScore) * 100;
+        return results.length > 1 ? botScore/(results.length-1)/100 : botScore/100;
     }
+
 
     public void startCmdReader() {
         String line = null;
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+
+        try (Socket controlerSockert = new Socket("localhost", 33000 + runnerId)) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(controlerSockert.getInputStream()));
             while ((line = in.readLine()) != null) {
                 if (line.startsWith(SET_OPPONENTS))
                     setOpponentsName(line.substring(MSG.length() + 1).split(","));
@@ -128,7 +143,6 @@ public class BattleRunner {
                     System.out.println(MSG + " " + getRobotFitness(robot));
                 }
             }
-
         } catch (IOException ioe) {
             log.log(Level.SEVERE, "printMsg", ioe);
         }
@@ -142,6 +156,8 @@ class BattleObserver extends BattleAdaptor {
     private BattleResults[] results;
     private long roundDuration = 0;
     private double remainEnergy = 0;
+    private BattleErrorEvent error = null;
+
 
     public BattleObserver(String robotName) {
         this.robotName = TARGET_PACKAGE + "." + robotName;
@@ -163,7 +179,8 @@ class BattleObserver extends BattleAdaptor {
 
     @Override
     public void onBattleError(BattleErrorEvent e) {
-        Logger.getLogger(this.getClass().getName()).severe("Battle error: " + e.getError());
+        //Logger.getLogger(this.getClass().getName()).severe("Battle error: " + e.getError());
+        this.error = e;
     }
 
     public BattleResults[] getResults() {
@@ -178,4 +195,7 @@ class BattleObserver extends BattleAdaptor {
         return remainEnergy;
     }
 
+    public BattleErrorEvent getError() {
+        return error;
+    }
 }

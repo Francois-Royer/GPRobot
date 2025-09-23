@@ -11,6 +11,7 @@ import static robocode.Rules.MAX_VELOCITY;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.FIELD_HEIGHT;
 import static tankbase.AbstractTankBase.FIELD_WIDTH;
+import static tankbase.Constant.TANK_SIZE;
 
 public class TankUtils {
 
@@ -201,5 +202,19 @@ public class TankUtils {
 
     public static boolean pointInBattleField(Point2D.Double p) {
         return pointInBattleField(p, 0);
+    }
+
+    public static double directToWallDistance(Point2D.Double target, double heading) {
+        double cosHeading = cos(heading);
+        double sinHeading = sin(heading);
+
+        Point2D.Double d = new Point2D.Double(target.x, target.y);
+
+        for (int x = 0; pointInBattleField(d, TANK_SIZE / 2); x+=8) {
+            d.x += cosHeading;
+            d.y += sinHeading;
+        }
+
+        return d.distance(target);
     }
 }

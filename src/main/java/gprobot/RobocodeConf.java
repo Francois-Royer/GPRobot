@@ -3,6 +3,7 @@ package gprobot;
 import robocode.control.BattlefieldSpecification;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -27,7 +28,7 @@ public class RobocodeConf {
     public static final int POP_SIZE = 300;
     public static final int MAX_GENS = 400;
     public static final int MIN_DEPTH = 2;
-    public static final int MAX_DEPTH = 11;
+    public static final int MAX_DEPTH = 9;
     public static final int ROUNDS = 10;
     public static final int TOURNY_SIZE = 6; // Selection Pressure
     public static final double PROB_CROSSOVER = 0.85;
@@ -38,7 +39,7 @@ public class RobocodeConf {
     public static final String GET_FITNESS = "GET FITNESS";
     public static final String READY = "READY";
     public static int RUNNERS_COUNT = AVAILABLE_PROCESSORS;
-    public static boolean ONE2ONE = false;
+    public static BattleType battleType = BattleType.MELEE;
     static String[] sampleRobots = {
             //"sample.Corners",
             "sample.Crazy",
@@ -60,9 +61,21 @@ public class RobocodeConf {
     static String[] skilledRobots = {
             "voidious.Diamond"
     };
-    static String[] opponents = sampleRobots;
+
+    public static String[] concat(String[] a, String[] b) {
+        String[] c = new String[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+
+    static String[] opponents = skilledRobots; //concat(sampleRobots, skilledRobots);
 
     private RobocodeConf() {
         // Const class
+    }
+
+    public enum BattleType {
+        DUEL, MELEE, ALL
     }
 }

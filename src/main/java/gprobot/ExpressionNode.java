@@ -58,14 +58,17 @@ public class ExpressionNode implements Serializable {
             //"runVar2"
     };
     static final String[] BASE_TERMINAL = {
-            "target.distance(getCurrentPoint())",
-            "target.getVelocity()",
-            "target.getDirection()",
-            "target.getRotationRate()",
-            "target.getAccel()",
-            "target.getEnergy()",
-            "target.getAngle()",
-            "(double) now",
+            "getPointAngle(getState(), target.getState())",
+            "target.getState().distance(getState())",
+            "target.getState().getVelocity()",
+            "target.getState().getTurnRate()",
+            "target.getState().getAcceleration()",
+            "target.getState().getEnergy()",
+            "target.getState().getHeadingRadians()",
+            "(double)target.getLastStop()",
+            "(double)target.getLastVelocityChange()",
+            "(double)target.getLastChangeDirection()",
+            "(double) getState().getTime()",
             "DISTANCE_MAX",
             "(double) TANK_SIZE",
             "(double) aliveCount",
@@ -75,8 +78,8 @@ public class ExpressionNode implements Serializable {
             "getGunCoolingRate()",
             "getHeadingRadians()",
             "getGunHeadingRadians()",
-            "getBulletSpeed(fire)",
-            "getBulletDamage(fire)",
+            "directToWallDistance(target.getState(), target.getState().getHeadingRadians())",
+            "directToWallDistance(target.getState(), target.getState().getHeadingRadians()+PI)",
     };
     static final String[][] TERMINALS = {
             CONSTANT_TERMINALS,
@@ -92,6 +95,8 @@ public class ExpressionNode implements Serializable {
             {"Math.sqrt(Math.abs(", "))"}, // square root
             {"Math.exp(", ")"}, // e^x
             {"Math.log(Math.abs(", "))"}, // ln
+            {"getBulletSpeed(", ")"},
+            {"getBulletDamage(", ")"},
     };
     static final String[][] FUNCTIONS_A2 = {
             {"", " - ", ""}, // add
@@ -101,6 +106,7 @@ public class ExpressionNode implements Serializable {
             {"", " % ", ""}, // modulo (CHECK FOR ZERO!)
             {"Math.min(", ", ", ")"}, // minimum
             {"Math.max(", ", ", ")"}, // maximum
+            {"Math.pow(", ", ", ")"}, // power
     };
     static final String[][] FUNCTIONS_A3 = {
             {"", " > 0 ? ", " : ", ""}, // X > 0 ? ifYes : ifNo

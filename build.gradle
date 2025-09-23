@@ -1,7 +1,7 @@
 plugins {
     id "java"
     id "java-library-distribution"
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.gradleup.shadow" version "9.0.0"
 }
 
 /*compileJava {
@@ -19,12 +19,12 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.esotericsoftware:kryo:5.3.0'
+    implementation 'com.esotericsoftware:kryo:5.6.2'
     implementation 'net.sf.robocode:robocode.api:1.10.0'
     shadow 'com.esotericsoftware:kryo:5.3.0'
 }
 
-project.configurations.implementation.setCanBeResolved(true)
+//project.configurations.implementation.setCanBeResolved(true)
 
 tasks.withType(JavaCompile).configureEach {
     options.deprecation = false
@@ -34,7 +34,7 @@ jar {
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
     manifest {
         attributes 'Main-Class': 'gprobot.RunGP',
-                'Class-Path': configurations.implementation.collect { "lib/$it.name" }.join(' ')
+                'Class-Path': configurations.runtimeClasspath.collect { "lib/$it.name" }.join(' ')
     }
     dependsOn ('dependencies')
 }
@@ -78,6 +78,6 @@ tasks.register('runGPBaseDiamond', Exec) {
 }
 
 tasks.register('runGP', Exec) {
-    commandLine 'java', '-cp', "$robotcode_home/libs/*", 'gprobot.RunGP'
+    commandLine 'java', '-cp', "$robotcode_home/libs/*", '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'gprobot.RunGP'
     dependsOn 'copyLib'
 }

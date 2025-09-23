@@ -175,7 +175,7 @@ public class RobotCodeUtil {
         File runnerBotsFolder = runnerDir.toPath().resolve(ROBOTS_FOLDER).resolve(TARGET_PACKAGE).toFile();
         cleanDirectory(runnerBotsFolder, BOT_PREFFIX + "(.*)");
 
-        if (className != "GPBase")
+        if (className != "TankBase")
             addClassRunner(runnerDir, className);
     }
 

@@ -1,6 +1,8 @@
 package gprobot;
 
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -15,9 +17,11 @@ public class BattleControler {
     private final int controlerId;
     double fitness;
     private Process battleRunner;
-    private PrintStream stdin;
+    private PrintStream controlStream;
     private File workerFolder;
     private Status status;
+    ServerSocket serverSocket;
+    Socket runnerSocket;
 
     public BattleControler(int controlerId) {
         this.controlerId = controlerId;
@@ -48,13 +52,11 @@ public class BattleControler {
     private String[] makeRunnerCmd() {
         List<String> cmdList = new ArrayList();
         cmdList.add("java");
-        cmdList.add("-Xmx512m");
+        cmdList.add("-Xmx1024m");
+        cmdList.add("-XX:+UseSerialGC");
         cmdList.add("-cp");
         cmdList.add("libs/*");
         cmdList.add("-Djava.awt.headless=true");
-        if (Runtime.version().feature() > 11)
-            cmdList.add("-Djava.security.manager=allow");
-
         cmdList.add("--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED");
         cmdList.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
         cmdList.add("--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED");
@@ -74,8 +76,12 @@ public class BattleControler {
 
     private void startBattleRunner() {
         try {
+            serverSocket = new ServerSocket(33000 + controlerId);
             battleRunner = Runtime.getRuntime().exec(makeRunnerCmd(), new String[0], workerFolder);
-            stdin = new PrintStream(battleRunner.getOutputStream(), true);
+            runnerSocket = serverSocket.accept();
+            serverSocket.close();
+
+            controlStream = new PrintStream(runnerSocket.getOutputStream(), true);
             pipeStream(battleRunner.getInputStream(), System.out);
             pipeStream(battleRunner.getErrorStream(), System.err);
             status = Status.Starting;
@@ -141,12 +147,12 @@ public class BattleControler {
 
     public void setOpponentsName(String[] names) throws InterruptedException, IOException {
         waitReadyStatus();
-        stdin.println(SET_OPPONENTS + " " + String.join(",", names));
+        controlStream.println(SET_OPPONENTS + " " + String.join(",", names));
     }
 
     public double getRobotFitness(String robot) throws InterruptedException, IOException {
         setRunning();
-        stdin.println(GET_FITNESS + " " + robot);
+        controlStream.println(GET_FITNESS + " " + robot);
         long duration = waitReadyStatus();
         log.fine(robot + " fitness is " + fitness + ", batle duration " + duration);
         return fitness;

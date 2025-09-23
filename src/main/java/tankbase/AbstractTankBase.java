@@ -62,7 +62,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     protected Aiming aiming = null;
     private Enemy prevTarget = null;
 
-    private long aliveCount;
+    protected long aliveCount;
     private long scanCount;
     private long prevScanCount;
 
@@ -571,13 +571,12 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     @Override
     public void onDeath(DeathEvent event) {
         onEvent(event);
-        running = alive = false;
+        alive = false;
     }
 
     @Override
     public void onRoundEnded(RoundEndedEvent event) {
         onEvent(event);
-        running = false;
         printStat();
     }
 
@@ -615,7 +614,52 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         }
     }
 
-    /// ///////////////////////////////////////////////////////////////////////////////////////
+
+    // ///////////////////////////////////////////////////////////////////////////////////////
+    // target stuff
+    public int countTargetFire() {
+        if (target == null) return 0;
+        checkFireLog();
+        return targetFireLog.length;
+    }
+
+    public double bulletPower(int i) {
+        if (countTargetFire()>i)
+            return targetFireLog[i].getAimingData().getFirePower();
+        return 0;
+    }
+
+    public double bulletSpeed(int i) {
+        if (countTargetFire()>i)
+            return targetFireLog[i].getVelocity();
+        return 0;
+    }
+
+    public double bulletDistance(int i) {
+        if (countTargetFire()>i)
+            return targetFireLog[i].getPosition(getTime()).distance(target.getState());
+        return 0;
+    }
+
+    public double bulletRelativeAngle(int i) {
+        if (countTargetFire()>i) {
+            double a= getPointAngle(targetFireLog[i].getPosition(getTime()), target.getState());
+            return normalRelativeAngle(target.getState().getHeadingRadians()-a);
+        }
+        return 0;
+    }
+
+    long logDate=0;
+    private Fire[] targetFireLog;
+    private void checkFireLog() {
+        if (getTime() != logDate && target != null) {
+            targetFireLog = getFireLog(target.getName()).toArray(new Fire[0]);
+        }
+    }
+
+
+
+    // ///////////////////////////////////////////////////////////////////////////////////////
     // Private stuff
     private Collection<SearchPoint> computeSearchPath() {
         double dx = FIELD_WIDTH / (1 + (int) (FIELD_WIDTH / RADAR_SEARCH_RADIUS));
@@ -675,9 +719,10 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     private void setupGuns() {
         if (guns.size() == 0) {
             headOnGunner = new HeadOnGun(this);
-            putGun(new CircularGun(this));
-            putGun(new ClusterGun(this));
-            putGun(new AntiSurferGun(this));
+            putGun(new HeadOnGun(this));
+            //putGun(new CircularGun(this));
+            //putGun(new ClusterGun(this));
+            //putGun(new AntiSurferGun(this));
         }
     }
 

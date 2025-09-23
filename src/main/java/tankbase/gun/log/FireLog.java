@@ -18,7 +18,7 @@ public class FireLog {
     public static List<Fire> getFireLog(String targetName) {
         return log.stream()
                 .filter(s -> s.getTarget().getName().equals(targetName))
-                .sorted((s1, s2) -> Long.compare(s1.getStart(), s2.getStart()))
+                .sorted((s1, s2) -> Long.compare(s2.getStart(), s1.getStart()))
                 .toList();
     }
 
@@ -33,6 +33,10 @@ public class FireLog {
 
     public static boolean removeFire(Fire fire) {
         return log.remove(fire);
+    }
+
+    public static long countFire(String targetName) {
+        return log.stream().filter(s -> s.getTarget().getName().equals(targetName)).count();
     }
 
     public static void clearFireLog() {
