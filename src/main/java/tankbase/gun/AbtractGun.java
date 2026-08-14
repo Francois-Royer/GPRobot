@@ -1,16 +1,21 @@
 package tankbase.gun;
 
 import tankbase.ITank;
+import tankbase.wave.Wave;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import static java.lang.Math.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.Rules.MIN_BULLET_POWER;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
 import static tankbase.Constant.TANK_SIZE;
+import static tankbase.wave.WaveLog.getWaves;
 
 public abstract class AbtractGun implements Gun {
     private final String name = this.getClass().getSimpleName();
@@ -44,6 +49,13 @@ public abstract class AbtractGun implements Gun {
     public double getFirePower(ITank target) {
         if (target.getState().getEnergy() == 0)
             return MIN_BULLET_POWER;
+
+        Optional<Wave> ow = getWaves().stream().filter(w -> w.getSource().getName().equals(target.getName()))
+                .sorted((w1, w2) -> Long.compare(w1.getStart(), w2.getStart())).limit(1).findFirst();
+
+        if (ow.isPresent()) {
+            return ow.get().getPower();
+        }
 
         double power = MAX_BULLET_POWER;
         double close = 3 * TANK_SIZE;

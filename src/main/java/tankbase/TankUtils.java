@@ -6,7 +6,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.asin;
+import static java.lang.Math.cos;
+import static java.lang.Math.exp;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
 import static robocode.Rules.MAX_VELOCITY;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.FIELD_HEIGHT;
@@ -31,7 +41,10 @@ public class TankUtils {
         double ab = a.distance(b);
         double sa = a.distance(s);
         double sb = b.distance(s);
-        return acos((pow(sa, 2) + pow(sb, 2) - pow(ab, 2)) / 2 / sa / sb);
+
+        if (ab == 0 || sa == 0 || sb == 0) return 0;
+
+        return acos(max(-1, min(1, (pow(sa, 2) + pow(sb, 2) - pow(ab, 2)) / 2 / sa / sb)));
     }
 
     // -PI -> PI
@@ -69,6 +82,10 @@ public class TankUtils {
 
     public static Point2D.Double middle(Point2D.Double a, Point2D.Double b, int ac, int bc) {
         return new Point2D.Double((a.getX() * ac + b.getX() * bc) / (ac + bc), (a.getY() * ac + b.getY() * bc) / (ac + bc));
+    }
+
+    public static Point2D.Double middle(Point2D.Double a, Point2D.Double b, double ratio) {
+        return new Point2D.Double(a.getX() + (b.getX() - a.getX()) * ratio, a.getY() + (b.getY() - a.getY()) * ratio);
     }
 
     public static double computeTurnGun2Target(Point2D.Double base, Point2D.Double target, double ga) {
@@ -132,35 +149,33 @@ public class TankUtils {
     }
 
     public static Point2D.Double wallIntersection(Point2D.Double source, double direction) {
-        if (direction == PI / 2) return new Point2D.Double(source.getX(), FIELD_HEIGHT - 1);
-        if (direction == -PI / 2) return new Point2D.Double(source.getX(), 0);
-        if (direction == 0) return new Point2D.Double(FIELD_WIDTH - 1, source.getY());
-        if (direction == PI) return new Point2D.Double(0, source.getY());
+        return wallIntersection(source, direction, 0);
+    }
 
-        if (direction > 0) {
-            if (direction < PI / 2) {
-                double y = source.getY() + (FIELD_WIDTH - source.getX()) * sin(direction);
-                if (y < FIELD_HEIGHT) return new Point2D.Double(FIELD_WIDTH - 1, y);
-                double x = source.getX() + (FIELD_HEIGHT - source.getY()) / cos(direction);
-                return new Point2D.Double(x, FIELD_HEIGHT - 1);
-            }
-            double y = source.getY() + source.getX() * sin(direction);
-            if (y < FIELD_HEIGHT) return new Point2D.Double(0, y);
-            double x = source.getX() + (FIELD_HEIGHT - source.getY()) / cos(direction);
-            return new Point2D.Double(x, FIELD_HEIGHT - 1);
+    public static Point2D.Double wallIntersection(Point2D.Double source, double direction, double offset) {
+        double cosD = cos(direction);
+        double sinD = sin(direction);
+
+        double minX = offset;
+        double maxX = FIELD_WIDTH - offset;
+        double minY = offset;
+        double maxY = FIELD_HEIGHT - offset;
+
+        double t = Double.POSITIVE_INFINITY;
+
+        if (cosD > 0) {
+            t = min(t, (maxX - source.x) / cosD);
+        } else if (cosD < 0) {
+            t = min(t, (minX - source.x) / cosD);
         }
 
-        if (direction > -PI / 2) {
-            double y = source.getY() + (FIELD_WIDTH - source.getX()) * sin(direction);
-            if (y >= 0) return new Point2D.Double(FIELD_WIDTH - 1, y);
-            double x = source.getX() + (source.getY()) / cos(direction);
-            return new Point2D.Double(x, 0);
+        if (sinD > 0) {
+            t = min(t, (maxY - source.y) / sinD);
+        } else if (sinD < 0) {
+            t = min(t, (minY - source.y) / sinD);
         }
 
-        double y = source.getY() + source.getX() * sin(direction);
-        if (y >= 0) return new Point2D.Double(0, y);
-        double x = source.getX() + source.getY() / cos(direction);
-        return new Point2D.Double(x, 0);
+        return new Point2D.Double(source.x + cosD * t, source.y + sinD * t);
     }
 
     public static double wallDistance(Point2D.Double p) {
@@ -205,16 +220,17 @@ public class TankUtils {
     }
 
     public static double directToWallDistance(Point2D.Double target, double heading) {
-        double cosHeading = cos(heading);
-        double sinHeading = sin(heading);
-
-        Point2D.Double d = new Point2D.Double(target.x, target.y);
-
-        for (int x = 0; pointInBattleField(d, TANK_SIZE / 2); x+=8) {
-            d.x += cosHeading;
-            d.y += sinHeading;
-        }
-
+        Point2D.Double d = wallIntersection(target, heading, TANK_SIZE / 2);
         return d.distance(target);
+    }
+
+    public static Point2D.Double movePoint(Point2D.Double pt, double direction, double distance) {
+        double newX = pt.x + distance * cos(direction);
+        double newY = pt.y + distance * sin(direction);
+        return new Point2D.Double(newX, newY);
+    }
+
+    public static double minMax(double value, double min, double max) {
+        return max(min, min(max, value));
     }
 }

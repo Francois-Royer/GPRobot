@@ -1,6 +1,11 @@
 package gprobot;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -8,20 +13,26 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static gprobot.RobocodeConf.*;
-import static gprobot.RobotCodeUtil.*;
+import static gprobot.RobocodeConf.GET_FITNESS;
+import static gprobot.RobocodeConf.MSG;
+import static gprobot.RobocodeConf.READY;
+import static gprobot.RobocodeConf.ROBOTS_FOLDER;
+import static gprobot.RobocodeConf.SET_OPPONENTS;
+import static gprobot.RobotCodeUtil.copyOrLinkDir;
+import static gprobot.RobotCodeUtil.copyOrLinkFile;
+import static gprobot.RobotCodeUtil.getRunnersDir;
 
 public class BattleControler {
 
     private final Logger log;
     private final int controlerId;
     double fitness;
+    ServerSocket serverSocket;
+    Socket runnerSocket;
     private Process battleRunner;
     private PrintStream controlStream;
     private File workerFolder;
     private Status status;
-    ServerSocket serverSocket;
-    Socket runnerSocket;
 
     public BattleControler(int controlerId) {
         this.controlerId = controlerId;

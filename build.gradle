@@ -63,17 +63,24 @@ tasks.register('copyLib', Copy) {
     dependsOn('shadowJar', 'copyBase')
 }
 
-tasks.register('runGPBase', Exec) {
+tasks.register('runSampleBattle', Exec) {
     workingDir "$robotcode_home"
     environment J2D_D3D: false
     commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/GPBaseSample.battle'
     dependsOn 'copyBase'
 }
 
-tasks.register('runGPBaseDiamond', Exec) {
+tasks.register('runWallBattle', Exec) {
     workingDir "$robotcode_home"
     environment J2D_D3D: false
-    commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/GPBaseDiamond.battle'
+    commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/GPBaseWall.battle'
+    dependsOn 'copyBase'
+}
+
+tasks.register('runDiamondBattle', Exec) {
+    workingDir "$robotcode_home"
+    environment J2D_D3D: false
+    commandLine 'java', '-Xmx512M', '-cp', 'libs/*', '-XX:+IgnoreUnrecognizedVMOptions', '--add-opens=java.base/sun.net.www.protocol.jar=ALL-UNNAMED', '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED', '--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED', '--add-opens=java.desktop/sun.awt=ALL-UNNAMED', 'robocode.Robocode', '-battle', 'battles/Diamond.battle'
     dependsOn 'copyBase'
 }
 

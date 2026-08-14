@@ -18,7 +18,7 @@ public class ClusterGun extends AbstractKdTreeGun {
         if (target.getPatternFormula() == null) return null;
 
         double[] kdPoint = target.getPatternFormula().getPoint();
-        List<KdTree.Entry<List<Move>>> el = target.getPatternFormula().getKdTree().nearestNeighbor(kdPoint, 10, true);
+        List<KdTree.Entry<List<Move>>> el = target.getPatternFormula().getKdTree().nearestNeighbor(kdPoint, 3, true);
 
         return getKdTreeAimingData(target, el);
     }

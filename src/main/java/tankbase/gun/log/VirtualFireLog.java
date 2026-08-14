@@ -5,7 +5,11 @@ import tankbase.gun.Aiming;
 import tankbase.gun.Fire;
 
 import java.awt.geom.Point2D;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static tankbase.Constant.TANK_SIZE;
 import static tankbase.TankUtils.collisionCircleSegment;
@@ -28,7 +32,7 @@ public class VirtualFireLog {
             ITank target = fire.getTarget();
 
             boolean remove = true;
-            if (target.isAlive()) {
+            if (target.isAlive() && target.hasState()) {
                 if (fire.distance(p) < fire.distance(target.getState()) + TANK_SIZE) {
                     Point2D.Double o = fire.getPosition(now + 1);
 

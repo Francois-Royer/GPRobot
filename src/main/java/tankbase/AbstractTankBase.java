@@ -1,34 +1,90 @@
 package tankbase;
 
-import robocode.*;
+import robocode.Bullet;
+import robocode.BulletHitBulletEvent;
+import robocode.BulletHitEvent;
+import robocode.BulletMissedEvent;
+import robocode.DeathEvent;
 import robocode.Event;
+import robocode.HitByBulletEvent;
+import robocode.HitRobotEvent;
+import robocode.RobotDeathEvent;
+import robocode.RoundEndedEvent;
+import robocode.ScannedRobotEvent;
+import robocode.SkippedTurnEvent;
 import tankbase.enemy.Enemy;
 import tankbase.enemy.EnemyDetectedEvent;
-import tankbase.gun.*;
+import tankbase.gun.Aiming;
+import tankbase.gun.AntiSurferGun;
+import tankbase.gun.CircularGun;
+import tankbase.gun.ClusterGun;
+import tankbase.gun.Fire;
+import tankbase.gun.FireStat;
+import tankbase.gun.Gun;
+import tankbase.gun.HeadOnGun;
 import tankbase.wave.Wave;
 import tankbase.wave.WaveLog;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.PrintStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+import static java.lang.Math.tan;
 import static java.util.function.Predicate.not;
-import static robocode.Rules.*;
+import static robocode.Rules.GUN_TURN_RATE_RADIANS;
+import static robocode.Rules.MAX_BULLET_POWER;
+import static robocode.Rules.MAX_VELOCITY;
+import static robocode.Rules.MIN_BULLET_POWER;
+import static robocode.Rules.RADAR_SCAN_RADIUS;
+import static robocode.Rules.getBulletDamage;
+import static robocode.Rules.getBulletSpeed;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
-import static tankbase.Chrono.getChrono;
-import static tankbase.Chrono.resetChrono;
-import static tankbase.Constant.*;
-import static tankbase.FieldMap.*;
-import static tankbase.TankUtils.*;
-import static tankbase.enemy.EnemyDB.*;
-import static tankbase.gun.log.FireLog.*;
-import static tankbase.gun.log.VirtualFireLog.*;
-import static tankbase.wave.WaveLog.*;
+import static tankbase.Constant.MAX_NOT_SCAN_TIME;
+import static tankbase.Constant.MIN_CHANGE_TARGET_TIME;
+import static tankbase.Constant.RADAR_SEARCH_RADIUS;
+import static tankbase.FieldMap.computeDangerMap;
+import static tankbase.FieldMap.computeSafeDestination;
+import static tankbase.FieldMap.getScale;
+import static tankbase.FieldMap.initFieldMap;
+import static tankbase.FieldMap.setBattleZone;
+import static tankbase.TankUtils.computeTurnGun2Target;
+import static tankbase.TankUtils.computeTurnGun2TargetNextPos;
+import static tankbase.TankUtils.getPointAngle;
+import static tankbase.TankUtils.minMax;
+import static tankbase.TankUtils.oppositeAngle;
+import static tankbase.TankUtils.trigoAngle;
+import static tankbase.enemy.EnemyDB.addEnemy;
+import static tankbase.enemy.EnemyDB.countFilteredEnemies;
+import static tankbase.enemy.EnemyDB.filterAndSortEnemies;
+import static tankbase.enemy.EnemyDB.filterEnemies;
+import static tankbase.enemy.EnemyDB.getCloseAliveEnemy;
+import static tankbase.enemy.EnemyDB.getCloseScannedEnemy;
+import static tankbase.enemy.EnemyDB.getEnemy;
+import static tankbase.enemy.EnemyDB.listAllEnemies;
+import static tankbase.gun.log.FireLog.clearFireLog;
+import static tankbase.gun.log.FireLog.getFireByDirection;
+import static tankbase.gun.log.FireLog.getFireLog;
+import static tankbase.gun.log.FireLog.logFire;
+import static tankbase.gun.log.FireLog.removeFire;
+import static tankbase.gun.log.VirtualFireLog.clearVirtualFireLog;
+import static tankbase.gun.log.VirtualFireLog.logVirtualFire;
+import static tankbase.gun.log.VirtualFireLog.updateVirtualFires;
+import static tankbase.wave.WaveLog.clearWaveLog;
+import static tankbase.wave.WaveLog.getWave;
+import static tankbase.wave.WaveLog.getWaves;
+import static tankbase.wave.WaveLog.removeWave;
+import static tankbase.wave.WaveLog.removeWaves;
+import static tankbase.wave.WaveLog.updateWaves;
 
 abstract public class AbstractTankBase extends AbstractCachedTankBase implements ITank {
     private static final List<Gun> guns = new ArrayList<>();
@@ -48,8 +104,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     public Enemy target;
     public Point2D.Double destination;
     public Collection<SearchPoint> searchPoints;
-    private int pathStep = 0;
-
     public double scanDirection = 1;
     public double forward = 1;
     public double turnLeft = 0;
@@ -60,15 +114,19 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     protected Enemy mostLeft;
     protected Enemy mostRight;
     protected Aiming aiming = null;
-    private Enemy prevTarget = null;
-
     protected long aliveCount;
+    long logDate = 0;
+    private final int pathStep = 0;
+    private Enemy prevTarget = null;
     private long scanCount;
     private long prevScanCount;
-
     private boolean alive;
     private boolean running;
     private long lastTargetChange;
+
+    // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // GPBase logic
+    private Fire[] targetFireLog;
 
     protected AbstractTankBase() {
         super();
@@ -76,8 +134,9 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         gpStat = new FireStat();
     }
 
-    // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // GPBase logic
+    private static void putGun(Gun gun) {
+        guns.add(gun);
+    }
 
     // GP Robot overide this method
     public void doGP() {
@@ -203,7 +262,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         double minDistance = Double.POSITIVE_INFINITY;
 
         for (Enemy e : filterEnemies(Enemy::isScanned)) {
-            if (e.getFEnergy() < 0|| e.getTurnAimDatas().isEmpty()) continue;
+            if (e.getFEnergy() < 0 || e.getTurnAimDatas().isEmpty()) continue;
 
             double distance = getState().distance(e.getState());
             double heading = getPointAngle(getState(), e.getState());
@@ -376,7 +435,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                 out.printf("Fire on %s rejected by tolerance, turn remaining=%.02f,  offset=%.02f\n", target.getName(), getTurnGun(), getGunHeadingRadians() - a);
             return;
         }
-
         /*out.printf("aiming: %s->%s at x=%f y=%f \n",
                 aimingData.getGunner().getName(), aimingData.getTarget().getName(),
                 aimingData.getFiringPosition().getX(),
@@ -404,8 +462,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     private void virtualFire() {
-        if (getGunHeat() > 0) return;
-
         filterEnemies(Enemy::isAlive).forEach(e -> {
             e.getTurnAimDatas().forEach(ad -> {
                 //out.printf("new Shell to %.0f, %.0f\n", ad.getFiringPosition().getX(), ad.getFiringPosition().getY());
@@ -464,7 +520,7 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         BIG_BATTLE_FIELD = FIELD_HEIGHT > RADAR_SCAN_RADIUS;
 
         initFieldMap();
-        moveLogMaxSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 1);
+        moveLogMaxSize = (int) (DISTANCE_MAX / getBulletSpeed(MAX_BULLET_POWER) + 2);
         if (BIG_BATTLE_FIELD)
             searchPoints = computeSearchPath();
         updateRobotCache();
@@ -502,10 +558,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         Optional<Fire> of = getFireByDirection(trigoAngle(bhe.getBullet().getHeadingRadians()));
         of.ifPresent(f -> {
             removeFire(f);
-            if (BIG_BATTLE_FIELD && getState().distance(f.getPosition(getTime())) > RADAR_SCAN_RADIUS) {
-                String name = bhe.getName();
-                Enemy enemy = getEnemy(bhe.getName());
+            String name = bhe.getName();
+            Enemy enemy = getEnemy(bhe.getName());
+            if (enemy != null) {
+                enemy.getState().setEnergy(bhe.getEnergy());
+            }
 
+            if (BIG_BATTLE_FIELD && getState().distance(f.getPosition(getTime())) > RADAR_SCAN_RADIUS) {
                 if (enemy == null) {
                     enemy = new Enemy(new EnemyDetectedEvent(bhe, f), name, this);
                     addEnemy(enemy);
@@ -535,12 +594,15 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         Bullet b = bhbe.getHitBullet();
         Point2D.Double p = new Point2D.Double(b.getX(), b.getY());
         Optional<Wave> ow = getWave(b.getName(), p, getTime());
-        ow.ifPresent(WaveLog::removeWave);
+        ow.ifPresent(wave -> {
+            removeWave(wave);
+            wave.getSource().addFEnergy(getBulletDamage(b.getPower()));
+
+        });
 
         Optional<Fire> of = getFireByDirection(trigoAngle(bhbe.getBullet().getHeadingRadians()));
         of.ifPresent(fire -> {
             removeFire(fire);
-            fire.getTarget().addFEnergy(getBulletDamage(bhbe.getBullet().getPower()));
         });
     }
 
@@ -555,17 +617,24 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         Bullet b = hbbe.getBullet();
         Point2D.Double p = new Point2D.Double(b.getX(), b.getY());
         Optional<Wave> ow = getWave(hbbe.getName(), p, getTime());
+        List<Wave> toRemove = new ArrayList<>();
+        List<Wave> toLog = new ArrayList<>();
         ow.ifPresent(wave -> {
             double bulletHeading = trigoAngle(hbbe.getHeadingRadians());
-            double headOn = getPointAngle(wave, wave.getHead());
-            double circular = getPointAngle(wave, wave.getCircular());
-
-            if (abs(headOn - bulletHeading) < abs(circular - bulletHeading))
-                e.fireHead();
-            else
-                e.fireCircular();
+            double headOn = getPointAngle(wave.getWaveStart(), wave.getHead());
+            double circular = getPointAngle(wave.getWaveStart(), wave.getCircular());
+            double ratio = minMax((bulletHeading - headOn) / (circular - headOn), -1, 1);
+            //sysout.printf("%s change angle ratio from %02f to %02f%n", e.getName(), e.getFireAngleRatio(), ratio);
+            e.setFireAngleRatio(ratio);
             removeWave(wave);
+            getWaves().stream().filter(w -> w.getSource() == wave.getSource() && w != wave)
+                    .forEach(w -> {
+                        toLog.add(w.updateWithRatio(ratio));
+                        toRemove.add(w);
+                    });
         });
+        removeWaves(toRemove);
+        toLog.forEach(WaveLog::logWave);
     }
 
     @Override
@@ -614,7 +683,6 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         }
     }
 
-
     // ///////////////////////////////////////////////////////////////////////////////////////
     // target stuff
     public int countTargetFire() {
@@ -624,40 +692,48 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
     }
 
     public double bulletPower(int i) {
-        if (countTargetFire()>i)
+        if (countTargetFire() > i)
             return targetFireLog[i].getAimingData().getFirePower();
         return 0;
     }
 
     public double bulletSpeed(int i) {
-        if (countTargetFire()>i)
+        if (countTargetFire() > i)
             return targetFireLog[i].getVelocity();
         return 0;
     }
 
+    public Point2D.Double bulletPos(int i) {
+        if (countTargetFire() > i)
+            return targetFireLog[i].getPosition(getTime());
+        return getState();
+    }
+
     public double bulletDistance(int i) {
-        if (countTargetFire()>i)
+        if (countTargetFire() > i)
             return targetFireLog[i].getPosition(getTime()).distance(target.getState());
         return 0;
     }
 
+    public double bulletHeading(int i) {
+        if (countTargetFire() > i)
+            return targetFireLog[i].getDirection();
+        return 0;
+    }
+
     public double bulletRelativeAngle(int i) {
-        if (countTargetFire()>i) {
-            double a= getPointAngle(targetFireLog[i].getPosition(getTime()), target.getState());
-            return normalRelativeAngle(target.getState().getHeadingRadians()-a);
+        if (countTargetFire() > i) {
+            double a = getPointAngle(targetFireLog[i].getPosition(getTime()), target.getState());
+            return normalRelativeAngle(target.getState().getHeadingRadians() - a);
         }
         return 0;
     }
 
-    long logDate=0;
-    private Fire[] targetFireLog;
     private void checkFireLog() {
         if (getTime() != logDate && target != null) {
             targetFireLog = getFireLog(target.getName()).toArray(new Fire[0]);
         }
     }
-
-
 
     // ///////////////////////////////////////////////////////////////////////////////////////
     // Private stuff
@@ -702,6 +778,22 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
                         fs.getDommageCostRatio() * 100);
             });
         });
+
+        /*listAllEnemies().forEach(enemy -> {
+            double hitRate = 0;
+            int fireCount = 0;
+            double damageCostRatio = 0;
+            for (Gun gun : guns) {
+                FireStat fs = gun.getEnemyRoundFireStat(enemy);
+                hitRate += fs.getHitRate();
+                fireCount += fs.getFireCount();
+                damageCostRatio += fs.getDommageCostRatio();
+            }
+            hitRate /= guns.size();
+            damageCostRatio /= guns.size();
+            out.printf("==== %s hitrate = %.0f%%(%d) / %d, dmg/cost=%.0f%%%n", enemy.getName(), hitRate * 100, (int) (hitRate * fireCount), fireCount, damageCostRatio * 100);
+            out.printf("==== %s hitMe = %d, dmgt=%.0f%%%n", enemy.getName(), enemy.getHitMe(), enemy.getDamageMe());
+        });*/
         resetRoundStat();
     }
 
@@ -712,17 +804,13 @@ abstract public class AbstractTankBase extends AbstractCachedTankBase implements
         return getState();
     }
 
-    private static void putGun(Gun gun) {
-        guns.add(gun);
-    }
-
     private void setupGuns() {
         if (guns.size() == 0) {
             headOnGunner = new HeadOnGun(this);
-            putGun(new HeadOnGun(this));
-            //putGun(new CircularGun(this));
-            //putGun(new ClusterGun(this));
-            //putGun(new AntiSurferGun(this));
+            //putGun(headOnGunner);
+            putGun(new CircularGun(this));
+            putGun(new ClusterGun(this));
+            putGun(new AntiSurferGun(this));
         }
     }
 

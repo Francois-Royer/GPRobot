@@ -1,13 +1,16 @@
 package tankbase.enemy;
 
 import robocode.Rules;
-import tankbase.*;
+import tankbase.AbstractTankBase;
+import tankbase.FieldMap;
+import tankbase.ITank;
+import tankbase.KDMove;
+import tankbase.Move;
+import tankbase.TankState;
 import tankbase.gun.Aiming;
-import tankbase.gun.Fire;
-import tankbase.gun.kdformula.KDFormula;
-import tankbase.gun.kdformula.Cluster;
 import tankbase.gun.kdformula.AntiSurfer;
-import tankbase.gun.log.FireLog;
+import tankbase.gun.kdformula.Cluster;
+import tankbase.gun.kdformula.KDFormula;
 import tankbase.wave.Wave;
 
 import java.awt.geom.Point2D;
@@ -15,32 +18,35 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static java.lang.Math.*;
-import static robocode.Rules.*;
+import static java.lang.Math.signum;
+import static robocode.Rules.MAX_BULLET_POWER;
+import static robocode.Rules.MIN_BULLET_POWER;
 import static robocode.util.Utils.normalAbsoluteAngle;
-import static tankbase.AbstractTankBase.*;
+import static tankbase.AbstractTankBase.DISTANCE_MAX;
+import static tankbase.AbstractTankBase.GUN_COOLING_RATE;
+import static tankbase.AbstractTankBase.sysout;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
-import static tankbase.Constant.*;
-import static tankbase.TankUtils.*;
+import static tankbase.Constant.TANK_MAX_DANGER_RADIUS;
+import static tankbase.Constant.TANK_SIZE;
+import static tankbase.TankUtils.collisionCircleSegment;
+import static tankbase.TankUtils.getPointAngle;
+import static tankbase.TankUtils.wallIntersection;
+import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.gun.log.FireLog.getFireLog;
 import static tankbase.wave.WaveLog.logWave;
-import static tankbase.enemy.EnemyDB.filterEnemies;
-import static tankbase.enemy.EnemyDB.listAllEnemies;
 
 
 public class Enemy implements ITank {
     public static final int MAX_GUN_HEAT = 3;
 
     private final String name;
-    private final LinkedList<KDMove> KDMoveLog = new LinkedList<>();
+    private final LinkedList<KDMove> kDMoveLog = new LinkedList<>();
     private final Cluster cluster;
     private final AntiSurfer antiSurfer;
-    int fireHead = 1;
-    int fireCircular = 0;
-    int FIRE_STAT_COUNT_MAX = 3;
+    double fireAngleRatio = 0;
     private TankState state;
     private TankState prevState;
-    private TankState prevScannedTankState;
+    private TankState prevScannedState;
     private AbstractTankBase tankBase;
     private List<Aiming> turnAimDatas = new ArrayList<>();
     private long lastScan;
@@ -74,44 +80,36 @@ public class Enemy implements ITank {
 
         computeFEnergy();
 
-        if (prevScannedTankState != null) {
+        if (prevScannedState != null) {
             checkEnemyFire();
-            if (state.getVelocity() == 0 || signum(prevScannedTankState.getVelocity()) != signum(state.getVelocity()))
+            if (state.getVelocity() == 0 && prevScannedState.getVelocity() != 0 ||
+                    state.getVelocity() != 0 && prevScannedState.getVelocity() != 0 && signum(prevScannedState.getVelocity()) != signum(state.getVelocity()))
                 lastStop = state.getTime();
 
-            if (state.getTurnRate() == 0 || signum(prevScannedTankState.getTurnRate()) != signum(state.getTurnRate()))
+            if (state.getTurnRate() == 0 || signum(prevScannedState.getTurnRate()) != signum(state.getTurnRate()))
                 lastChangeDirection = state.getTime();
 
             lastVelocityChange = (state.getAcceleration() == 0) ? lastVelocityChange : state.getTime();
 
-            if (prevScannedTankState != null) {
-                long deltaTime = state.getTime() - prevScannedTankState.getTime();
-                double distance = state.distance(prevScannedTankState);
-                double turn = state.getHeadingRadians() - prevScannedTankState.getHeadingRadians();
-                KDMoveLog.add(new KDMove(cluster.getPoint(), turn, distance * signum(state.getVelocity()), deltaTime));
+            long deltaTime = state.getTime() - prevScannedState.getTime();
+            double distance = state.distance(prevScannedState);
+            double turn = state.getHeadingRadians() - prevScannedState.getHeadingRadians();
+            kDMoveLog.add(new KDMove(cluster.getPoint(), antiSurfer.getPoint(), turn, distance * signum(state.getVelocity()), deltaTime));
 
-            }
-
-            if (KDMoveLog.size() > tankBase.moveLogMaxSize) {
-                List<KDMove> log = new ArrayList<>(KDMoveLog.subList(KDMoveLog.size() - tankBase.moveLogMaxSize, KDMoveLog.size()));
+            if (kDMoveLog.size() > tankBase.moveLogMaxSize) {
+                List<KDMove> log = new ArrayList<>(kDMoveLog.subList(0, tankBase.moveLogMaxSize));
                 KDMove m = log.get(0);
                 List<Move> mLog = log.stream().map(KDMove::getMove).toList();
                 cluster.addPoint(m.getClusterKdPoint(), mLog);
-                if (m.getAntiSurferKdPoint() != null)
-                    antiSurfer.addPoint(m.getAntiSurferKdPoint(), mLog);
-                KDMoveLog.removeFirst();
+                antiSurfer.addPoint(m.getAntiSurferKdPoint(), mLog);
+                kDMoveLog.removeFirst();
             }
         }
 
-        prevScannedTankState = state;
-        lastScan = state.getTime();
+        prevScannedState = state;
         if (INFO_LEVEL > 2) {
             sysout.printf("%s scanned %s%n", name, state);
         }
-    }
-
-    public void setAntiSurferPoint(Fire fire) {
-        KDMoveLog.get(KDMoveLog.size()-1).setAntiSurferKdPoint(antiSurfer.getPoint());
     }
 
     void computeFEnergy() {
@@ -120,9 +118,9 @@ public class Enemy implements ITank {
     }
 
     public void move() {
-        if (state == null) return;
+        if (state == null || state.getTime() + 1 < tankBase.getTime()) return;
         TankState newState = state.extrapolateNextState();
-        if (newState.getTime() <= tankBase.getTime()) {
+        if (newState.getTime() <= tankBase.getTime() && newState.getTime() > state.getTime()) {
             prevState = state;
             state = newState;
         }
@@ -130,7 +128,7 @@ public class Enemy implements ITank {
 
     public void reset() {
         alive = true;
-        state = prevScannedTankState = prevState = null;
+        state = prevScannedState = prevState = null;
     }
 
     public void die() {
@@ -138,17 +136,17 @@ public class Enemy implements ITank {
     }
 
     private void checkEnemyFire() {
-        if (state.getGunHeat() > 0 || prevScannedTankState == null)
+        if (state.getGunHeat() > GUN_COOLING_RATE || prevScannedState == null)
             return;
 
-        double drop = prevScannedTankState.getEnergy() - state.getEnergy();
+        double drop = prevScannedState.getEnergy() - state.getEnergy();
+        //sysout.printf("drop=%.02f\n",drop);
         if (drop < MIN_BULLET_POWER || drop > MAX_BULLET_POWER)
             return;
 
         state.setGunHeat(Rules.getGunHeat(drop));
         long waveStart = prevState.getTime() + (long) (prevState.getGunHeat() / GUN_COOLING_RATE);
-        Wave w = new Wave(tankBase, drop, waveStart, this, fireHead, fireCircular);
-
+        Wave w = new Wave(tankBase, drop, waveStart, this, fireAngleRatio);
         logWave(w);
     }
 
@@ -177,11 +175,7 @@ public class Enemy implements ITank {
     }
 
     public boolean isScanned() {
-        return prevScannedTankState != null && alive;
-    }
-
-    public boolean hasState() {
-        return state !=  null;
+        return prevScannedState != null && alive;
     }
 
     public double getFEnergy() {
@@ -224,10 +218,6 @@ public class Enemy implements ITank {
         hitMe();
     }
 
-    public long getLastUpdateDelta(long now) {
-        return tankBase.getTime() - now;
-    }
-
     public long getLastScanDelta() {
         return tankBase.getTime() - lastScan;
     }
@@ -242,19 +232,7 @@ public class Enemy implements ITank {
 
     @Override
     public List<KDMove> getMoveLog() {
-        return KDMoveLog;
-    }
-
-    public double getWallDistanceX() {
-        return min(state.getX(), FIELD_WIDTH - state.getX());
-    }
-
-    public double getWallDistanceY() {
-        return min(state.getY(), FIELD_HEIGHT - state.getY());
-    }
-
-    public double getWallDistance() {
-        return min(getWallDistanceX(), getWallDistanceY());
+        return kDMoveLog;
     }
 
     public double getForwardWallDistance() {
@@ -289,23 +267,6 @@ public class Enemy implements ITank {
 
     }
 
-
-    public void fireHead() {
-        fireHead++;
-        if (fireHead + fireCircular > FIRE_STAT_COUNT_MAX) {
-            if (fireHead > FIRE_STAT_COUNT_MAX) fireHead--;
-            else fireCircular--;
-        }
-    }
-
-    public void fireCircular() {
-        fireCircular++;
-        if (fireHead + fireCircular > FIRE_STAT_COUNT_MAX) {
-            if (fireCircular > FIRE_STAT_COUNT_MAX) fireCircular--;
-            else fireHead--;
-        }
-    }
-
     public List<Aiming> getTurnAimDatas() {
         return turnAimDatas;
     }
@@ -315,21 +276,29 @@ public class Enemy implements ITank {
     }
 
     public Aiming getBestAiming() {
-        double maxhitrate = 0;
+        double maxHitRate = 0;
         Aiming aiming = null;
         for (Aiming ad : turnAimDatas) {
             double hr = ad.getGun().getEnemyRoundFireStat(this).getHitRate();
-            if ((hr > maxhitrate) || aiming == null) {
+            if ((hr > maxHitRate) || aiming == null) {
                 aiming = ad;
-                maxhitrate = hr;
+                maxHitRate = hr;
             }
         }
         return aiming;
     }
 
+    public double getFireAngleRatio() {
+        return fireAngleRatio;
+    }
+
+    public void setFireAngleRatio(double fireAngleRatio) {
+        this.fireAngleRatio = fireAngleRatio;
+    }
+
     @Override
     public String toString() {
-        return String.format("Enemy %s alive=%b fErnergy=%.1f, damageMe=%.1f %s", name, alive, fEnergy, damageMe, state);
+        return String.format("Enemy %s alive=%b fEnergy=%.1f, damageMe=%.1f %s", name, alive, fEnergy, damageMe, state);
     }
 
     @Override
@@ -342,7 +311,6 @@ public class Enemy implements ITank {
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        return result;
+        return name.hashCode();
     }
 }

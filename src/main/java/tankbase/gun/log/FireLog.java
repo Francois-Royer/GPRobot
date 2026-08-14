@@ -1,6 +1,5 @@
 package tankbase.gun.log;
 
-import tankbase.enemy.Enemy;
 import tankbase.gun.Fire;
 
 import java.util.HashSet;
@@ -18,7 +17,7 @@ public class FireLog {
     public static List<Fire> getFireLog(String targetName) {
         return log.stream()
                 .filter(s -> s.getTarget().getName().equals(targetName))
-                .sorted((s1, s2) -> Long.compare(s2.getStart(), s1.getStart()))
+                .sorted((s1, s2) -> Long.compare(s1.getStart(), s2.getStart()))
                 .toList();
     }
 
@@ -27,7 +26,7 @@ public class FireLog {
     }
 
     public static boolean logFire(Fire fire) {
-        ((Enemy)fire.getTarget()).setAntiSurferPoint(fire);
+        //((Enemy)fire.getTarget()).setAntiSurferPoint(fire);
         return log.add(fire);
     }
 

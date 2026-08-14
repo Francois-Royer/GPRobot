@@ -8,7 +8,9 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.Math.*;
+import static java.lang.Math.abs;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 import static robocode.Rules.MIN_BULLET_POWER;
 import static robocode.Rules.getBulletSpeed;
 import static tankbase.Constant.TANK_SIZE;
@@ -23,17 +25,19 @@ public abstract class AbstractKdTreeGun extends AbtractGun {
 
 
     public Aiming getKdTreeAimingData(ITank target, List<KdTree.Entry<List<Move>>> el) {
-        double firePower = getFirePower(target);
+        if (el.isEmpty()) return null;
         Point2D.Double[] firingPosition = null;
         List<Point2D.Double> expectedMoves;
-        if (el.isEmpty()) return null;
+        double firePower = getFirePower(target);
         while (firePower >= MIN_BULLET_POWER) {
             for (KdTree.Entry<List<Move>> kdEntry : el) {
                 expectedMoves = new ArrayList<>();
-                List<Move> movesLog = kdEntry.value;
+                List<Move> movesLog = kdEntry.value.subList(1, kdEntry.value.size());
                 firingPosition = getFiringPosition(target, firePower, movesLog, expectedMoves);
-                if (firingPosition != null)
+                if (firingPosition != null) {
+                    //sysout.printf("%s aim %s, kdistance=%f%n", getName(), target.getName(), kdEntry.distance);
                     return new Aiming(this, target, firingPosition[0], firingPosition[1], firePower, expectedMoves, kdEntry);
+                }
             }
             firePower -= .1;
         }
@@ -64,8 +68,9 @@ public abstract class AbstractKdTreeGun extends AbtractGun {
             int step = 0;
             double dir = target.getState().getHeadingRadians();
 
-            while (moveDuration < time + 1 && step < movesLog.size()) {
+            while (moveDuration < time && step < movesLog.size()) {
                 Move m = movesLog.get(step++);
+                moveDuration += m.duration();
                 long overtime = moveDuration - time;
                 double dist = m.distance();
                 dir += m.turn();
@@ -75,18 +80,17 @@ public abstract class AbstractKdTreeGun extends AbtractGun {
                     dir -= m.turn() * overtime / m.duration();
                 }
 
-                if (moveDuration == time)
+                if (moveDuration >= time)
                     prevPoint = clonePoint(firePoint);
 
                 firePoint.x += dist * cos(dir);
                 firePoint.y += dist * sin(dir);
 
-                if (!pointInBattleField(firePoint, TANK_SIZE / 2.5))
+                if (!pointInBattleField(firePoint, TANK_SIZE / 2.01))
                     return null;
 
 
                 predMoves.add(clonePoint(firePoint));
-                moveDuration += m.duration();
             }
         }
 

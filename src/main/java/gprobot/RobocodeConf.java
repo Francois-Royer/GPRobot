@@ -3,7 +3,6 @@ package gprobot;
 import robocode.control.BattlefieldSpecification;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -61,18 +60,17 @@ public class RobocodeConf {
     static String[] skilledRobots = {
             "voidious.Diamond"
     };
+    static String[] opponents = skilledRobots; //concat(sampleRobots, skilledRobots);
+
+    private RobocodeConf() {
+        // Const class
+    }
 
     public static String[] concat(String[] a, String[] b) {
         String[] c = new String[a.length + b.length];
         System.arraycopy(a, 0, c, 0, a.length);
         System.arraycopy(b, 0, c, a.length, b.length);
         return c;
-    }
-
-    static String[] opponents = skilledRobots; //concat(sampleRobots, skilledRobots);
-
-    private RobocodeConf() {
-        // Const class
     }
 
     public enum BattleType {

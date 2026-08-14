@@ -28,4 +28,8 @@ public interface ITank {
     long getLastChangeDirection();
 
     long getLastScan();
+
+    default boolean hasState() {
+        return this.getState() != null;
+    }
 }

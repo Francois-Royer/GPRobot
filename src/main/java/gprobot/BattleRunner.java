@@ -17,13 +17,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.file.FileSystems;
-import java.security.*;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static gprobot.RobocodeConf.*;
+import static gprobot.RobocodeConf.BattleType;
+import static gprobot.RobocodeConf.GET_FITNESS;
+import static gprobot.RobocodeConf.MSG;
+import static gprobot.RobocodeConf.READY;
+import static gprobot.RobocodeConf.ROUNDS;
+import static gprobot.RobocodeConf.SET_OPPONENTS;
+import static gprobot.RobocodeConf.TARGET_PACKAGE;
+import static gprobot.RobocodeConf.battleType;
+import static gprobot.RobocodeConf.opponents;
 import static gprobot.RobotCodeUtil.updateRunner;
 
 public class BattleRunner {
@@ -63,7 +70,7 @@ public class BattleRunner {
             + result.getRamDamageBonus();*/
         //return result.getScore();
         return result.getBulletDamage()
-            + result.getBulletDamageBonus();
+                + result.getBulletDamageBonus();
 
     }
 
@@ -126,7 +133,7 @@ public class BattleRunner {
                 .mapToDouble(br -> getScore(br))
                 .sum();
 
-        return results.length > 1 ? botScore/(results.length-1)/100 : botScore/100;
+        return results.length > 1 ? botScore / (results.length - 1) / 100 : botScore / 100;
     }
 
 

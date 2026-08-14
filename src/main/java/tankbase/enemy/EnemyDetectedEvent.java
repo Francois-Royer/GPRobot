@@ -11,14 +11,16 @@ import static tankbase.TankUtils.getPointAngle;
 import static tankbase.TankUtils.trigoAngle;
 
 public class EnemyDetectedEvent {
+    private final String name;
     private double heading;
-    private double bearing;
-    private double distance;
+    private final double bearing;
+    private final double distance;
     private double velocity;
-    private double energy;
-    private long time;
+    private final double energy;
+    private final long time;
 
     public EnemyDetectedEvent(ScannedRobotEvent sre) {
+        this.name = sre.getName();
         this.time = sre.getTime();
         this.heading = trigoAngle(sre.getHeadingRadians());
         this.bearing = sre.getBearingRadians();
@@ -28,6 +30,7 @@ public class EnemyDetectedEvent {
     }
 
     public EnemyDetectedEvent(BulletHitEvent bhe, Fire fire) {
+        this.name = bhe.getName();
         this.time = bhe.getTime();
         Point2D.Double position = fire.getPosition(time);
         TankState firer = fire.getAimingData().getGun().getFirer().getState();
@@ -43,6 +46,10 @@ public class EnemyDetectedEvent {
         this(bhe, fire);
         this.heading = prev.getHeadingRadians();
         this.velocity = prev.getVelocity();
+    }
+
+    public String getName() {
+        return name;
     }
 
     public double getHeadingRadians() {

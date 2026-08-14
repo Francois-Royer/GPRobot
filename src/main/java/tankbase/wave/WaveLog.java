@@ -2,8 +2,13 @@ package tankbase.wave;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static tankbase.Constant.TANK_SIZE;
 
@@ -29,12 +34,18 @@ public class WaveLog {
     }
 
     public static void updateWaves(Point2D.Double tankPos, long now) {
-        List<Wave> toRemove = log.stream().filter(w -> w.getDistance(now) > w.distance(tankPos) + TANK_SIZE / 2).toList();
+        List<Wave> toRemove = log.stream().filter(w ->
+                w.getDistance(now) > w.getWaveStart().distance(tankPos) + TANK_SIZE / 2
+        ).toList();
         toRemove.forEach(log::remove);
     }
 
     public static boolean removeWave(Wave wave) {
         return log.remove(wave);
+    }
+
+    public static boolean removeWaves(Collection<Wave> waves) {
+        return log.removeAll(waves);
     }
 
     public static void clearWaveLog() {

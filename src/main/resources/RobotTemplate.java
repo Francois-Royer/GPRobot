@@ -1,18 +1,15 @@
 package sample;
 
-import tankbase.TankBase;
-import java.lang.Math;
-import static java.lang.Math.*;
-import static tankbase.Constant.*;
-import static tankbase.TankUtils.*;
-import static robocode.Rules.*;
+import static tankbase.TankUtils.getPointAngle;
 
 
-public class %s extends TankBase {
+public class %s extends
+
+TankBase {
 
     @Override
     public void doGP () {
-        firePower = avoidNan( %s, 0);
-        turnGunLeft = getPointAngle(getState(), target.getState()) + avoidNan( %s, 0);
+        firePower = avoidNan( % s, 0);
+        turnGunLeft = getPointAngle(getState(), target.getState()) + avoidNan( % s, 0);
     }
 }

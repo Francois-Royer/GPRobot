@@ -13,7 +13,7 @@ public class Chrono {
     public static void getChrono(String msg) {
         long now = System.nanoTime();
 
-        sysout.printf("%s: %d (%d from begin)%n", msg, now-inter,now-start);
+        sysout.printf("%s: %d (%d from begin)%n", msg, now - inter, now - start);
         inter = now;
     }
 }

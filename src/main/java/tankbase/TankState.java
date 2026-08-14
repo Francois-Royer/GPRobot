@@ -4,21 +4,30 @@ import tankbase.enemy.EnemyDetectedEvent;
 
 import java.awt.geom.Point2D;
 
-import static java.lang.Math.*;
-import static robocode.Rules.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.cos;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.signum;
+import static java.lang.Math.sin;
+import static java.lang.Math.toDegrees;
+import static robocode.Rules.ACCELERATION;
+import static robocode.Rules.DECELERATION;
+import static robocode.Rules.MAX_VELOCITY;
+import static robocode.Rules.getTurnRateRadians;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static robocode.util.Utils.normalRelativeAngle;
 import static tankbase.AbstractTankBase.GUN_COOLING_RATE;
 import static tankbase.Constant.TANK_SIZE;
-import static tankbase.TankUtils.checkMinMax;
 import static tankbase.TankUtils.pointInBattleField;
 import static tankbase.enemy.Enemy.MAX_GUN_HEAT;
 
 public class TankState extends Point2D.Double {
     private final double headingRadians;
-    private final double velocity;
     private final int others;
     private final long time;
+    private final double velocity;
     private boolean isDecelerate;
     private double acceleration;
     private double energy;
@@ -82,26 +91,39 @@ public class TankState extends Point2D.Double {
             gunHeat = newGunHeat > 0 ? newGunHeat : 0;
             vmax = max(previous.vmax, vmax);
             vmin = min(previous.vmin, vmin);
+            //sysout.printf("%s accel=%02f, velocity=%02f%n", ede.getName(), acceleration, velocity);
         }
     }
 
-    // Extrapolate next TankState based on current state return null if out of battlefield (hit wall)
+    // Extrapolate next TankState based on current state return clone of this if next is out of battlefield (hit wall)
     public TankState extrapolateNextState() {
-        if (!(energy == 0 || acceleration == 0 && velocity == 0 && turnRate == 0)) {
-            double nextVelocity = checkMinMax(velocity + acceleration, max(vmin, -MAX_VELOCITY), min(vmax, MAX_VELOCITY));
-            double nextAcceleration = nextVelocity - velocity;
+        return extrapolateNextState(true);
+    }
+
+    public TankState extrapolateNextState(boolean wall) {
+        if (!(energy == 0 || acceleration == 0 && velocity == 0)) {
+            //sysout.printf("extra accel=%02f, velocity=%02f%n", acceleration, velocity);
+
+            double nextX = x + velocity * cos(headingRadians);
+            double nextY = y + velocity * sin(headingRadians);
             double nextHeading = headingRadians + min(abs(turnRate), getTurnRateRadians(velocity)) * signum(turnRate);
-            double nextX = x + nextVelocity * cos(nextHeading);
-            double nextY = y + nextVelocity * sin(nextHeading);
+            double nextVelocity = velocity + acceleration;
+            if (abs(nextVelocity) > MAX_VELOCITY)
+                nextVelocity = velocity;
+            double nextAcceleration = acceleration;
             double nextGunHeat = gunHeat > 0 ? gunHeat - GUN_COOLING_RATE : 0;
 
-            if (pointInBattleField(new Point2D.Double(nextX, nextY), TANK_SIZE / 2.5)) {
+            if (isDecelerate() && signum(nextVelocity) != signum(velocity)) {
+                acceleration = ACCELERATION * signum(acceleration);
+            }
+
+            if (!wall || pointInBattleField(new Point2D.Double(nextX, nextY), TANK_SIZE / 2.1)) {
                 return new TankState(nextX, nextY, nextHeading, gunHeadingRadians, turnRemaining, nextVelocity, nextGunHeat, energy, others,
                         time + 1, nextAcceleration, turnRate, vmax, vmin);
             }
         }
-        return new TankState(x, y, headingRadians, gunHeadingRadians, turnRemaining, velocity, gunHeat, energy, others, time + 1,
-                acceleration, turnRate, vmax, vmin);
+
+        return this;
     }
 
     public double getHeadingRadians() {
@@ -173,8 +195,12 @@ public class TankState extends Point2D.Double {
         if (previous == null) return 0;
         long deltaTime = time - previous.time;
         if (deltaTime <= 0) return 0;
-        isDecelerate = abs(velocity - previous.getVelocity()) > ACCELERATION;
         acceleration = (velocity - previous.velocity) / deltaTime;
+        isDecelerate = abs(acceleration) > ACCELERATION;
+        if (abs(acceleration) > DECELERATION && velocity == 0) {
+            // hit something
+            acceleration = 0;
+        }
         turnRate = (headingRadians - previous.headingRadians) / deltaTime;
         return deltaTime;
     }

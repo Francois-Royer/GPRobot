@@ -7,7 +7,10 @@ import tankbase.wave.Wave;
 import java.awt.*;
 import java.awt.geom.Point2D;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.toDegrees;
 import static robocode.Rules.MAX_BULLET_POWER;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.Constant.TANK_SIZE_INT;
@@ -25,7 +28,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     boolean drawAiming = true;
     boolean drawAimPoint = false;
     boolean drawMap = true;
-    boolean drawEnemy = true;
+    boolean drawEnemy = false;
     boolean drawFire = false;
     boolean drawWave = false;
 
@@ -55,16 +58,16 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     public static void drawWave(Graphics2D g2D, Wave w, long tick) {
         int waveArc = (int) (toDegrees(w.getArc()));
         int d = (int) w.getDistance(tick);
-        int a = (450 - (int) (normalAbsoluteAngle(w.direction) * 180 / PI)) % 360;
+        int a = (450 - (int) (normalAbsoluteAngle(w.getDirection()) * 180 / PI)) % 360;
         int s = d - 5;
         int e = d + 5;
         g2D.drawArc((int) w.x - d, (int) w.y - d, 2 * d, 2 * d, a - waveArc / 2, waveArc);
-        g2D.drawLine((int) (w.x /*+ s * cos(w.direction)*/), (int) (w.y /*+ s * sin(w.direction)*/),
-                (int) (w.x + e * cos(w.direction)), (int) (w.y + e * sin(w.direction)));
-        g2D.drawLine((int) (w.x + s * cos(w.direction + w.getArc() / 2)), (int) (w.y + s * sin(w.direction + w.getArc() / 2)),
-                (int) (w.x + e * cos(w.direction + w.getArc() / 2)), (int) (w.y + e * sin(w.direction + w.getArc() / 2)));
-        g2D.drawLine((int) (w.x + s * cos(w.direction - w.getArc() / 2)), (int) (w.y + s * sin(w.direction - w.getArc() / 2)),
-                (int) (w.x + e * cos(w.direction - w.getArc() / 2)), (int) (w.y + e * sin(w.direction - w.getArc() / 2)));
+        g2D.drawLine((int) (w.x /*+ s * cos(w.getDirection())*/), (int) (w.y /*+ s * sin(w.getDirection())*/),
+                (int) (w.x + e * cos(w.getDirection())), (int) (w.y + e * sin(w.getDirection())));
+        g2D.drawLine((int) (w.x + s * cos(w.getDirection() + w.getArc() / 2)), (int) (w.y + s * sin(w.getDirection() + w.getArc() / 2)),
+                (int) (w.x + e * cos(w.getDirection() + w.getArc() / 2)), (int) (w.y + e * sin(w.getDirection() + w.getArc() / 2)));
+        g2D.drawLine((int) (w.x + s * cos(w.getDirection() - w.getArc() / 2)), (int) (w.y + s * sin(w.getDirection() - w.getArc() / 2)),
+                (int) (w.x + e * cos(w.getDirection() - w.getArc() / 2)), (int) (w.y + e * sin(w.getDirection() - w.getArc() / 2)));
     }
 
     @Override
@@ -107,7 +110,7 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
     @Override
     public void onPaint(Graphics2D g2D) {
         if (drawEnemy) paintEnemies(g2D);
-        if (aiming != null && drawAiming) paintAiming(g2D);
+        if (drawAiming) paintAiming(g2D);
         if (drawWave) paintWaves(g2D);
         if (drawFire) paintShells(g2D);
         if (drawAimPoint) paintFirePoints(g2D);
@@ -126,11 +129,21 @@ public abstract class AbstractTankDrawingBase extends AbstractTankBase implement
                 drawCircle(g2D, Color.YELLOW, state, de);
             else
                 drawCircle(g2D, Color.PINK, state, de);
+            paintCircularMoving(g2D, state);
         });
         drawCircle(g2D, Color.MAGENTA, getState(), TANK_SIZE_INT);
     }
 
+    private void paintCircularMoving(Graphics2D g2D, TankState state) {
+        g2D.setColor(Color.YELLOW);
+        for (int tick = 0; tick < 15; tick++) {
+            state = state.extrapolateNextState();
+            drawFillCircle(g2D, state, 5);
+        }
+    }
+
     private void paintAiming(Graphics2D g2D) {
+        if (aiming == null) return;
         g2D.setColor(Color.YELLOW);
         for (Point2D.Double p : aiming.getExpectedMoves())
             drawFillCircle(g2D, p, 5);

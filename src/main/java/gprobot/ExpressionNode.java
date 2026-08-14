@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static gprobot.RobocodeConf.*;
+import static gprobot.RobocodeConf.MAX_DEPTH;
+import static gprobot.RobocodeConf.MIN_DEPTH;
+import static gprobot.RobocodeConf.random;
 
 public class ExpressionNode implements Serializable {
     static final double PROB_TERM_UNIV = 0.35;

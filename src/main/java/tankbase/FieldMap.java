@@ -8,17 +8,26 @@ import java.awt.geom.Point2D;
 import java.util.Collection;
 import java.util.Collections;
 
-import static java.lang.Math.*;
-import static tankbase.AbstractTankBase.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+import static tankbase.AbstractTankBase.BIG_BATTLE_FIELD;
+import static tankbase.AbstractTankBase.FIELD_HEIGHT;
+import static tankbase.AbstractTankBase.FIELD_WIDTH;
+import static tankbase.AbstractTankBase.sysout;
 import static tankbase.AbstractTankDrawingBase.INFO_LEVEL;
 import static tankbase.Constant.BORDER_OFFSET;
-import static tankbase.TankUtils.*;
+import static tankbase.Constant.TANK_SIZE;
+import static tankbase.TankUtils.collisionCircleSegment;
+import static tankbase.TankUtils.listClosePoint;
+import static tankbase.TankUtils.range;
 import static tankbase.enemy.EnemyDB.filterEnemies;
 import static tankbase.wave.WaveLog.getWaves;
 
 public class FieldMap {
     private static int totalFieldZone = 6000;
-    private static int dangerRadius = 16;
+    private static int dangerRadius = 20;
     private static boolean fullMap = false;
     private static int width;
     private static int height;
@@ -31,6 +40,9 @@ public class FieldMap {
     private static boolean forceRebuildZone;
     private static Point zoneCenter;
     private static double zoneRadius;
+
+    private FieldMap() {
+    }
 
     public static void initFieldMap() {
         scale = sqrt(FIELD_WIDTH * FIELD_HEIGHT / totalFieldZone);
@@ -87,13 +99,14 @@ public class FieldMap {
             Point2D.Double position = new Point2D.Double(x, y);
             // add danger if collision with enemy
             d += enemies.stream().filter(e -> e.isAlive() &&
-                    collisionCircleSegment(e.getState(), Constant.TANK_SIZE * 1.1, state,
+                    collisionCircleSegment(e.getState(), TANK_SIZE * 1.1, state,
                             position)).mapToDouble(e -> 100).sum();
             if (d < danger) {
                 danger = d;
                 safePosition = position;
             }
         }
+
         return safePosition;
     }
 
@@ -127,7 +140,6 @@ public class FieldMap {
         return height;
     }
 
-
     public static double getScale() {
         return scale;
     }
@@ -136,10 +148,10 @@ public class FieldMap {
         fullMap = !fullMap;
         if (fullMap) {
             totalFieldZone = 1500;
-            dangerRadius = 8;
+            dangerRadius = 10;
         } else {
             totalFieldZone = 6000;
-            dangerRadius = 16;
+            dangerRadius = 20;
         }
         initFieldMap();
     }
@@ -178,7 +190,7 @@ public class FieldMap {
     private static void computeNearDangerMap(Collection<Enemy> enemies, double maxEnemyDamage, long now,
                                              TankState state) {
         clear();
-        maxDanger = 1;
+        maxDanger = -1;
         Point gp = new Point((int) (state.getX() / scale), (int) (state.getY() / scale));
         points = listClosePoint(gp, dangerRadius, width, height);
         points.forEach(p -> {
@@ -186,8 +198,12 @@ public class FieldMap {
             for (Enemy enemy : enemies)
                 if (enemy.getLastScan() > 0)
                     danger += enemy.getDanger(p.x, p.y, maxEnemyDamage);
+            if (Double.isNaN(danger))
+                sysout.printf("computeNearDangerMap: enemy danger is NaN at point (%d, %d)\n", p.x, p.y);
             for (Wave wave : getWaves())
                 danger += wave.getDanger(p.x, p.y, now);
+            if (Double.isNaN(danger))
+                sysout.printf("computeNearDangerMap: wave danger is NaN at point (%d, %d)\n", p.x, p.y);
             maxDanger = max(danger, maxDanger);
             map[p.x][p.y] = danger;
         });
@@ -219,16 +235,13 @@ public class FieldMap {
             }
 
         if (INFO_LEVEL > 1)
-            sysout.println(String.format("FieldMap[scale=%.2f, width=%d, height=%d, searchMode=%b, a=%.2f, b=%.2f]",
-                    scale, width, height, searchMode, a, b));
+            sysout.printf("FieldMap[scale=%.2f, width=%d, height=%d, searchMode=%b, a=%.2f, b=%.2f]%n",
+                    scale, width, height, searchMode, a, b);
     }
 
     private static void clear() {
         maxDanger = 0;
         map = new double[width][height];
-    }
-
-    private FieldMap() {
     }
 
 }

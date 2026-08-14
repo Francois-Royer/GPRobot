@@ -6,20 +6,27 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
 public class MovingPoint extends Point2D.Double {
-    protected double velocity;
-    protected double direction;
-
-    long start;
+    private final long start;
+    private final double velocity;
+    private double direction;
+    private double cd;
+    private double sd;
 
     public MovingPoint(Point2D.Double origin, double velocity, double direction, long start) {
         super(origin.getX(), origin.getY());
         this.velocity = velocity;
-        this.direction = direction;
         this.start = start;
+        setDirection(direction);
     }
 
     public double getDirection() {
         return direction;
+    }
+
+    public void setDirection(double direction) {
+        this.direction = direction;
+        cd = cos(direction);
+        sd = sin(direction);
     }
 
     public double getVelocity() {
@@ -40,7 +47,7 @@ public class MovingPoint extends Point2D.Double {
 
     public Point2D.Double getPosition(long time) {
         double d = getDistance(time);
-        return new Point2D.Double(x + d * cos(direction), y + d * sin(direction));
+        return new Point2D.Double(x + d * cd, y + d * sd);
     }
 
     @Override

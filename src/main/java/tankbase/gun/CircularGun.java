@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Math.abs;
-import static robocode.Rules.*;
+import static robocode.Rules.MIN_BULLET_POWER;
+import static robocode.Rules.getBulletSpeed;
 
 public class CircularGun extends AbtractGun {
 
@@ -19,8 +20,7 @@ public class CircularGun extends AbtractGun {
 
     @Override
     public Aiming aim(ITank target) {
-        if (target.getState().getVelocity() == 0 && (target.getState().getAcceleration() == 0 ||
-                target.getState().getAcceleration() == -MAX_VELOCITY))
+        if (target.getState().getVelocity() == 0 && target.getState().getAcceleration() == 0)
             return null;
 
         double firePower = getFirePower(target);
@@ -65,11 +65,12 @@ public class CircularGun extends AbtractGun {
 
             for (long t = 0; t < time + 1; t++) {
                 prevPoint = targetState;
-                targetState = targetState.extrapolateNextState();
+                TankState nextState = targetState.extrapolateNextState();
 
-                if (targetState == null)
+                if (targetState == nextState)
                     return null;
 
+                targetState = nextState;
                 predMoves.add(targetState);
             }
         }

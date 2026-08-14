@@ -8,7 +8,12 @@ import robocode.control.BattleSpecification;
 import robocode.control.RobocodeEngine;
 import robocode.control.RobotSpecification;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
@@ -22,8 +27,25 @@ import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import static gprobot.RobocodeConf.*;
-import static gprobot.RobotCodeUtil.*;
+import static gprobot.RobocodeConf.BATTLEFIELD;
+import static gprobot.RobocodeConf.BOT_PREFFIX;
+import static gprobot.RobocodeConf.CTX_FILE;
+import static gprobot.RobocodeConf.MAX_GENS;
+import static gprobot.RobocodeConf.POP_SIZE;
+import static gprobot.RobocodeConf.PROB_CROSSOVER;
+import static gprobot.RobocodeConf.PROB_MUTATION;
+import static gprobot.RobocodeConf.ROBO_CODE_PATH;
+import static gprobot.RobocodeConf.ROUNDS;
+import static gprobot.RobocodeConf.RUNNERS_COUNT;
+import static gprobot.RobocodeConf.TARGET_FOLDER;
+import static gprobot.RobocodeConf.TOURNY_SIZE;
+import static gprobot.RobocodeConf.opponents;
+import static gprobot.RobocodeConf.random;
+import static gprobot.RobotCodeUtil.compileBots;
+import static gprobot.RobotCodeUtil.delete;
+import static gprobot.RobotCodeUtil.getRobotName;
+import static gprobot.RobotCodeUtil.getRunnersDir;
+import static gprobot.RobotCodeUtil.sDuration;
 
 /**
  * This class represents the main genetic algorithm.

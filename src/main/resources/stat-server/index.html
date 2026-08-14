@@ -4,11 +4,11 @@
         <title>Genetic Programming Robocade Statistics</title>
         <!--        <meta http-equiv="refresh" content="60" />-->
     </head>
-    <script type="text/javascript" src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="https://dygraphs.com/2.2.1/dist/dygraph.min.js"></script>
-    <script type="text/javascript" src="https://dygraphs.com/2.2.1/dist/extras/smooth-plotter.js"></script>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="dygraph.css">
+    <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.1.0.min.js" type="text/javascript"></script>
+    <script src="https://dygraphs.com/2.2.1/dist/dygraph.min.js" type="text/javascript"></script>
+    <script src="https://dygraphs.com/2.2.1/dist/extras/smooth-plotter.js" type="text/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js" type="text/javascript"></script>
+    <link href="dygraph.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 <style>.dygraph-legend {
@@ -16,26 +16,26 @@
     background: none;
 }</style>
 <div class="container" style="width: 100%;">
-    <div id="graphdiv" class="chart" style="width:800px; height:400px; float: left;"></div>
-    <div id="graphdiv2" class="chart" style="width:800px; height:400px; margin-left: 802px;"></div>
+    <div class="chart" id="graphdiv" style="width:800px; height:400px; float: left;"></div>
+    <div class="chart" id="graphdiv2" style="width:800px; height:400px; margin-left: 802px;"></div>
 </div>
 <p><b>Show Series:</b></p>
 <Span><p>
-    <input type=checkbox id="0" checked onClick="change(this)">
+    <input checked id="0" onClick="change(this)" type=checkbox>
     <label for="0"> Average Fitness</label><br/>
-    <input type=checkbox id="1" checked onClick="change(this)">
+    <input checked id="1" onClick="change(this)" type=checkbox>
     <label for="1"> Best Fitness</label><br/>
-    <input type=checkbox id="2" checked onClick="change2(this)">
+    <input checked id="2" onClick="change2(this)" type=checkbox>
     <label for="2"> Average Node</label><br/>
-    <input type=checkbox id="3" checked onClick="change2(this)">
+    <input checked id="3" onClick="change2(this)" type=checkbox>
     <label for="3"> Best Node</label>
 </p></Span><span>
-<p class="smoother">Smoothing:&nbsp;<input type="range" id="smoothing-amount" min="0" max="0.7" step="0.01"
+<p class="smoother">Smoothing:&nbsp;<input id="smoothing-amount" max="0.7" min="0" step="0.01" type="range"
                                            value="0.33"></p>
 </span>
 <div class="container" style="width: 100%;">
-    <div id="graphdiv3" class="chart" style="width:800px; height:400px; float: left;"></div>
-    <div id="graphdiv4" class="chart" style="width:800px; height:400px; margin-left: 802px;"></div>
+    <div class="chart" id="graphdiv3" style="width:800px; height:400px; float: left;"></div>
+    <div class="chart" id="graphdiv4" style="width:800px; height:400px; margin-left: 802px;"></div>
 </div>
 
 

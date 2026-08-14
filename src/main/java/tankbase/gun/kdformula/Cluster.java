@@ -7,13 +7,15 @@ import tankbase.kdtree.KdTree;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.min;
-import static robocode.Rules.*;
+import static robocode.Rules.DECELERATION;
+import static robocode.Rules.MAX_TURN_RATE_RADIANS;
+import static robocode.Rules.MAX_VELOCITY;
 import static robocode.util.Utils.normalAbsoluteAngle;
 import static tankbase.AbstractTankBase.DISTANCE_MAX;
-import static tankbase.TankUtils.wallIntersection;
+import static tankbase.TankUtils.directToWallDistance;
 
 public class Cluster extends AbstractKDFormula {
-    double[] weights = {1, 1, 1, 1, 1, 1, 1, 1};
+    double[] weights = {1, 1, 1, 1, 1, 1, 1};
     ITank target;
 
     public Cluster(ITank target, AbstractTankBase base) {
@@ -28,13 +30,12 @@ public class Cluster extends AbstractKDFormula {
         TankState state = target.getState();
         return new double[]{
                 state.getVelocity() / MAX_VELOCITY,
-                ((normalAbsoluteAngle(state.getHeadingRadians()) - .001) % (PI / 4)) / (PI / 4),
+                (normalAbsoluteAngle(state.getHeadingRadians()) % (PI / 2)) / (PI / 2),
                 state.getTurnRate() / MAX_TURN_RATE_RADIANS,
-                state.distance(wallIntersection(state, state.getMovingDirection())) / DISTANCE_MAX,
+                directToWallDistance(state, state.getHeadingRadians()) / DISTANCE_MAX,
+                directToWallDistance(state, state.getHeadingRadians() + PI) / DISTANCE_MAX,
                 state.getAcceleration() / DECELERATION,
-                (double) min(state.getTime() - target.getLastStop(), 100) / 100,
-                (double) min(state.getTime() - target.getLastChangeDirection(), 100) / 100,
-                (double) min(state.getTime() - target.getLastVelocityChange(), 100) / 100
+                min(1.0, (state.getTime() - target.getLastStop()) / 15.0)
         };
     }
 }
